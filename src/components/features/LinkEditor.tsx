@@ -1,0 +1,278 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Modal, Button, Input, LoadingSpinner } from '../ui';
+import { Link, UpdateLinkData, ApiResponse } from '../../types';
+
+interface LinkEditorProps {
+  link: Link | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onLinkUpdated: (updatedLink: Link) => void;
+  onError: (error: string) => void;
+}
+
+export function LinkEditor({ link, isOpen, onClose, onLinkUpdated, onError }: LinkEditorProps) {
+  const [formData, setFormData] = useState({
+    originalUrl: '',
+    slug: '',
+    title: '',
+    description: '',
+    isPublicStats: false,
+    isActive: true,
+  });
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Reset form when link changes or modal opens
+  useEffect(() => {
+    if (link && isOpen) {
+      setFormData({
+        originalUrl: link.originalUrl,
+        slug: link.slug,
+        title: link.title || '',
+        description: link.description || '',
+        isPublicStats: link.isPublicStats,
+        isActive: link.isActive,
+      });
+      setErrors({});
+    }
+  }, [link, isOpen]);
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.originalUrl.trim()) {
+      newErrors.originalUrl = 'URL is required';
+    } else {
+      // Basic URL validation
+      try {
+        const url = formData.originalUrl.trim();
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          // This is fine, we'll add https:// in the API
+        } else {
+          new URL(url);
+        }
+      } catch {
+        newErrors.originalUrl = 'Please enter a valid URL';
+      }
+    }
+
+    if (formData.slug.trim()) {
+      const slug = formData.slug.trim();
+      if (!/^[a-z0-9-_]+$/i.test(slug)) {
+        newErrors.slug = 'Slug can only contain letters, numbers, hyphens, and underscores';
+      } else if (slug.length > 50) {
+        newErrors.slug = 'Slug must be 50 characters or less';
+      }
+    }
+
+    if (formData.title.length > 200) {
+      newErrors.title = 'Title must be 200 characters or less';
+    }
+
+    if (formData.description.length > 500) {
+      newErrors.description = 'Description must be 500 characters or less';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!link || !validateForm()) return;
+
+    setLoading(true);
+
+    try {
+      const updateData: UpdateLinkData = {
+        originalUrl: formData.originalUrl.trim(),
+        slug: formData.slug.trim().toLowerCase(),
+        title: formData.title.trim() || undefined,
+        description: formData.description.trim() || undefined,
+        isPublicStats: formData.isPublicStats,
+        isActive: formData.isActive,
+      };
+
+      const response = await fetch(`/api/links/${link.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      const data: ApiResponse<Link> = await response.json();
+
+      if (data.success && data.data) {
+        onLinkUpdated(data.data);
+        onClose();
+      } else {
+        if (data.error?.code === 'SLUG_EXISTS') {
+          setErrors({ slug: data.error.message });
+        } else {
+          onError(data.error?.message || 'Failed to update link');
+        }
+      }
+    } catch (error) {
+      console.error('Error updating link:', error);
+      onError('Failed to update link');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  if (!link) return null;
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit Link"
+      size="lg"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="originalUrl" className="block text-sm font-medium text-foreground mb-2">
+            Destination URL *
+          </label>
+          <Input
+            id="originalUrl"
+            type="url"
+            value={formData.originalUrl}
+            onChange={(e) => handleInputChange('originalUrl', e.target.value)}
+            placeholder="https://example.com"
+            error={errors.originalUrl}
+            disabled={loading}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="slug" className="block text-sm font-medium text-foreground mb-2">
+            Custom Slug
+          </label>
+          <div className="flex items-center">
+            <span className="text-sm text-muted-foreground mr-2">
+              {typeof window !== 'undefined' ? window.location.origin : ''}/
+            </span>
+            <Input
+              id="slug"
+              type="text"
+              value={formData.slug}
+              onChange={(e) => handleInputChange('slug', e.target.value)}
+              placeholder="my-link"
+              error={errors.slug}
+              disabled={loading}
+              className="flex-1"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Leave empty to keep current slug. Only letters, numbers, hyphens, and underscores allowed.
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
+            Title
+          </label>
+          <Input
+            id="title"
+            type="text"
+            value={formData.title}
+            onChange={(e) => handleInputChange('title', e.target.value)}
+            placeholder="Optional title for your link"
+            error={errors.title}
+            disabled={loading}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
+            Description
+          </label>
+          <textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => handleInputChange('description', e.target.value)}
+            placeholder="Optional description"
+            rows={3}
+            disabled={loading}
+            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
+              errors.description
+                ? 'border-red-300 focus:ring-red-500'
+                : 'border-input bg-background text-foreground'
+            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          />
+          {errors.description && (
+            <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center">
+            <input
+              id="isActive"
+              type="checkbox"
+              checked={formData.isActive}
+              onChange={(e) => handleInputChange('isActive', e.target.checked)}
+              disabled={loading}
+              className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+            />
+            <label htmlFor="isActive" className="ml-2 block text-sm text-foreground">
+              Link is active
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground ml-6">
+            Inactive links will show a 404 page when accessed
+          </p>
+
+          <div className="flex items-center">
+            <input
+              id="isPublicStats"
+              type="checkbox"
+              checked={formData.isPublicStats}
+              onChange={(e) => handleInputChange('isPublicStats', e.target.checked)}
+              disabled={loading}
+              className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+            />
+            <label htmlFor="isPublicStats" className="ml-2 block text-sm text-foreground">
+              Enable public statistics
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground ml-6">
+            Allow others to view aggregated statistics for this link
+          </p>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            {loading && <LoadingSpinner size="sm" />}
+            Update Link
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
