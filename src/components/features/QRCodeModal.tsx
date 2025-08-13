@@ -14,7 +14,7 @@ interface QRCodeModalProps {
 
 export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
   const qrCodeRef = useRef<HTMLDivElement>(null);
-  
+
   // Prepare URL for QR code
   const getEnhancedUrl = () => {
     // Add protocol if missing to ensure proper scanning
@@ -25,58 +25,73 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
     return enhancedUrl;
   };
 
+  // Extract slug from URL for filename
+  const getSlugFromUrl = () => {
+    try {
+      const urlObj = new URL(getEnhancedUrl());
+      const pathname = urlObj.pathname;
+      // Remove leading slash and get the first segment
+      const slug = pathname.replace(/^\//, '').split('/')[0];
+      return slug || 'qrcode';
+    } catch {
+      // If URL parsing fails, try to extract from the original url
+      const parts = url.split('/');
+      return parts[parts.length - 1] || 'qrcode';
+    }
+  };
+
   // Function to download QR code
   const downloadQRCode = () => {
     if (!qrCodeRef.current) return;
-    
+
     try {
       // Find the SVG element within the container
       const svgElement = qrCodeRef.current.querySelector('svg');
       if (!svgElement) return;
-      
+
       // Create a canvas element
       const canvas = document.createElement('canvas');
       const qrSize = 240; // Match the QR code size
       const margin = 30; // Margin between QR code and text
-      
+
       canvas.width = qrSize;
       canvas.height = qrSize + margin; // Increase canvas height to accommodate margin and text
-      
+
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      
+
       // Fill with white background
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
+
       // Draw QR code directly from SVG
       const svgString = new XMLSerializer().serializeToString(svgElement);
       const img = new Image();
-      
+
       img.onload = () => {
         // Draw QR code
         ctx.drawImage(img, 0, 0, qrSize, qrSize);
-        
+
         // Add text at the bottom with favicon icon
         ctx.font = 'bold 14px Arial';
         ctx.fillStyle = '#444444';
         ctx.textAlign = 'center';
-        
+
         // Position for text - now below the QR code with margin
-        const textY = qrSize + margin/2 + 5; // Position text in the middle of the margin area
+        const textY = qrSize + margin / 2 + 5; // Position text in the middle of the margin area
         const textX = qrSize / 2;
-        
+
         // Draw text centered
         ctx.fillText('Creado con broslunas.link', textX, textY);
-        
+
         // Convert to PNG
         try {
           const pngUrl = canvas.toDataURL('image/png');
-          
+
           // Create a download link
           const downloadLink = document.createElement('a');
           downloadLink.href = pngUrl;
-          downloadLink.download = 'qrcode.png';
+          downloadLink.download = `${getSlugFromUrl()} - Broslunas Link.png`;
           document.body.appendChild(downloadLink);
           downloadLink.click();
           document.body.removeChild(downloadLink);
@@ -84,13 +99,15 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
           console.error('Error generating QR code PNG:', error);
         }
       };
-      
+
       img.onerror = () => {
         console.error('Error loading QR code image');
       };
-      
+
       // Set the source of the image to the SVG data
-      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+      img.src =
+        'data:image/svg+xml;base64,' +
+        btoa(unescape(encodeURIComponent(svgString)));
     } catch (error) {
       console.error('Error in downloadQRCode:', error);
     }
@@ -107,9 +124,9 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
       <div className="p-6 flex flex-col items-center">
         <div className="bg-white p-4 rounded-lg mb-4 shadow-lg border border-gray-200">
           <div ref={qrCodeRef} className="p-4 bg-white">
-            <QRCode 
-              value={getEnhancedUrl()} 
-              size={240} 
+            <QRCode
+              value={getEnhancedUrl()}
+              size={240}
               level="Q" // Quarter error correction level (25%)
               fgColor="#000000"
               bgColor="#FFFFFF"
@@ -122,9 +139,9 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
         <p className="text-sm text-muted-foreground text-center break-all mb-4">
           {url}
         </p>
-        <Button 
-          onClick={downloadQRCode} 
-          variant="outline" 
+        <Button
+          onClick={downloadQRCode}
+          variant="outline"
           size="sm"
           className="flex items-center gap-1"
         >
