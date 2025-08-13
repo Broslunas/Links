@@ -89,6 +89,12 @@ export default function SignInForm() {
           'Continuar con Discord'
         )}
       </button>
+      <div className="mt-6 text-xs text-center text-gray-600 dark:text-gray-400">
+        Al continuar, aceptas nuestros
+        <a href="/terms-and-services" className="underline hover:text-blue-600 dark:hover:text-blue-400 mx-1">Términos y Servicios</a>
+        y
+        <a href="/privacy-policy" className="underline hover:text-blue-600 dark:hover:text-blue-400 mx-1">Política de Privacidad</a>.
+      </div>
     </div>
   );
 }

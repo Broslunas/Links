@@ -101,6 +101,44 @@ const navigation = [
       </svg>
     ),
   },
+  {
+    name: 'Términos y Servicios',
+    href: '/terms-and-services',
+    icon: (
+      <svg
+        className="h-5 w-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M8 17l4 4 4-4m-4-5v9"
+        />
+      </svg>
+    ),
+  },
+  {
+    name: 'Política de Privacidad',
+    href: '/privacy-policy',
+    icon: (
+      <svg
+        className="h-5 w-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 11c0-1.104.896-2 2-2s2 .896 2 2-2 2-2 2-2-.896-2-2zm0 0V7a4 4 0 118 0v4a4 4 0 01-8 0z"
+        />
+      </svg>
+    ),
+  },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
