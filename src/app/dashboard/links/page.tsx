@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { DashboardLayout } from '../../../components/layout';
 import { ToastContainer, ConfirmationModal } from '../../../components/ui';
-import { LinkCreator, LinkList, LinkEditor } from '../../../components/features';
+import { LinkList, LinkEditor } from '../../../components/features';
 import { useToast } from '../../../hooks/useToast';
 import { Link, ApiResponse } from '../../../types';
 
@@ -120,9 +120,6 @@ export default function LinksPage() {
                         el rendimiento de tus enlaces.
                     </p>
                 </div>
-
-                {/* Link Creator */}
-                <LinkCreator onLinkCreated={handleLinkCreated} onError={handleError} />
 
                 {/* Links List */}
                 <LinkList
