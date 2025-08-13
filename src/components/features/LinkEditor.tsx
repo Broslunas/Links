@@ -12,7 +12,13 @@ interface LinkEditorProps {
   onError: (error: string) => void;
 }
 
-export function LinkEditor({ link, isOpen, onClose, onLinkUpdated, onError }: LinkEditorProps) {
+export function LinkEditor({
+  link,
+  isOpen,
+  onClose,
+  onLinkUpdated,
+  onError,
+}: LinkEditorProps) {
   const [formData, setFormData] = useState({
     originalUrl: '',
     slug: '',
@@ -61,7 +67,8 @@ export function LinkEditor({ link, isOpen, onClose, onLinkUpdated, onError }: Li
     if (formData.slug.trim()) {
       const slug = formData.slug.trim();
       if (!/^[a-z0-9-_]+$/i.test(slug)) {
-        newErrors.slug = 'Slug can only contain letters, numbers, hyphens, and underscores';
+        newErrors.slug =
+          'Slug can only contain letters, numbers, hyphens, and underscores';
       } else if (slug.length > 50) {
         newErrors.slug = 'Slug must be 50 characters or less';
       }
@@ -96,7 +103,7 @@ export function LinkEditor({ link, isOpen, onClose, onLinkUpdated, onError }: Li
         isActive: formData.isActive,
       };
 
-      const response = await fetch(`/api/links/${link.id}`, {
+      const response = await fetch(`/api/links/${link.slug}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -135,22 +142,20 @@ export function LinkEditor({ link, isOpen, onClose, onLinkUpdated, onError }: Li
   if (!link) return null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Edit Link"
-      size="lg"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Link" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="originalUrl" className="block text-sm font-medium text-foreground mb-2">
+          <label
+            htmlFor="originalUrl"
+            className="block text-sm font-medium text-foreground mb-2"
+          >
             Destination URL *
           </label>
           <Input
             id="originalUrl"
             type="url"
             value={formData.originalUrl}
-            onChange={(e) => handleInputChange('originalUrl', e.target.value)}
+            onChange={e => handleInputChange('originalUrl', e.target.value)}
             placeholder="https://example.com"
             error={errors.originalUrl}
             disabled={loading}
@@ -158,7 +163,10 @@ export function LinkEditor({ link, isOpen, onClose, onLinkUpdated, onError }: Li
         </div>
 
         <div>
-          <label htmlFor="slug" className="block text-sm font-medium text-foreground mb-2">
+          <label
+            htmlFor="slug"
+            className="block text-sm font-medium text-foreground mb-2"
+          >
             Custom Slug
           </label>
           <div className="flex items-center">
@@ -169,7 +177,7 @@ export function LinkEditor({ link, isOpen, onClose, onLinkUpdated, onError }: Li
               id="slug"
               type="text"
               value={formData.slug}
-              onChange={(e) => handleInputChange('slug', e.target.value)}
+              onChange={e => handleInputChange('slug', e.target.value)}
               placeholder="my-link"
               error={errors.slug}
               disabled={loading}
@@ -177,19 +185,23 @@ export function LinkEditor({ link, isOpen, onClose, onLinkUpdated, onError }: Li
             />
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Leave empty to keep current slug. Only letters, numbers, hyphens, and underscores allowed.
+            Leave empty to keep current slug. Only letters, numbers, hyphens,
+            and underscores allowed.
           </p>
         </div>
 
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
+          <label
+            htmlFor="title"
+            className="block text-sm font-medium text-foreground mb-2"
+          >
             Title
           </label>
           <Input
             id="title"
             type="text"
             value={formData.title}
-            onChange={(e) => handleInputChange('title', e.target.value)}
+            onChange={e => handleInputChange('title', e.target.value)}
             placeholder="Optional title for your link"
             error={errors.title}
             disabled={loading}
@@ -197,13 +209,16 @@ export function LinkEditor({ link, isOpen, onClose, onLinkUpdated, onError }: Li
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
+          <label
+            htmlFor="description"
+            className="block text-sm font-medium text-foreground mb-2"
+          >
             Description
           </label>
           <textarea
             id="description"
             value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
+            onChange={e => handleInputChange('description', e.target.value)}
             placeholder="Optional description"
             rows={3}
             disabled={loading}
@@ -224,11 +239,14 @@ export function LinkEditor({ link, isOpen, onClose, onLinkUpdated, onError }: Li
               id="isActive"
               type="checkbox"
               checked={formData.isActive}
-              onChange={(e) => handleInputChange('isActive', e.target.checked)}
+              onChange={e => handleInputChange('isActive', e.target.checked)}
               disabled={loading}
               className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
             />
-            <label htmlFor="isActive" className="ml-2 block text-sm text-foreground">
+            <label
+              htmlFor="isActive"
+              className="ml-2 block text-sm text-foreground"
+            >
               Link is active
             </label>
           </div>
@@ -241,11 +259,16 @@ export function LinkEditor({ link, isOpen, onClose, onLinkUpdated, onError }: Li
               id="isPublicStats"
               type="checkbox"
               checked={formData.isPublicStats}
-              onChange={(e) => handleInputChange('isPublicStats', e.target.checked)}
+              onChange={e =>
+                handleInputChange('isPublicStats', e.target.checked)
+              }
               disabled={loading}
               className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
             />
-            <label htmlFor="isPublicStats" className="ml-2 block text-sm text-foreground">
+            <label
+              htmlFor="isPublicStats"
+              className="ml-2 block text-sm text-foreground"
+            >
               Enable public statistics
             </label>
           </div>

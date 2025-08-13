@@ -89,7 +89,7 @@ export default function DashboardPage() {
   };
 
   const handleLinkUpdated = (updatedLink: Link) => {
-    success('Link updated successfully!', 'Link Updated');
+    success('Enlace editado correctamente!', 'Enlace Editado');
     setRefreshTrigger(prev => prev + 1);
   };
 
@@ -103,22 +103,22 @@ export default function DashboardPage() {
     setDeleteLoading(true);
 
     try {
-      const response = await fetch(`/api/links/${deletingLink.id}`, {
+      const response = await fetch(`/api/links/${deletingLink.slug}`, {
         method: 'DELETE',
       });
 
       const data: ApiResponse = await response.json();
 
       if (data.success) {
-        success('Link deleted successfully!', 'Link Deleted');
+        success('El enlace se ha eliminado correctamente!', 'Enlace Eliminado');
         setRefreshTrigger(prev => prev + 1);
         setDeletingLink(null);
       } else {
-        error(data.error?.message || 'Failed to delete link', 'Error');
+        error(data.error?.message || 'Error al eliminar el enlace', 'Error');
       }
     } catch (err) {
-      console.error('Error deleting link:', err);
-      error('Failed to delete link', 'Error');
+      console.error('Error al eliminar el enlace:', err);
+      error('Error al eliminar el enlace', 'Error');
     } finally {
       setDeleteLoading(false);
     }
