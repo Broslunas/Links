@@ -184,7 +184,8 @@ export async function PUT(
       'originalUrl',
     ];
     updatableFields.forEach(field => {
-      if (field in body) {
+      // Permite actualizar el campo aunque el valor sea vacío, null, false, etc.
+      if (Object.prototype.hasOwnProperty.call(body, field)) {
         link[field] = body[field];
       }
     });

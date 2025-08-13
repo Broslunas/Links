@@ -73,10 +73,7 @@ export default function DashboardPage() {
 
   // Event handlers
   const handleLinkCreated = (link: any) => {
-    success(
-      `Short link created successfully! ${link.shortUrl}`,
-      'Link Created'
-    );
+    success(`Enlace creado correctamente! ${link.shortUrl}`, 'Enlace creado');
     setRefreshTrigger(prev => prev + 1);
   };
 

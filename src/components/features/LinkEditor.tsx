@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Modal, Button, Input, LoadingSpinner } from '../ui';
+import './LinkEditor.css';
 import { Link, UpdateLinkData, ApiResponse } from '../../types';
 
 interface LinkEditorProps {
@@ -143,159 +144,161 @@ export function LinkEditor({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Editar enlace" size="lg">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="originalUrl"
-            className="block text-sm font-medium text-foreground mb-2"
-          >
-            Enlace de destino *
-          </label>
-          <Input
-            id="originalUrl"
-            type="url"
-            value={formData.originalUrl}
-            onChange={e => handleInputChange('originalUrl', e.target.value)}
-            placeholder="https://example.com"
-            error={errors.originalUrl}
-            disabled={loading}
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="slug"
-            className="block text-sm font-medium text-foreground mb-2"
-          >
-            Enlace corto (slug)
-          </label>
-          <div className="flex items-center">
-            <span className="text-sm text-muted-foreground mr-2">
-              {typeof window !== 'undefined' ? window.location.origin : ''}/
-            </span>
+      <div className="linkEditorScroll">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="originalUrl"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
+              Enlace de destino *
+            </label>
             <Input
-              id="slug"
+              id="originalUrl"
+              type="url"
+              value={formData.originalUrl}
+              onChange={e => handleInputChange('originalUrl', e.target.value)}
+              placeholder="https://example.com"
+              error={errors.originalUrl}
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="slug"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
+              Enlace corto (slug)
+            </label>
+            <div className="flex items-center">
+              <span className="text-sm text-muted-foreground mr-2">
+                {typeof window !== 'undefined' ? window.location.origin : ''}/
+              </span>
+              <Input
+                id="slug"
+                type="text"
+                value={formData.slug}
+                onChange={e => handleInputChange('slug', e.target.value)}
+                placeholder="my-link"
+                error={errors.slug}
+                disabled={loading}
+                className="flex-1"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Deja vacío para mantener el slug actual. Solo se permiten letras,
+              números, guiones y guiones bajos.
+            </p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
+              Título
+            </label>
+            <Input
+              id="title"
               type="text"
-              value={formData.slug}
-              onChange={e => handleInputChange('slug', e.target.value)}
-              placeholder="my-link"
-              error={errors.slug}
+              value={formData.title}
+              onChange={e => handleInputChange('title', e.target.value)}
+              placeholder="Título opcional para tu enlace"
+              error={errors.title}
               disabled={loading}
-              className="flex-1"
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Deja vacío para mantener el slug actual. Solo se permiten letras,
-            números, guiones y guiones bajos.
-          </p>
-        </div>
 
-        <div>
-          <label
-            htmlFor="title"
-            className="block text-sm font-medium text-foreground mb-2"
-          >
-            Título
-          </label>
-          <Input
-            id="title"
-            type="text"
-            value={formData.title}
-            onChange={e => handleInputChange('title', e.target.value)}
-            placeholder="Título opcional para tu enlace"
-            error={errors.title}
-            disabled={loading}
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium text-foreground mb-2"
-          >
-            Descripción
-          </label>
-          <textarea
-            id="description"
-            value={formData.description}
-            onChange={e => handleInputChange('description', e.target.value)}
-            placeholder="Descripción opcional"
-            rows={3}
-            disabled={loading}
-            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
-              errors.description
-                ? 'border-red-300 focus:ring-red-500'
-                : 'border-input bg-background text-foreground'
-            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          />
-          {errors.description && (
-            <p className="text-red-500 text-xs mt-1">{errors.description}</p>
-          )}
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center">
-            <input
-              id="isActive"
-              type="checkbox"
-              checked={formData.isActive}
-              onChange={e => handleInputChange('isActive', e.target.checked)}
-              disabled={loading}
-              className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-            />
+          <div>
             <label
-              htmlFor="isActive"
-              className="ml-2 block text-sm text-foreground"
+              htmlFor="description"
+              className="block text-sm font-medium text-foreground mb-2"
             >
-              El enlace está activo
+              Descripción
             </label>
-          </div>
-          <p className="text-xs text-muted-foreground ml-6">
-            Los enlaces inactivos mostrarán una página 404 cuando se accedan
-          </p>
-
-          <div className="flex items-center">
-            <input
-              id="isPublicStats"
-              type="checkbox"
-              checked={formData.isPublicStats}
-              onChange={e =>
-                handleInputChange('isPublicStats', e.target.checked)
-              }
+            <textarea
+              id="description"
+              value={formData.description}
+              onChange={e => handleInputChange('description', e.target.value)}
+              placeholder="Descripción opcional"
+              rows={3}
               disabled={loading}
-              className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
+                errors.description
+                  ? 'border-red-300 focus:ring-red-500'
+                  : 'border-input bg-background text-foreground'
+              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
-            <label
-              htmlFor="isPublicStats"
-              className="ml-2 block text-sm text-foreground"
-            >
-              Habilitar estadísticas públicas
-            </label>
+            {errors.description && (
+              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground ml-6">
-            Permitir que otros vean estadísticas agregadas para este enlace
-          </p>
-        </div>
 
-        <div className="flex justify-end gap-3 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            disabled={loading}
-            className="flex items-center gap-2"
-          >
-            {loading && <LoadingSpinner size="sm" />}
-            Editar
-          </Button>
-        </div>
-      </form>
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <input
+                id="isActive"
+                type="checkbox"
+                checked={formData.isActive}
+                onChange={e => handleInputChange('isActive', e.target.checked)}
+                disabled={loading}
+                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+              />
+              <label
+                htmlFor="isActive"
+                className="ml-2 block text-sm text-foreground"
+              >
+                El enlace está activo
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground ml-6">
+              Los enlaces inactivos mostrarán una página 404 cuando se accedan
+            </p>
+
+            <div className="flex items-center">
+              <input
+                id="isPublicStats"
+                type="checkbox"
+                checked={formData.isPublicStats}
+                onChange={e =>
+                  handleInputChange('isPublicStats', e.target.checked)
+                }
+                disabled={loading}
+                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+              />
+              <label
+                htmlFor="isPublicStats"
+                className="ml-2 block text-sm text-foreground"
+              >
+                Habilitar estadísticas públicas
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground ml-6">
+              Permitir que otros vean estadísticas agregadas para este enlace
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              {loading && <LoadingSpinner size="sm" />}
+              Editar
+            </Button>
+          </div>
+        </form>
+      </div>
     </Modal>
   );
 }
