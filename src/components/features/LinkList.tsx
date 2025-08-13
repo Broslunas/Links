@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Button, LoadingSpinner } from '../ui';
 import { Link, ApiResponse } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale'
+import { es } from 'date-fns/locale';
 
 interface LinkListProps {
   onEditLink: (link: Link) => void;
@@ -247,7 +247,7 @@ export function LinkList({
                     Creado{' '}
                     {formatDistanceToNow(new Date(link.createdAt), {
                       addSuffix: true,
-                      locale: es
+                      locale: es,
                     })}
                   </span>
                 </div>
@@ -255,7 +255,9 @@ export function LinkList({
 
               <div className="flex items-center gap-2 ml-4">
                 <Button
-                  onClick={() => window.location.href = `/dashboard/links/${link.id}/analytics`}
+                  onClick={() =>
+                    (window.location.href = `/dashboard/links/${link.slug}/analytics`)
+                  }
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-1"
