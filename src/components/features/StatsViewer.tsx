@@ -169,11 +169,11 @@ export function StatsViewer({ linkId, linkSlug, className = '' }: StatsViewerPro
         }
     };
 
-    const handleDetailedExport = async (format: 'csv' | 'json') => {
+    const handleDetailedExport = async (exportFormat: 'csv' | 'json') => {
         try {
             const params = new URLSearchParams({
                 linkId,
-                format,
+                format: exportFormat,
                 limit: '5000', // Limit to prevent huge downloads
             });
 
@@ -196,7 +196,7 @@ export function StatsViewer({ linkId, linkSlug, className = '' }: StatsViewerPro
 
             // Get filename from response headers
             const contentDisposition = response.headers.get('content-disposition');
-            let filename = `detailed_analytics_${linkSlug || linkId}_${format(new Date(), 'yyyy-MM-dd')}.${format}`;
+            let filename = `detailed_analytics_${linkSlug || linkId}_${format(new Date(), 'yyyy-MM-dd')}.${exportFormat}`;
 
             if (contentDisposition) {
                 const filenameMatch = contentDisposition.match(/filename="(.+)"/);
