@@ -1,50 +1,100 @@
-
-
-
-import React from "react";
+import React from 'react';
 
 const PrivacyPolicy: React.FC = () => (
   <main className="max-w-3xl mx-auto py-12 px-4 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 rounded-lg shadow-lg">
-    <h1 className="text-4xl font-bold mb-8 text-center">Política de Privacidad</h1>
+    <h1 className="text-4xl font-bold mb-8 text-center">
+      Política de Privacidad
+    </h1>
+
     <section className="mb-10">
-      <h2 className="text-2xl font-semibold mb-3">1. Información que Recopilamos</h2>
-      <p className="mb-2">Recopilamos información personal que usted proporciona voluntariamente al registrarse, iniciar sesión, crear enlaces o interactuar con nuestro sitio. Esto puede incluir nombre, correo electrónico, dirección IP, y datos de uso.</p>
-      <p className="mb-2">También recopilamos información automáticamente a través de cookies y tecnologías similares para mejorar la experiencia del usuario y analizar el tráfico del sitio.</p>
-    </section>
-    <section className="mb-10">
-      <h2 className="text-2xl font-semibold mb-3">2. Uso de la Información</h2>
+      <h2 className="text-2xl font-semibold mb-3">1. Datos que Recopilamos</h2>
       <ul className="list-disc pl-6 space-y-2">
-        <li>Proveer y mantener el servicio.</li>
-        <li>Personalizar la experiencia del usuario.</li>
-        <li>Analizar el uso y mejorar la funcionalidad.</li>
-        <li>Enviar notificaciones importantes y actualizaciones.</li>
-        <li>Prevenir actividades fraudulentas y proteger la seguridad.</li>
+        <li>
+          Correo electrónico y nombre de usuario, obtenidos a través de Google,
+          Discord, GitHub y otros proveedores OAuth.
+        </li>
+        <li>Cookies para gestionar sesiones y mejorar el servicio.</li>
+        <li>
+          Datos de ubicación cuando un usuario accede a un enlace, para
+          analíticas detalladas.
+        </li>
       </ul>
     </section>
+
     <section className="mb-10">
-      <h2 className="text-2xl font-semibold mb-3">3. Compartir y Divulgación</h2>
-      <p className="mb-2">No compartimos su información personal con terceros, excepto cuando sea necesario para cumplir con la ley, proteger nuestros derechos, o mejorar el servicio (por ejemplo, proveedores de análisis).</p>
+      <h2 className="text-2xl font-semibold mb-3">2. Uso de los Datos</h2>
+      <p className="mb-2">
+        Usamos los datos para generar estadísticas de enlaces y métricas
+        generales, siempre con medidas de privacidad y cifrado.
+      </p>
     </section>
+
     <section className="mb-10">
-      <h2 className="text-2xl font-semibold mb-3">4. Seguridad de los Datos</h2>
-      <p className="mb-2">Implementamos medidas técnicas y organizativas para proteger su información personal contra accesos no autorizados, pérdida o destrucción. Sin embargo, ningún sistema es completamente seguro y no podemos garantizar la seguridad absoluta.</p>
+      <h2 className="text-2xl font-semibold mb-3">3. Compartición de Datos</h2>
+      <p className="mb-2">
+        No compartimos ni vendemos tus datos a terceros. Toda la información se
+        mantiene dentro de Broslunas.
+      </p>
     </section>
+
     <section className="mb-10">
-      <h2 className="text-2xl font-semibold mb-3">5. Derechos del Usuario</h2>
+      <h2 className="text-2xl font-semibold mb-3">4. Seguridad</h2>
+      <p className="mb-2">
+        Implementamos cifrado y medidas técnicas para proteger tus datos frente
+        a accesos no autorizados.
+      </p>
+    </section>
+
+    <section className="mb-10">
+      <h2 className="text-2xl font-semibold mb-3">5. Retención de Datos</h2>
+      <p className="mb-2">
+        Conservamos los datos mientras la cuenta esté activa. Puedes solicitar
+        su eliminación escribiendo a{' '}
+        <a href="mailto:pablo@broslunas.com" className="text-blue-500">
+          pablo@broslunas.com
+        </a>
+        .
+      </p>
+    </section>
+
+    <section className="mb-10">
+      <h2 className="text-2xl font-semibold mb-3">
+        6. Derechos del Usuario (RGPD)
+      </h2>
       <ul className="list-disc pl-6 space-y-2">
-        <li>Acceder, rectificar o eliminar su información personal.</li>
-        <li>Solicitar la limitación u oposición al tratamiento de sus datos.</li>
-        <li>Retirar el consentimiento en cualquier momento.</li>
+        <li>Acceder a tus datos.</li>
+        <li>Rectificarlos.</li>
+        <li>Solicitar su eliminación.</li>
+        <li>Oponerte a su tratamiento.</li>
       </ul>
-      <p className="mt-2">Para ejercer estos derechos, contáctenos a través de nuestro formulario de contacto.</p>
     </section>
+
     <section className="mb-10">
-      <h2 className="text-2xl font-semibold mb-3">6. Cambios en la Política</h2>
-      <p className="mb-2">Nos reservamos el derecho de modificar esta política de privacidad en cualquier momento. Las actualizaciones serán publicadas en esta página y notificadas a los usuarios registrados.</p>
+      <h2 className="text-2xl font-semibold mb-3">7. Edad Mínima</h2>
+      <p className="mb-2">
+        El servicio está recomendado para mayores de 14 años, aunque no existe
+        una restricción técnica.
+      </p>
     </section>
+
+    <section className="mb-10">
+      <h2 className="text-2xl font-semibold mb-3">
+        8. Cambios en esta Política
+      </h2>
+      <p className="mb-2">
+        Podemos actualizar esta política en cualquier momento. Notificaremos
+        cambios importantes en la web o por correo electrónico.
+      </p>
+    </section>
+
     <section>
-      <h2 className="text-2xl font-semibold mb-3">7. Contacto</h2>
-      <p>Si tiene preguntas sobre nuestra política de privacidad, puede contactarnos en cualquier momento a través del correo soporte@broslunas.com o el formulario de contacto.</p>
+      <h2 className="text-2xl font-semibold mb-3">9. Contacto</h2>
+      <p>
+        Para consultas sobre privacidad:{' '}
+        <a href="mailto:pablo@broslunas.com" className="text-blue-500">
+          pablo@broslunas.com
+        </a>
+      </p>
     </section>
   </main>
 );
