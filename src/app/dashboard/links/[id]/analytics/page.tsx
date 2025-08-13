@@ -193,27 +193,6 @@ export default function LinkAnalyticsPage() {
                 </p>
               )}
             </div>
-            {/* Quick Actions */}
-            <div className="flex gap-2">
-              {link.isPublicStats && (
-                <Button
-                  onClick={() => window.open(`/stats/${link.slug}`, '_blank')}
-                  variant="outline"
-                >
-                  Ver Estadísticas Públicas
-                </Button>
-              )}
-              <Button
-                onClick={() =>
-                  navigator.clipboard.writeText(
-                    `${window.location.origin}/${link.slug}`
-                  )
-                }
-                variant="outline"
-              >
-                Copiar Enlace
-              </Button>
-            </div>
           </div>
           {/* Quick Actions */}
           <div className="flex gap-2">
