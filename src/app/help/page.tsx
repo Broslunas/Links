@@ -1,5 +1,20 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Centro de Ayuda',
+  description: 'Encuentra respuestas a tus preguntas sobre Broslunas Links. Guías, tutoriales y documentación para aprovechar al máximo nuestro acortador de URLs.',
+  keywords: ['ayuda', 'soporte', 'guías', 'tutoriales', 'documentación', 'faq', 'preguntas frecuentes'],
+  openGraph: {
+    title: 'Centro de Ayuda - Broslunas Links',
+    description: 'Encuentra respuestas a tus preguntas y aprende a usar BRL Links con nuestras guías y tutoriales.',
+  },
+  twitter: {
+    title: 'Centro de Ayuda - Broslunas Links',
+    description: 'Encuentra respuestas a tus preguntas y aprende a usar BRL Links con nuestras guías y tutoriales.',
+  },
+};
 
 export default function HelpPage() {
   return (

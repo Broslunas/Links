@@ -1,5 +1,20 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Precios y Planes',
+  description: 'Descubre nuestros planes de precios flexibles para el acortador de URLs Broslunas Links. Desde planes gratuitos hasta soluciones empresariales.',
+  keywords: ['precios', 'planes', 'tarifas', 'acortador urls', 'suscripción', 'gratis', 'premium', 'empresarial'],
+  openGraph: {
+    title: 'Precios y Planes - Broslunas Links',
+    description: 'Planes flexibles para todas tus necesidades de acortamiento de enlaces. Desde opciones gratuitas hasta soluciones empresariales.',
+  },
+  twitter: {
+    title: 'Precios y Planes - Broslunas Links',
+    description: 'Planes flexibles para todas tus necesidades de acortamiento de enlaces. Desde opciones gratuitas hasta soluciones empresariales.',
+  },
+};
 
 export default function PricingPage() {
   return (

@@ -1,5 +1,20 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Contacto',
+  description: '¿Tienes preguntas sobre Broslunas Links? Contáctanos para soporte técnico, consultas comerciales o cualquier duda sobre nuestro acortador de URLs.',
+  keywords: ['contacto', 'soporte', 'ayuda', 'consultas', 'atención al cliente', 'broslunas links'],
+  openGraph: {
+    title: 'Contacto - Broslunas Links',
+    description: '¿Tienes preguntas? Nos encantaría escucharte. Contáctanos para cualquier consulta sobre nuestro servicio.',
+  },
+  twitter: {
+    title: 'Contacto - Broslunas Links',
+    description: '¿Tienes preguntas? Nos encantaría escucharte. Contáctanos para cualquier consulta sobre nuestro servicio.',
+  },
+};
 
 export default function ContactPage() {
   return (

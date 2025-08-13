@@ -1,4 +1,23 @@
 import React from 'react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Política de Privacidad',
+  description: 'Conoce cómo Broslunas Links protege tu privacidad. Información sobre recopilación, uso y protección de datos personales según RGPD.',
+  keywords: ['política de privacidad', 'protección de datos', 'rgpd', 'privacidad', 'datos personales', 'cookies'],
+  openGraph: {
+    title: 'Política de Privacidad - Broslunas Links',
+    description: 'Información completa sobre cómo protegemos tu privacidad y manejamos tus datos personales.',
+  },
+  twitter: {
+    title: 'Política de Privacidad - Broslunas Links',
+    description: 'Información completa sobre cómo protegemos tu privacidad y manejamos tus datos personales.',
+  },
+  robots: {
+    index: true,
+    follow: false,
+  },
+};
 
 const PrivacyPolicy: React.FC = () => (
   <main className="max-w-3xl mx-auto py-12 px-4 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 rounded-lg shadow-lg">

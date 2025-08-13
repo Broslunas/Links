@@ -1,4 +1,23 @@
 import React from 'react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Términos de Servicio',
+  description: 'Términos y condiciones de uso de Broslunas Links. Conoce las normas, derechos y responsabilidades al usar nuestro acortador de URLs.',
+  keywords: ['términos de servicio', 'condiciones de uso', 'normas', 'legal', 'acortador urls', 'responsabilidades'],
+  openGraph: {
+    title: 'Términos de Servicio - Broslunas Links',
+    description: 'Términos y condiciones de uso del servicio. Información legal sobre derechos y responsabilidades.',
+  },
+  twitter: {
+    title: 'Términos de Servicio - Broslunas Links',
+    description: 'Términos y condiciones de uso del servicio. Información legal sobre derechos y responsabilidades.',
+  },
+  robots: {
+    index: true,
+    follow: false,
+  },
+};
 
 const TermsAndServices: React.FC = () => (
   <main className="max-w-3xl mx-auto py-12 px-4 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 rounded-lg shadow-lg">

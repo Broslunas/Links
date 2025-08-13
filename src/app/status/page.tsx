@@ -1,5 +1,20 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Estado del Sistema',
+  description: 'Monitoreo en tiempo real del estado de los servicios de Broslunas Links. Verifica el uptime, rendimiento y disponibilidad de nuestros sistemas.',
+  keywords: ['estado', 'sistema', 'uptime', 'monitoreo', 'disponibilidad', 'rendimiento', 'servicios'],
+  openGraph: {
+    title: 'Estado del Sistema - Broslunas Links',
+    description: 'Monitoreo en tiempo real del estado de nuestros servicios. Verifica la disponibilidad y rendimiento.',
+  },
+  twitter: {
+    title: 'Estado del Sistema - Broslunas Links',
+    description: 'Monitoreo en tiempo real del estado de nuestros servicios. Verifica la disponibilidad y rendimiento.',
+  },
+};
 
 export default function StatusPage() {
   return (
