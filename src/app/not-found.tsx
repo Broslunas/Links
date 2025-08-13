@@ -11,7 +11,7 @@ export default function NotFound() {
                         Link Not Found
                     </h2>
                     <p className="text-gray-600 dark:text-gray-400 mb-8">
-                        The short link you're looking for doesn't exist or has been removed.
+                        The short link you&apos;re looking for doesn&apos;t exist or has been removed.
                         It might have been deleted, expired, or you may have mistyped the URL.
                     </p>
                 </div>

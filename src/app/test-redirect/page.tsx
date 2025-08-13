@@ -95,8 +95,8 @@ export default function TestRedirectPage() {
                     <ul className="text-blue-800 dark:text-blue-200 space-y-1 text-sm">
                         <li>1. Create a link in the dashboard first</li>
                         <li>2. Enter the slug of that link above</li>
-                        <li>3. Click "Test API" to see the redirect data</li>
-                        <li>4. Click "Test Actual Redirect" to test the real redirect</li>
+                        <li>3. Click &quot;Test API&quot; to see the redirect data</li>
+                        <li>4. Click &quot;Test Actual Redirect&quot; to test the real redirect</li>
                     </ul>
                 </div>
             </div>

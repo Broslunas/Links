@@ -116,11 +116,11 @@ export function StatsViewer({ linkId, linkSlug, className = '' }: StatsViewerPro
         }
     };
 
-    const handleExport = async (format: 'csv' | 'json') => {
+    const handleExport = async (exportFormat: 'csv' | 'json') => {
         try {
             const params = new URLSearchParams({
                 linkId,
-                format,
+                format: exportFormat,
             });
 
             // Add date range parameters
