@@ -41,7 +41,7 @@ export default function StatsPage({ params }: StatsPageProps) {
             const data: ApiResponse<Link[]> = await response.json();
 
             if (data.success && data.data) {
-                const foundLink = data.data.find(l => l.id === params.linkId);
+                const foundLink = data.data.find(l => l.slug === params.linkId);
                 if (foundLink) {
                     setLink(foundLink);
                 } else {
@@ -192,7 +192,7 @@ export default function StatsPage({ params }: StatsPageProps) {
                     <div className="flex gap-2">
                         {link.isPublicStats && (
                             <Button
-                                onClick={() => window.open(`/stats/${link.id}`, '_blank')}
+                                onClick={() => window.open(`/stats/${link.slug}`, '_blank')}
                                 variant="outline"
                             >
                                 Ver Estadísticas Públicas
