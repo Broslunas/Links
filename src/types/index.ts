@@ -5,7 +5,7 @@ export interface User {
   email: string;
   name: string;
   image?: string;
-  provider: 'github' | 'google';
+  provider: 'github' | 'google' | 'discord';
   providerId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -102,19 +102,19 @@ declare module 'next-auth' {
       name?: string | null;
       email?: string | null;
       image?: string | null;
-      provider?: 'github' | 'google';
+      provider?: 'github' | 'google' | 'discord';
     };
   }
 
   interface User {
     id: string;
-    provider?: 'github' | 'google';
+    provider?: 'github' | 'google' | 'discord';
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
     id?: string;
-    provider?: 'github' | 'google';
+    provider?: 'github' | 'google' | 'discord';
   }
 }

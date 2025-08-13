@@ -18,7 +18,7 @@ export default async function SignInPage() {
             Inicia sesión en tu cuenta
           </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
-            Usa tu cuenta de GitHub o Google para acceder
+            Usa tu cuenta de GitHub, Google o Discord para acceder
           </p>
         </div>
         <SignInForm />

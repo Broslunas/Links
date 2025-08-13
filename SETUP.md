@@ -23,6 +23,9 @@ GITHUB_CLIENT_SECRET=tu-github-client-secret
 GOOGLE_CLIENT_ID=tu-google-client-id
 GOOGLE_CLIENT_SECRET=tu-google-client-secret
 
+DISCORD_CLIENT_ID=tu-discord-client-id
+DISCORD_CLIENT_SECRET=tu-discord-client-secret
+
 # App Configuration
 APP_URL=http://localhost:3000
 
@@ -43,6 +46,13 @@ IP_HASH_SECRET=tu-clave-secreta-para-hash-ip
 3. Habilita Google+ API
 4. Crea credenciales OAuth 2.0
 5. Authorized redirect URIs: `http://localhost:3000/api/auth/callback/google`
+
+#### Discord OAuth App:
+1. Ve a Discord Developer Portal (https://discord.com/developers/applications)
+2. Crea una nueva aplicación
+3. Ve a la sección OAuth2
+4. Agrega redirect URI: `http://localhost:3000/api/auth/callback/discord`
+5. Copia el Client ID y Client Secret
 
 ### 3. Configurar MongoDB
 

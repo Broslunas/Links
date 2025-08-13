@@ -6,7 +6,7 @@ A modern URL shortener built with Next.js 14, TypeScript, and TailwindCSS.
 
 - 🔗 Create short URLs with custom slugs
 - 📊 Advanced analytics and statistics
-- 🔐 OAuth authentication (GitHub & Google)
+- 🔐 OAuth authentication (GitHub, Google & Discord)
 - 🌙 Dark/Light mode support
 - 📱 Responsive design
 - 🚀 Built with Next.js 14 App Router

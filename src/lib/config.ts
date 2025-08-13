@@ -10,6 +10,8 @@ const optionalEnvVars = [
     'GITHUB_CLIENT_SECRET',
     'GOOGLE_CLIENT_ID',
     'GOOGLE_CLIENT_SECRET',
+    'DISCORD_CLIENT_ID',
+    'DISCORD_CLIENT_SECRET',
 ] as const;
 
 // Validate required environment variables
@@ -29,9 +31,10 @@ export function validateConfig() {
     // Check if at least one OAuth provider is configured
     const hasGithub = process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET;
     const hasGoogle = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
+    const hasDiscord = process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET;
 
-    if (!hasGithub && !hasGoogle) {
-        console.warn('Warning: No OAuth providers configured. At least one provider (GitHub or Google) should be configured.');
+    if (!hasGithub && !hasGoogle && !hasDiscord) {
+        console.warn('Warning: No OAuth providers configured. At least one provider (GitHub, Google, or Discord) should be configured.');
     }
 }
 
@@ -60,6 +63,10 @@ export const config = {
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        },
+        discord: {
+            clientId: process.env.DISCORD_CLIENT_ID,
+            clientSecret: process.env.DISCORD_CLIENT_SECRET,
         },
     },
     app: {

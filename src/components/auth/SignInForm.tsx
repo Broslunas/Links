@@ -3,7 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { FaGithub, FaGoogle } from 'react-icons/fa';
+import { FaGithub, FaGoogle, FaDiscord } from 'react-icons/fa';
 
 export default function SignInForm() {
   const [isLoading, setIsLoading] = useState<string | null>(null);
@@ -11,13 +11,13 @@ export default function SignInForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
-  const handleSignIn = async (provider: 'github' | 'google') => {
+  const handleSignIn = async (provider: 'github' | 'google' | 'discord') => {
     setIsLoading(provider);
     setError(null);
-    
+
     try {
       // Use NextAuth's built-in redirect handling
-      await signIn(provider, { 
+      await signIn(provider, {
         callbackUrl,
         redirect: true // Let NextAuth handle the redirect
       });
@@ -35,7 +35,7 @@ export default function SignInForm() {
           {error}
         </div>
       )}
-      
+
       <button
         onClick={() => handleSignIn('github')}
         disabled={isLoading !== null}
@@ -69,6 +69,24 @@ export default function SignInForm() {
           </div>
         ) : (
           'Continuar con Google'
+        )}
+      </button>
+
+      <button
+        onClick={() => handleSignIn('discord')}
+        disabled={isLoading !== null}
+        className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+          <FaDiscord className="h-5 w-5" />
+        </span>
+        {isLoading === 'discord' ? (
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            Conectando...
+          </div>
+        ) : (
+          'Continuar con Discord'
         )}
       </button>
     </div>

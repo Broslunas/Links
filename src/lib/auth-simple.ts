@@ -1,6 +1,7 @@
 import { NextAuthOptions } from 'next-auth';
 import GithubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
+import DiscordProvider from 'next-auth/providers/discord';
 import { connectDB } from './db-utils';
 import User from '../models/User';
 
@@ -17,6 +18,10 @@ export const authOptions: NextAuthOptions = {
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        }),
+        DiscordProvider({
+            clientId: process.env.DISCORD_CLIENT_ID!,
+            clientSecret: process.env.DISCORD_CLIENT_SECRET!,
         }),
     ],
     pages: {
@@ -46,7 +51,7 @@ export const authOptions: NextAuthOptions = {
                         email: user.email,
                         name: user.name || '',
                         image: user.image,
-                        provider: account.provider as 'github' | 'google',
+                        provider: account.provider as 'github' | 'google' | 'discord',
                         providerId: account.providerAccountId,
                     });
                     console.log(`✅ Created new user: ${user.email}`);
@@ -71,7 +76,7 @@ export const authOptions: NextAuthOptions = {
                 token.email = user.email;
                 token.name = user.name;
                 token.image = user.image;
-                token.provider = account.provider as 'github' | 'google';
+                token.provider = account.provider as 'github' | 'google' | 'discord';
             }
             return token;
         },
@@ -82,7 +87,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.email = token.email as string;
                 session.user.name = token.name as string;
                 session.user.image = token.image as string;
-                session.user.provider = token.provider as 'github' | 'google';
+                session.user.provider = token.provider as 'github' | 'google' | 'discord';
             }
             return session;
         },
