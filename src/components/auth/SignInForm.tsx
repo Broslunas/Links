@@ -19,7 +19,7 @@ export default function SignInForm() {
       // Use NextAuth's built-in redirect handling
       await signIn(provider, {
         callbackUrl,
-        redirect: true // Let NextAuth handle the redirect
+        redirect: true, // Let NextAuth handle the redirect
       });
     } catch (error) {
       console.error('Error signing in:', error);
@@ -73,8 +73,8 @@ export default function SignInForm() {
       </button>
 
       <button
-        onClick={() => handleSignIn('discord')}
-        disabled={isLoading !== null}
+        /*onClick={() => handleSignIn('discord')}*/
+        disabled
         className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         <span className="absolute left-0 inset-y-0 flex items-center pl-3">
@@ -86,14 +86,26 @@ export default function SignInForm() {
             Conectando...
           </div>
         ) : (
-          'Continuar con Discord'
+          'Discord (Próximamente)'
         )}
       </button>
+
       <div className="mt-6 text-xs text-center text-gray-600 dark:text-gray-400">
         Al continuar, aceptas nuestros
-        <a href="/terms-and-services" className="underline hover:text-blue-600 dark:hover:text-blue-400 mx-1">Términos y Servicios</a>
+        <a
+          href="/terms-and-services"
+          className="underline hover:text-blue-600 dark:hover:text-blue-400 mx-1"
+        >
+          Términos y Servicios
+        </a>
         y
-        <a href="/privacy-policy" className="underline hover:text-blue-600 dark:hover:text-blue-400 mx-1">Política de Privacidad</a>.
+        <a
+          href="/privacy-policy"
+          className="underline hover:text-blue-600 dark:hover:text-blue-400 mx-1"
+        >
+          Política de Privacidad
+        </a>
+        .
       </div>
     </div>
   );
