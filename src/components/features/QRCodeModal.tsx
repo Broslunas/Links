@@ -13,7 +13,7 @@ interface QRCodeModalProps {
 }
 
 export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
-  const qrCodeRef = useRef<SVGSVGElement>(null);
+  const qrCodeRef = useRef<HTMLDivElement>(null);
   
   // Prepare URL for QR code
   const getEnhancedUrl = () => {
@@ -30,6 +30,10 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
     if (!qrCodeRef.current) return;
     
     try {
+      // Find the SVG element within the container
+      const svgElement = qrCodeRef.current.querySelector('svg');
+      if (!svgElement) return;
+      
       // Create a canvas element
       const canvas = document.createElement('canvas');
       const qrSize = 240; // Match the QR code size
@@ -46,7 +50,7 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       // Draw QR code directly from SVG
-      const svgString = new XMLSerializer().serializeToString(qrCodeRef.current);
+      const svgString = new XMLSerializer().serializeToString(svgElement);
       const img = new Image();
       
       img.onload = () => {
@@ -102,9 +106,8 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
     >
       <div className="p-6 flex flex-col items-center">
         <div className="bg-white p-4 rounded-lg mb-4 shadow-lg border border-gray-200">
-          <div className="p-4 bg-white">
+          <div ref={qrCodeRef} className="p-4 bg-white">
             <QRCode 
-              ref={qrCodeRef} 
               value={getEnhancedUrl()} 
               size={240} 
               level="Q" // Quarter error correction level (25%)
