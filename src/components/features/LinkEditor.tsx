@@ -142,14 +142,14 @@ export function LinkEditor({
   if (!link) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Link" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Editar enlace" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label
             htmlFor="originalUrl"
             className="block text-sm font-medium text-foreground mb-2"
           >
-            Destination URL *
+            Enlace de destino *
           </label>
           <Input
             id="originalUrl"
@@ -167,7 +167,7 @@ export function LinkEditor({
             htmlFor="slug"
             className="block text-sm font-medium text-foreground mb-2"
           >
-            Custom Slug
+            Enlace corto (slug)
           </label>
           <div className="flex items-center">
             <span className="text-sm text-muted-foreground mr-2">
@@ -185,8 +185,8 @@ export function LinkEditor({
             />
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Leave empty to keep current slug. Only letters, numbers, hyphens,
-            and underscores allowed.
+            Deja vacío para mantener el slug actual. Solo se permiten letras,
+            números, guiones y guiones bajos.
           </p>
         </div>
 
@@ -195,14 +195,14 @@ export function LinkEditor({
             htmlFor="title"
             className="block text-sm font-medium text-foreground mb-2"
           >
-            Title
+            Título
           </label>
           <Input
             id="title"
             type="text"
             value={formData.title}
             onChange={e => handleInputChange('title', e.target.value)}
-            placeholder="Optional title for your link"
+            placeholder="Título opcional para tu enlace"
             error={errors.title}
             disabled={loading}
           />
@@ -213,13 +213,13 @@ export function LinkEditor({
             htmlFor="description"
             className="block text-sm font-medium text-foreground mb-2"
           >
-            Description
+            Descripción
           </label>
           <textarea
             id="description"
             value={formData.description}
             onChange={e => handleInputChange('description', e.target.value)}
-            placeholder="Optional description"
+            placeholder="Descripción opcional"
             rows={3}
             disabled={loading}
             className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
@@ -247,11 +247,11 @@ export function LinkEditor({
               htmlFor="isActive"
               className="ml-2 block text-sm text-foreground"
             >
-              Link is active
+              El enlace está activo
             </label>
           </div>
           <p className="text-xs text-muted-foreground ml-6">
-            Inactive links will show a 404 page when accessed
+            Los enlaces inactivos mostrarán una página 404 cuando se accedan
           </p>
 
           <div className="flex items-center">
@@ -269,11 +269,11 @@ export function LinkEditor({
               htmlFor="isPublicStats"
               className="ml-2 block text-sm text-foreground"
             >
-              Enable public statistics
+              Habilitar estadísticas públicas
             </label>
           </div>
           <p className="text-xs text-muted-foreground ml-6">
-            Allow others to view aggregated statistics for this link
+            Permitir que otros vean estadísticas agregadas para este enlace
           </p>
         </div>
 
@@ -284,7 +284,7 @@ export function LinkEditor({
             onClick={onClose}
             disabled={loading}
           >
-            Cancel
+            Cancelar
           </Button>
           <Button
             type="submit"
@@ -292,7 +292,7 @@ export function LinkEditor({
             className="flex items-center gap-2"
           >
             {loading && <LoadingSpinner size="sm" />}
-            Update Link
+            Editar
           </Button>
         </div>
       </form>
