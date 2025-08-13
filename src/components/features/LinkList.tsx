@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Button, LoadingSpinner } from '../ui';
 import { Link, ApiResponse } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale'
 
 interface LinkListProps {
   onEditLink: (link: Link) => void;
@@ -139,15 +140,6 @@ export function LinkList({
 
   return (
     <div className="bg-card rounded-lg border border-border">
-      <div className="p-6 border-b border-border">
-        <h2 className="text-xl font-semibold text-card-foreground">
-          Your Links
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          Manage and track your shortened URLs
-        </p>
-      </div>
-
       <div className="divide-y divide-border">
         {links.map(link => (
           <div
@@ -193,7 +185,7 @@ export function LinkList({
                       Destino:
                     </span>
                     <a
-                      href={link.originalUrl}
+                      href={getShortUrl(link.slug)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:text-primary/80 truncate max-w-md"
@@ -255,6 +247,7 @@ export function LinkList({
                     Creado{' '}
                     {formatDistanceToNow(new Date(link.createdAt), {
                       addSuffix: true,
+                      locale: es
                     })}
                   </span>
                 </div>

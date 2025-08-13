@@ -115,7 +115,7 @@ export default function LinksPage() {
                     <p className="text-muted-foreground">
                         Gestiona todos tus enlaces cortos en un solo lugar.{' '}
                         <span className="text-blue-500 font-semibold">
-                            Crea, edita y analiza
+                            Edita y analiza
                         </span>{' '}
                         el rendimiento de tus enlaces.
                     </p>
