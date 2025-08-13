@@ -2,29 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../lib/auth-simple';
 import { connectDB } from '../../../../lib/db-utils';
+import { aggregateLinkStats } from '../../../../lib/analytics-aggregation';
 import Link from '../../../../models/Link';
-import { ApiResponse } from '../../../../types';
+import { ApiResponse, LinkStats } from '../../../../types';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: { linkId: string } }
 ) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return NextResponse.json<ApiResponse>({
-                success: false,
-                error: {
-                    code: 'UNAUTHORIZED',
-                    message: 'Authentication required',
-                },
-                timestamp: new Date().toISOString(),
-            }, { status: 401 });
-        }
+        const { linkId } = params;
 
-        const { id } = params;
-
-        if (!id) {
+        if (!linkId) {
             return NextResponse.json<ApiResponse>({
                 success: false,
                 error: {
@@ -37,8 +26,8 @@ export async function GET(
 
         await connectDB();
 
-        // Find the link and verify ownership
-        const link = await Link.findById(id);
+        // Find the link
+        const link = await Link.findById(linkId);
         if (!link) {
             return NextResponse.json<ApiResponse>({
                 success: false,
@@ -50,45 +39,47 @@ export async function GET(
             }, { status: 404 });
         }
 
-        if (link.userId.toString() !== session.user.id) {
+        // Check if this is a public stats request or authenticated request
+        const session = await getServerSession(authOptions);
+        const isOwner = session?.user?.id === link.userId.toString();
+        const isPublicStats = link.isPublicStats;
+
+        // Allow access if user is owner OR if public stats are enabled
+        if (!isOwner && !isPublicStats) {
             return NextResponse.json<ApiResponse>({
                 success: false,
                 error: {
                     code: 'FORBIDDEN',
-                    message: 'Access denied',
+                    message: 'Access denied. Link statistics are private.',
                 },
                 timestamp: new Date().toISOString(),
             }, { status: 403 });
         }
 
-        // Transform the link data
-        const linkData = {
-            id: link._id.toString(),
-            userId: link.userId.toString(),
-            originalUrl: link.originalUrl,
-            slug: link.slug,
-            title: link.title,
-            description: link.description,
-            isPublicStats: link.isPublicStats,
-            isActive: link.isActive,
-            createdAt: link.createdAt,
-            updatedAt: link.updatedAt,
-            clickCount: link.clickCount,
-        };
+        // Parse query parameters for date filtering
+        const url = new URL(request.url);
+        const startDate = url.searchParams.get('startDate');
+        const endDate = url.searchParams.get('endDate');
 
-        return NextResponse.json<ApiResponse>({
+        // Aggregate statistics
+        const stats = await aggregateLinkStats(linkId, {
+            startDate: startDate ? new Date(startDate) : undefined,
+            endDate: endDate ? new Date(endDate) : undefined,
+        });
+
+        return NextResponse.json<ApiResponse<LinkStats>>({
             success: true,
-            data: linkData,
+            data: stats,
             timestamp: new Date().toISOString(),
         });
 
     } catch (error) {
-        console.error('Error fetching link:', error);
+        console.error('Error fetching analytics:', error);
         return NextResponse.json<ApiResponse>({
             success: false,
             error: {
                 code: 'INTERNAL_ERROR',
-                message: 'Failed to fetch link',
+                message: 'Failed to fetch analytics',
             },
             timestamp: new Date().toISOString(),
         }, { status: 500 });

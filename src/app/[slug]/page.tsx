@@ -34,7 +34,7 @@ export default async function SlugPage({ params }: SlugPageProps) {
         const cfConnectingIP = headersList.get('cf-connecting-ip');
 
         // Create a mock request object for analytics extraction
-        const mockRequest = new Request('http://localhost', {
+        const mockRequest = new Request('http://brl-links.vercel.app', {
             headers: {
                 'user-agent': userAgent,
                 'referer': referrer || '',
