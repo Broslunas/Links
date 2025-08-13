@@ -328,7 +328,7 @@ export default async function Home() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Broslunas Links. Todos los derechos reservados.</p>
+            <p>&copy; 2025 Broslunas Links. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>
