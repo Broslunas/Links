@@ -6,9 +6,11 @@ export { default as connectDB } from './mongodb';
 
 /**
  * Hash IP address for privacy protection
+ * @deprecated Use hashIP from analytics.ts instead
  */
 export function hashIP(ip: string): string {
-    return crypto.createHash('sha256').update(ip + process.env.IP_HASH_SECRET).digest('hex');
+    const secret = process.env.IP_HASH_SECRET || 'default-secret-change-in-production';
+    return crypto.createHash('sha256').update(ip + secret).digest('hex');
 }
 
 /**

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import mongoose from 'mongoose';
 import { authOptions } from '../../../lib/auth-simple';
 import { connectDB, generateSlug, isValidUrl } from '../../../lib/db-utils';
+import { validateUserSession } from '../../../lib/user-utils';
 import Link from '../../../models/Link';
 import { CreateLinkData, ApiResponse } from '../../../types';
 
@@ -9,21 +11,25 @@ import { CreateLinkData, ApiResponse } from '../../../types';
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
+        const userValidation = validateUserSession(session);
 
-        if (!session?.user?.id) {
+        if (!userValidation.isValid) {
+            const statusCode = userValidation.error === 'Authentication required' ? 401 : 400;
+            const errorCode = userValidation.error === 'Authentication required' ? 'UNAUTHORIZED' : 'INVALID_USER_ID';
+
             return NextResponse.json<ApiResponse>({
                 success: false,
                 error: {
-                    code: 'UNAUTHORIZED',
-                    message: 'Authentication required',
+                    code: errorCode,
+                    message: userValidation.error!,
                 },
                 timestamp: new Date().toISOString(),
-            }, { status: 401 });
+            }, { status: statusCode });
         }
 
         await connectDB();
 
-        const links = await Link.find({ userId: session.user.id })
+        const links = await Link.find({ userId: userValidation.userId })
             .sort({ createdAt: -1 })
             .lean();
 
@@ -50,16 +56,20 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
+        const userValidation = validateUserSession(session);
 
-        if (!session?.user?.id) {
+        if (!userValidation.isValid) {
+            const statusCode = userValidation.error === 'Authentication required' ? 401 : 400;
+            const errorCode = userValidation.error === 'Authentication required' ? 'UNAUTHORIZED' : 'INVALID_USER_ID';
+
             return NextResponse.json<ApiResponse>({
                 success: false,
                 error: {
-                    code: 'UNAUTHORIZED',
-                    message: 'Authentication required',
+                    code: errorCode,
+                    message: userValidation.error!,
                 },
                 timestamp: new Date().toISOString(),
-            }, { status: 401 });
+            }, { status: statusCode });
         }
 
         const body: CreateLinkData = await request.json();
@@ -156,7 +166,7 @@ export async function POST(request: NextRequest) {
 
         // Create the link
         const newLink = new Link({
-            userId: session.user.id,
+            userId: userValidation.userId,
             originalUrl: sanitizedUrl,
             slug: finalSlug,
             title: title?.trim() || undefined,

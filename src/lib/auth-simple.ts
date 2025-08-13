@@ -72,11 +72,33 @@ export const authOptions: NextAuthOptions = {
         async jwt({ token, user, account }) {
             // Persist user info in JWT token
             if (user && account) {
-                token.id = user.id;
-                token.email = user.email;
-                token.name = user.name;
-                token.image = user.image;
-                token.provider = account.provider as 'github' | 'google' | 'discord';
+                try {
+                    await connectDB();
+
+                    // Find our user in the database to get the MongoDB ObjectId
+                    const dbUser = await User.findOne({
+                        $or: [
+                            { email: user.email },
+                            { provider: account.provider, providerId: account.providerAccountId }
+                        ]
+                    });
+
+                    if (dbUser) {
+                        token.id = dbUser._id.toString(); // Use our MongoDB ObjectId
+                        token.email = dbUser.email;
+                        token.name = dbUser.name;
+                        token.image = dbUser.image;
+                        token.provider = dbUser.provider;
+                    }
+                } catch (error) {
+                    console.error('Error in JWT callback:', error);
+                    // Fallback to original values if database lookup fails
+                    token.id = user.id;
+                    token.email = user.email;
+                    token.name = user.name;
+                    token.image = user.image;
+                    token.provider = account.provider as 'github' | 'google' | 'discord';
+                }
             }
             return token;
         },
