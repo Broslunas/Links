@@ -149,7 +149,7 @@ export default function LinkAnalyticsPage() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Button
-                onClick={() => router.push('/dashboard/links')}
+                onClick={() => router.push('/dashboard/analytics')}
                 variant="ghost"
                 size="sm"
                 className="p-1"
