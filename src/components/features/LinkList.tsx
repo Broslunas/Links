@@ -256,7 +256,7 @@ export function LinkList({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 ml-4">
+              <div className="grid grid-cols-2 gap-2 ml-4 max-w-fit">
                 <Button
                   onClick={() =>
                     (window.location.href = `/dashboard/links/${link.slug}/analytics`)
@@ -280,7 +280,7 @@ export function LinkList({
                   </svg>
                   Estadísticas
                 </Button>
-                
+
                 <Button
                   onClick={() => {
                     setSelectedLinkUrl(getShortUrl(link.slug));
@@ -305,6 +305,33 @@ export function LinkList({
                   </svg>
                   Código QR
                 </Button>
+
+                {link.isPublicStats && (
+                  <Button
+                    onClick={() => {
+                      const publicStatsUrl = `${window.location.origin}/stats/${link.slug}`;
+                      window.open(publicStatsUrl, '_blank');
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                      />
+                    </svg>
+                    Compartir Stats
+                  </Button>
+                )}
 
                 <Button
                   onClick={() => onEditLink(link)}
@@ -354,7 +381,7 @@ export function LinkList({
           </div>
         ))}
       </div>
-      
+
       <QRCodeModal
         isOpen={qrModalOpen}
         onClose={() => setQrModalOpen(false)}

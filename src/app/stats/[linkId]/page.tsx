@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { StatsViewer } from '../../../components/features';
+import { PublicStatsViewer } from '../../../components/features';
 import { LoadingSpinner, Button } from '../../../components/ui';
 import { Link, ApiResponse } from '../../../types';
 
@@ -22,15 +22,17 @@ export default function PublicStatsPage({ params }: PublicStatsPageProps) {
       setLoading(true);
       setError(null);
 
-      // Try to fetch stats directly - the API will handle permission checking
-      const response = await fetch(`/api/analytics/${params.linkId}`);
+      // Try to fetch public stats - the API will handle permission checking
+      const response = await fetch(`/api/stats/${params.linkId}`);
       const data: ApiResponse = await response.json();
 
-      if (data.success) {
-        // If we can fetch stats, create a minimal link object for display
+      if (data.success && data.data) {
+        // Create link object with the returned data
         setLink({
           id: params.linkId,
-          slug: 'public-link',
+          slug: data.data.link.slug,
+          title: data.data.link.title,
+          description: data.data.link.description,
           isPublicStats: true,
         } as Link);
       } else {
@@ -152,7 +154,7 @@ export default function PublicStatsPage({ params }: PublicStatsPageProps) {
               </p>
               <div className="mt-4">
                 <Button
-                  onClick={() => (window.location.href = '/')}
+                  onClick={() => (window.location.href = '/auth/signin')}
                   variant="outline"
                 >
                   Crear tu propio enlace corto
@@ -161,8 +163,15 @@ export default function PublicStatsPage({ params }: PublicStatsPageProps) {
             </div>
           </div>
 
-          {/* Stats Viewer */}
-          <StatsViewer linkId={link.id} />
+          {/* Public Stats Viewer */}
+          <PublicStatsViewer
+            linkId={params.linkId}
+            linkInfo={{
+              slug: link.slug,
+              title: link.title,
+              description: link.description,
+            }}
+          />
 
           {/* Footer */}
           <div className="bg-card rounded-lg border border-border p-6">
@@ -170,7 +179,7 @@ export default function PublicStatsPage({ params }: PublicStatsPageProps) {
               <p>
                 Estas estadísticas son generadas por{' '}
                 <a
-                  href="/auth/signin"
+                  href="/"
                   className="text-primary hover:text-primary/80 font-medium"
                 >
                   Broslunas Links
