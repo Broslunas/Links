@@ -222,7 +222,7 @@ export default function LinkAnalyticsPage() {
                 onClick={() => window.open(`/stats/${link.slug}`, '_blank')}
                 variant="outline"
               >
-                Ver Estadísticas Públicas
+                Enlace Público
               </Button>
             )}
             <Button
