@@ -72,8 +72,7 @@ export async function GET(
     // Filtrar información sensible para estadísticas públicas
     const publicStats: Partial<LinkStats> = {
       totalClicks: fullStats.totalClicks,
-      uniqueClicks: fullStats.uniqueClicks,
-      clicksByDate: fullStats.clicksByDate,
+      clicksByDay: fullStats.clicksByDay,
       clicksByCountry: fullStats.clicksByCountry,
       clicksByDevice: fullStats.clicksByDevice,
       clicksByBrowser: fullStats.clicksByBrowser,

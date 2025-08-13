@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Button, Input } from '../ui';
+import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { ApiResponse, CreateLinkData } from '../../types';
+import { handleFetchError, showSuccessToast, withToastHandler } from '../../lib/client-error-handler';
 
 interface LinkCreatorProps {
   onLinkCreated?: (link: any) => void;
@@ -95,10 +97,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
       return;
     }
 
-    setIsLoading(true);
-    setErrors({});
-
-    try {
+    const createLinkOperation = async () => {
       const createData: CreateLinkData = {
         originalUrl: formData.originalUrl.trim(),
         slug: formData.slug.trim() || undefined,
@@ -115,10 +114,49 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
         body: JSON.stringify(createData),
       });
 
-      const result: ApiResponse = await response.json();
+      if (!response.ok) {
+        await handleFetchError(response, {
+          onValidationError: (details) => {
+            if (details?.errors) {
+              const newErrors: FormErrors = {};
+              details.errors.forEach((error: string) => {
+                if (error.includes('slug')) {
+                  newErrors.slug = error;
+                } else if (error.includes('originalUrl') || error.includes('URL')) {
+                  newErrors.originalUrl = error;
+                }
+              });
+              setErrors(newErrors);
+            }
+          }
+        });
+        throw new Error('Request failed');
+      }
 
-      if (result.success) {
-        setCreatedLink(result.data);
+      const result: ApiResponse = await response.json();
+      
+      if (!result.success) {
+        if (result.error?.code === 'SLUG_TAKEN') {
+          setErrors({ slug: result.error.message });
+          throw new Error(result.error.message);
+        }
+        throw new Error(result.error?.message || 'Error al crear el enlace');
+      }
+
+      return result.data;
+    };
+
+    setIsLoading(true);
+    setErrors({});
+
+    const result = await withToastHandler(createLinkOperation, {
+      loadingMessage: 'Creando enlace...',
+      successMessage: '¡Enlace creado exitosamente!',
+      showLoading: true,
+      showSuccess: true,
+      showError: true,
+      onSuccess: (linkData) => {
+        setCreatedLink(linkData);
         setFormData({
           originalUrl: '',
           slug: '',
@@ -127,22 +165,14 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
           isPublicStats: false,
         });
         setShowAdvanced(false);
-        onLinkCreated?.(result.data);
-      } else {
-        if (result.error?.code === 'SLUG_EXISTS') {
-          setErrors({ slug: result.error.message });
-        } else {
-          const errorMessage =
-            result.error?.message || 'Error al crear el enlace';
-          onError?.(errorMessage);
-        }
+        onLinkCreated?.(linkData);
+      },
+      onError: (error) => {
+        onError?.(error.message || 'Error al crear el enlace');
       }
-    } catch (error) {
-      console.error('Error al crear el enlace:', error);
-      onError?.('Error de conexión, Intentelo de nuevo.');
-    } finally {
-      setIsLoading(false);
-    }
+    });
+
+    setIsLoading(false);
   };
 
   const handleInputChange = (
@@ -251,18 +281,33 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
   }
 
   return (
-    <div className="bg-card rounded-lg border border-border p-6">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-card-foreground mb-2">
-          Crea tu enlace
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Introduce una URL para crear un enlace acortado que puedas compartir
-          fácilmente
-        </p>
-      </div>
+    <ErrorBoundary
+      fallback={({ error, resetError }) => (
+        <div className="bg-card rounded-lg border border-border p-6">
+          <div className="text-center space-y-4">
+            <h3 className="text-lg font-semibold text-destructive">Error en el Formulario</h3>
+            <p className="text-muted-foreground">
+              No se pudo cargar el formulario de creación de enlaces.
+            </p>
+            <Button onClick={resetError} size="sm">
+              Intentar de nuevo
+            </Button>
+          </div>
+        </div>
+      )}
+    >
+      <div className="bg-card rounded-lg border border-border p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-card-foreground mb-2">
+            Crea tu enlace
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Introduce una URL para crear un enlace acortado que puedas compartir
+            fácilmente
+          </p>
+        </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Input
             label="Enlace"
@@ -413,6 +458,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
           )}
         </div>
       </form>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

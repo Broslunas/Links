@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { DashboardLayout } from '../../../components/layout';
 import { LoadingSpinner, Button } from '../../../components/ui';
+import { ErrorBoundary } from '../../../components/ui/ErrorBoundary';
 import { Link, ApiResponse } from '../../../types';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import {
@@ -403,38 +404,40 @@ export default function AnalyticsPage() {
                 Clicks por Día
               </h3>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analyticsData.clicksByDay}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      className="opacity-30"
-                    />
-                    <XAxis
-                      dataKey="date"
-                      tickFormatter={value => format(new Date(value), 'MMM dd')}
-                      className="text-xs"
-                    />
-                    <YAxis className="text-xs" />
-                    <Tooltip
-                      labelFormatter={value =>
-                        format(new Date(value), 'dd MMM yyyy')
-                      }
-                      formatter={(value: number) => [value, 'Clicks']}
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '6px',
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="clicks"
-                      stroke="#3B82F6"
-                      strokeWidth={2}
-                      dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <ErrorBoundary fallback={() => <div className="flex items-center justify-center h-full text-muted-foreground">Error al cargar el gráfico</div>}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={analyticsData.clicksByDay}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="opacity-30"
+                      />
+                      <XAxis
+                        dataKey="date"
+                        tickFormatter={value => format(new Date(value), 'MMM dd')}
+                        className="text-xs"
+                      />
+                      <YAxis className="text-xs" />
+                      <Tooltip
+                        labelFormatter={value =>
+                          format(new Date(value), 'dd MMM yyyy')
+                        }
+                        formatter={(value: number) => [value, 'Clicks']}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="clicks"
+                        stroke="#3B82F6"
+                        strokeWidth={2}
+                        dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ErrorBoundary>
               </div>
             </div>
 
@@ -443,38 +446,40 @@ export default function AnalyticsPage() {
                 Distribución por Dispositivo
               </h3>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={analyticsData.clicksByDevice}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ device, percent }) =>
-                        `${device} ${((percent || 0) * 100).toFixed(0)}%`
-                      }
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="clicks"
-                      nameKey="device"
-                    >
-                      {analyticsData.clicksByDevice.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: number, name: string) => [value, name]}
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '6px',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                <ErrorBoundary fallback={() => <div className="flex items-center justify-center h-full text-muted-foreground">Error al cargar el gráfico</div>}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={analyticsData.clicksByDevice}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ device, percent }) =>
+                          `${device} ${((percent || 0) * 100).toFixed(0)}%`
+                        }
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="clicks"
+                        nameKey="device"
+                      >
+                        {analyticsData.clicksByDevice.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number, name: string) => [value, name]}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ErrorBoundary>
               </div>
             </div>
           </div>
@@ -551,33 +556,35 @@ export default function AnalyticsPage() {
                 Países con Más Clicks
               </h3>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={analyticsData.clicksByCountry}
-                    layout="horizontal"
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      className="opacity-30"
-                    />
-                    <XAxis type="number" className="text-xs" />
-                    <YAxis
-                      dataKey="country"
-                      type="category"
-                      width={60}
-                      className="text-xs"
-                    />
-                    <Tooltip
-                      formatter={(value: number) => [value, 'Clicks']}
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '6px',
-                      }}
-                    />
-                    <Bar dataKey="clicks" fill="#10B981" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <ErrorBoundary fallback={() => <div className="flex items-center justify-center h-full text-muted-foreground">Error al cargar el gráfico</div>}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={analyticsData.clicksByCountry}
+                      layout="horizontal"
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="opacity-30"
+                      />
+                      <XAxis type="number" className="text-xs" />
+                      <YAxis
+                        dataKey="country"
+                        type="category"
+                        width={60}
+                        className="text-xs"
+                      />
+                      <Tooltip
+                        formatter={(value: number) => [value, 'Clicks']}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                        }}
+                      />
+                      <Bar dataKey="clicks" fill="#10B981" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ErrorBoundary>
               </div>
             </div>
           </div>

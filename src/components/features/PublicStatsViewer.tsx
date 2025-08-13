@@ -248,10 +248,10 @@ export function PublicStatsViewer({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                Clicks únicos:
+                Total de clicks:
               </p>
               <p className="text-2xl font-bold text-foreground">
-                {stats.uniqueClicks?.toLocaleString() || '0'}
+                {stats.totalClicks?.toLocaleString() || '0'}
               </p>
             </div>
             <div className="h-8 w-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -276,14 +276,14 @@ export function PublicStatsViewer({
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Clicks by Date */}
-        {stats.clicksByDate && stats.clicksByDate.length > 0 && (
+        {stats.clicksByDay && stats.clicksByDay.length > 0 && (
           <div className="bg-card rounded-lg border border-border p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">
               Clicks por Día
             </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.clicksByDate}>
+                <AreaChart data={stats.clicksByDay}>
                   <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis
                     dataKey="date"
@@ -325,7 +325,7 @@ export function PublicStatsViewer({
                     cy="50%"
                     labelLine={false}
                     label={({ device, percent }) =>
-                      `${device} ${(percent * 100).toFixed(0)}%`
+                      `${device} ${percent ? (percent * 100).toFixed(0) : '0'}%`
                     }
                     outerRadius={80}
                     fill="#8884d8"
@@ -400,7 +400,7 @@ export function PublicStatsViewer({
                     cy="50%"
                     labelLine={false}
                     label={({ os, percent }) =>
-                      `${os} ${(percent * 100).toFixed(0)}%`
+                      `${os} ${percent ? (percent * 100).toFixed(0) : '0'}%`
                     }
                     outerRadius={80}
                     fill="#8884d8"

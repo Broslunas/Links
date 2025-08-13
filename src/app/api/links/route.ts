@@ -6,220 +6,108 @@ import { connectDB, generateSlug, isValidUrl } from '../../../lib/db-utils';
 import { validateUserSession } from '../../../lib/user-utils';
 import Link from '../../../models/Link';
 import { CreateLinkData, ApiResponse } from '../../../types';
+import { createSuccessResponse, createErrorResponse, withErrorHandler, validateRequest, validateUrl, validateSlug, parseRequestBody } from '../../../lib/api-response';
+import { createError, AppError, ErrorCode } from '../../../lib/api-errors';
 
 // GET /api/links - Get user's links
-export async function GET(request: NextRequest) {
-    try {
-        const session = await getServerSession(authOptions);
-        const userValidation = validateUserSession(session);
+export const GET = withErrorHandler(async (request: NextRequest) => {
+    const session = await getServerSession(authOptions);
+    const userValidation = validateUserSession(session);
 
-        if (!userValidation.isValid) {
-            const statusCode = userValidation.error === 'Authentication required' ? 401 : 400;
-            const errorCode = userValidation.error === 'Authentication required' ? 'UNAUTHORIZED' : 'INVALID_USER_ID';
-
-            return NextResponse.json<ApiResponse>({
-                success: false,
-                error: {
-                    code: errorCode,
-                    message: userValidation.error!,
-                },
-                timestamp: new Date().toISOString(),
-            }, { status: statusCode });
+    if (!userValidation.isValid) {
+        if (userValidation.error === 'Authentication required') {
+            throw createError.unauthorized();
         }
-
-        await connectDB();
-
-        const links = await Link.find({ userId: userValidation.userId })
-            .sort({ createdAt: -1 })
-            .lean();
-
-        return NextResponse.json<ApiResponse>({
-            success: true,
-            data: links,
-            timestamp: new Date().toISOString(),
-        });
-
-    } catch (error) {
-        console.error('Error fetching links:', error);
-        return NextResponse.json<ApiResponse>({
-            success: false,
-            error: {
-                code: 'INTERNAL_ERROR',
-                message: 'Failed to fetch links',
-            },
-            timestamp: new Date().toISOString(),
-        }, { status: 500 });
+        throw createError.validation(userValidation.error!);
     }
-}
+
+    await connectDB();
+
+    const links = await Link.find({ userId: userValidation.userId })
+        .sort({ createdAt: -1 })
+        .lean();
+
+    return createSuccessResponse(links);
+});
 
 // POST /api/links - Create new link
-export async function POST(request: NextRequest) {
-    try {
-        const session = await getServerSession(authOptions);
-        const userValidation = validateUserSession(session);
+export const POST = withErrorHandler(async (request: NextRequest) => {
+    const session = await getServerSession(authOptions);
+    const userValidation = validateUserSession(session);
 
-        if (!userValidation.isValid) {
-            const statusCode = userValidation.error === 'Authentication required' ? 401 : 400;
-            const errorCode = userValidation.error === 'Authentication required' ? 'UNAUTHORIZED' : 'INVALID_USER_ID';
-
-            return NextResponse.json<ApiResponse>({
-                success: false,
-                error: {
-                    code: errorCode,
-                    message: userValidation.error!,
-                },
-                timestamp: new Date().toISOString(),
-            }, { status: statusCode });
+    if (!userValidation.isValid) {
+        if (userValidation.error === 'Authentication required') {
+            throw createError.unauthorized();
         }
-
-        const body: CreateLinkData = await request.json();
-        const { originalUrl, slug, title, description, isPublicStats = false } = body;
-
-        // Validate required fields
-        if (!originalUrl) {
-            return NextResponse.json<ApiResponse>({
-                success: false,
-                error: {
-                    code: 'VALIDATION_ERROR',
-                    message: 'Original URL is required',
-                },
-                timestamp: new Date().toISOString(),
-            }, { status: 400 });
-        }
-
-        // Validate URL format
-        if (!isValidUrl(originalUrl)) {
-            return NextResponse.json<ApiResponse>({
-                success: false,
-                error: {
-                    code: 'VALIDATION_ERROR',
-                    message: 'Invalid URL format',
-                },
-                timestamp: new Date().toISOString(),
-            }, { status: 400 });
-        }
-
-        // Sanitize URL (ensure it has protocol)
-        let sanitizedUrl = originalUrl.trim();
-        if (!sanitizedUrl.startsWith('http://') && !sanitizedUrl.startsWith('https://')) {
-            sanitizedUrl = 'https://' + sanitizedUrl;
-        }
-
-        // Validate sanitized URL
-        if (!isValidUrl(sanitizedUrl)) {
-            return NextResponse.json<ApiResponse>({
-                success: false,
-                error: {
-                    code: 'VALIDATION_ERROR',
-                    message: 'Invalid URL format after sanitization',
-                },
-                timestamp: new Date().toISOString(),
-            }, { status: 400 });
-        }
-
-        await connectDB();
-
-        // Generate or validate slug
-        let finalSlug = slug?.trim().toLowerCase();
-
-        if (finalSlug) {
-            // Validate custom slug format
-            if (!/^[a-z0-9-_]+$/.test(finalSlug)) {
-                return NextResponse.json<ApiResponse>({
-                    success: false,
-                    error: {
-                        code: 'VALIDATION_ERROR',
-                        message: 'Slug can only contain lowercase letters, numbers, hyphens, and underscores',
-                    },
-                    timestamp: new Date().toISOString(),
-                }, { status: 400 });
-            }
-
-            if (finalSlug.length > 50) {
-                return NextResponse.json<ApiResponse>({
-                    success: false,
-                    error: {
-                        code: 'VALIDATION_ERROR',
-                        message: 'Slug must be 50 characters or less',
-                    },
-                    timestamp: new Date().toISOString(),
-                }, { status: 400 });
-            }
-
-            // Check if custom slug already exists
-            const existingLink = await Link.findOne({ slug: finalSlug });
-            if (existingLink) {
-                return NextResponse.json<ApiResponse>({
-                    success: false,
-                    error: {
-                        code: 'SLUG_EXISTS',
-                        message: 'This slug is already taken. Please choose a different one.',
-                        details: { suggestedSlugs: await generateAlternativeSlugs(finalSlug) },
-                    },
-                    timestamp: new Date().toISOString(),
-                }, { status: 409 });
-            }
-        } else {
-            // Generate unique slug
-            finalSlug = await generateUniqueSlug();
-        }
-
-        // Create the link
-        const newLink = new Link({
-            userId: userValidation.userId,
-            originalUrl: sanitizedUrl,
-            slug: finalSlug,
-            title: title?.trim() || undefined,
-            description: description?.trim() || undefined,
-            isPublicStats,
-        });
-
-        await newLink.save();
-
-        return NextResponse.json<ApiResponse>({
-            success: true,
-            data: {
-                id: newLink._id,
-                userId: newLink.userId,
-                originalUrl: newLink.originalUrl,
-                slug: newLink.slug,
-                title: newLink.title,
-                description: newLink.description,
-                isPublicStats: newLink.isPublicStats,
-                isActive: newLink.isActive,
-                clickCount: newLink.clickCount,
-                createdAt: newLink.createdAt,
-                updatedAt: newLink.updatedAt,
-                shortUrl: `${process.env.NEXTAUTH_URL}/${newLink.slug}`,
-            },
-            timestamp: new Date().toISOString(),
-        }, { status: 201 });
-
-    } catch (error) {
-        console.error('Error creating link:', error);
-
-        // Handle duplicate key error (slug collision)
-        if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
-            return NextResponse.json<ApiResponse>({
-                success: false,
-                error: {
-                    code: 'SLUG_EXISTS',
-                    message: 'This slug is already taken. Please try again.',
-                },
-                timestamp: new Date().toISOString(),
-            }, { status: 409 });
-        }
-
-        return NextResponse.json<ApiResponse>({
-            success: false,
-            error: {
-                code: 'INTERNAL_ERROR',
-                message: 'Failed to create link',
-            },
-            timestamp: new Date().toISOString(),
-        }, { status: 500 });
+        throw createError.validation(userValidation.error!);
     }
-}
+
+    const body: CreateLinkData = await parseRequestBody<CreateLinkData>(request);
+    const { originalUrl, slug, title, description, isPublicStats = false } = body;
+
+    // Validate required fields
+    validateRequest(body, ['originalUrl'], ['slug', 'title', 'description', 'isPublicStats']);
+
+    // Validate and sanitize URL
+    let sanitizedUrl = originalUrl.trim();
+    if (!sanitizedUrl.startsWith('http://') && !sanitizedUrl.startsWith('https://')) {
+        sanitizedUrl = 'https://' + sanitizedUrl;
+    }
+    validateUrl(sanitizedUrl);
+
+    await connectDB();
+
+    // Generate or validate slug
+    let finalSlug = slug?.trim().toLowerCase();
+
+    if (finalSlug) {
+        validateSlug(finalSlug);
+        
+        // Check if custom slug already exists
+        const existingLink = await Link.findOne({ slug: finalSlug });
+        if (existingLink) {
+            const suggestedSlugs = await generateAlternativeSlugs(finalSlug);
+            throw new AppError(
+                ErrorCode.SLUG_TAKEN,
+                `Slug '${finalSlug}' is already taken`,
+                409,
+                { slug: finalSlug, suggestedSlugs }
+            );
+        }
+    } else {
+        // Generate unique slug
+        finalSlug = await generateUniqueSlug();
+    }
+
+    // Create the link
+    const newLink = new Link({
+        userId: userValidation.userId,
+        originalUrl: sanitizedUrl,
+        slug: finalSlug,
+        title: title?.trim() || undefined,
+        description: description?.trim() || undefined,
+        isPublicStats,
+    });
+
+    await newLink.save();
+
+    const responseData = {
+        id: newLink._id,
+        userId: newLink.userId,
+        originalUrl: newLink.originalUrl,
+        slug: newLink.slug,
+        title: newLink.title,
+        description: newLink.description,
+        isPublicStats: newLink.isPublicStats,
+        isActive: newLink.isActive,
+        clickCount: newLink.clickCount,
+        createdAt: newLink.createdAt,
+        updatedAt: newLink.updatedAt,
+        shortUrl: `${process.env.NEXTAUTH_URL}/${newLink.slug}`,
+    };
+
+    return createSuccessResponse(responseData, 201);
+});
 
 // Helper function to generate unique slug with collision detection
 async function generateUniqueSlug(maxAttempts: number = 10): Promise<string> {
