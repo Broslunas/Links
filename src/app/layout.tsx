@@ -4,6 +4,7 @@ import './globals.css';
 import SessionProvider from '../components/providers/SessionProvider';
 import { ThemeProvider } from '../components/providers/ThemeProvider';
 import { ErrorBoundary } from '../components/ui/ErrorBoundary';
+import CookieConsentModal from '../components/ui/CookieConsentModal';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -24,6 +25,7 @@ export default function RootLayout({
           <ThemeProvider>
             <SessionProvider>
               {children}
+              <CookieConsentModal />
             </SessionProvider>
           </ThemeProvider>
         </ErrorBoundary>
