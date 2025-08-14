@@ -40,8 +40,8 @@ const footerSections: NavigationSection[] = [
   {
     title: 'Legal',
     items: [
-      { label: 'Términos de Servicio', href: '/terms' },
-      { label: 'Política de Privacidad', href: '/privacy' },
+      { label: 'Términos de Servicio', href: '/terms-and-services' },
+      { label: 'Política de Privacidad', href: '/privacy-policy' },
       { label: 'Política de Cookies', href: '/cookies' },
       { label: 'GDPR', href: '/gdpr' },
     ],
@@ -144,13 +144,13 @@ const GlobalFooter: React.FC = () => {
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <Link
-                href="/terms"
+                href="/terms-and-services"
                 className="text-gray-400 hover:text-white text-sm transition-colors"
               >
                 Términos
               </Link>
               <Link
-                href="/privacy"
+                href="/privacy-policy"
                 className="text-gray-400 hover:text-white text-sm transition-colors"
               >
                 Privacidad

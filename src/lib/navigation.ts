@@ -77,11 +77,11 @@ export const footerNavigation: FooterNavigation = {
       items: [
         {
           label: 'Términos de Servicio',
-          href: '/terms',
+          href: '/terms-and-services',
         },
         {
           label: 'Política de Privacidad',
-          href: '/privacy',
+          href: '/privacy-policy',
         },
         {
           label: 'Política de Cookies',
