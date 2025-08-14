@@ -3,6 +3,7 @@
 import React from 'react';
 import { GlobalHeader } from './GlobalHeader';
 import { GlobalFooter } from './GlobalFooter';
+import { AnimatedBackground } from '../ui/AnimatedBackground';
 
 interface GlobalLayoutProps {
     children: React.ReactNode;
@@ -10,7 +11,7 @@ interface GlobalLayoutProps {
 
 const GlobalLayout: React.FC<GlobalLayoutProps> = ({ children }) => {
     return (
-        <div className="min-h-screen flex flex-col bg-background">
+        <AnimatedBackground className="flex flex-col">
             {/* Global Header */}
             <GlobalHeader />
 
@@ -21,7 +22,7 @@ const GlobalLayout: React.FC<GlobalLayoutProps> = ({ children }) => {
 
             {/* Global Footer */}
             <GlobalFooter />
-        </div>
+        </AnimatedBackground>
     );
 };
 
