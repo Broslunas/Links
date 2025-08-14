@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react';
 import { ToastContainer, ConfirmationModal } from '../../components/ui';
 import { LinkCreator, LinkList, LinkEditor } from '../../components/features';
 import { useToast } from '../../hooks/useToast';
-import { debugSession } from '../../lib/debug';
 import { Link, ApiResponse } from '../../types';
 
 export default function DashboardPage() {
@@ -24,9 +23,7 @@ export default function DashboardPage() {
   });
 
   // Debug session in development
-  useEffect(() => {
-    debugSession(session, status);
-  }, [session, status]);
+  useEffect(() => {}, [session, status]);
 
   // Handle authentication state
   useEffect(() => {
