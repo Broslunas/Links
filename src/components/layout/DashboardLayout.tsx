@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -17,10 +17,53 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/dashboard/' });
   };
+
+  const handleSidebarOpen = () => {
+    // Store the currently focused element
+    previousFocusRef.current = document.activeElement as HTMLElement;
+    setSidebarOpen(true);
+  };
+
+  const handleSidebarClose = () => {
+    setSidebarOpen(false);
+    // Return focus to the mobile menu button
+    setTimeout(() => {
+      mobileMenuButtonRef.current?.focus();
+    }, 0);
+  };
+
+  // Handle keyboard navigation for mobile sidebar
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!sidebarOpen) return;
+
+      switch (event.key) {
+        case 'Escape':
+          event.preventDefault();
+          handleSidebarClose();
+          break;
+      }
+    };
+
+    if (sidebarOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Prevent body scroll when sidebar is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [sidebarOpen]);
 
   // Redirect to login if not authenticated
   React.useEffect(() => {
@@ -43,16 +86,30 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Skip Navigation Links */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      >
+        Saltar al contenido principal
+      </a>
+      <a
+        href="#dashboard-navigation"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-48 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      >
+        Saltar a la navegación del dashboard
+      </a>
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={handleSidebarClose}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar isOpen={sidebarOpen} onClose={handleSidebarClose} />
 
       {/* Main content */}
       <div className="lg:pl-64">
@@ -62,17 +119,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <div className="flex items-center space-x-4">
               {/* Mobile menu button */}
               <Button
+                ref={mobileMenuButtonRef}
                 variant="ghost"
                 size="icon"
-                className="lg:hidden"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open sidebar"
+                className="lg:hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                onClick={handleSidebarOpen}
+                aria-label="Abrir barra lateral de navegación"
+                aria-expanded={sidebarOpen}
+                aria-controls="mobile-sidebar"
               >
                 <svg
                   className="h-6 w-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -116,7 +177,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   variant="ghost"
                   size="sm"
                   onClick={handleSignOut}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  aria-label="Cerrar sesión y salir del dashboard"
                   title="Cerrar Sesión"
                 >
                   <svg
@@ -124,6 +186,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
@@ -139,7 +202,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         </header>
 
         {/* Page content */}
-        <main className="flex-1">
+        <main id="main-content" className="flex-1">
           <div className="px-4 py-8 sm:px-6 lg:px-8">{children}</div>
         </main>
       </div>

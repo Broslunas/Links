@@ -27,24 +27,67 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ currentPath }) => {
     return isActiveNavItem({ label: '', href }, activePath);
   };
 
-  // Handle escape key to close mobile menu
+  // Handle keyboard navigation for mobile menu
   useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && mobileMenuOpen) {
-        setMobileMenuOpen(false);
-        mobileMenuButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!mobileMenuOpen) return;
+
+      const menuItems = mobileMenuRef.current?.querySelectorAll('a, button') as NodeListOf<HTMLElement>;
+      if (!menuItems || menuItems.length === 0) return;
+
+      const currentIndex = Array.from(menuItems).findIndex(item => item === document.activeElement);
+
+      switch (event.key) {
+        case 'Escape':
+          event.preventDefault();
+          setMobileMenuOpen(false);
+          mobileMenuButtonRef.current?.focus();
+          break;
+        case 'ArrowDown':
+          event.preventDefault();
+          const nextIndex = currentIndex < menuItems.length - 1 ? currentIndex + 1 : 0;
+          menuItems[nextIndex]?.focus();
+          break;
+        case 'ArrowUp':
+          event.preventDefault();
+          const prevIndex = currentIndex > 0 ? currentIndex - 1 : menuItems.length - 1;
+          menuItems[prevIndex]?.focus();
+          break;
+        case 'Home':
+          event.preventDefault();
+          menuItems[0]?.focus();
+          break;
+        case 'End':
+          event.preventDefault();
+          menuItems[menuItems.length - 1]?.focus();
+          break;
+        case 'Tab':
+          // Allow normal tab behavior but trap focus within menu
+          const firstItem = menuItems[0];
+          const lastItem = menuItems[menuItems.length - 1];
+          
+          if (event.shiftKey && document.activeElement === firstItem) {
+            event.preventDefault();
+            lastItem?.focus();
+          } else if (!event.shiftKey && document.activeElement === lastItem) {
+            event.preventDefault();
+            firstItem?.focus();
+          }
+          break;
       }
     };
 
     if (mobileMenuOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleKeyDown);
       // Focus first menu item when menu opens
-      const firstMenuItem = mobileMenuRef.current?.querySelector('a');
-      firstMenuItem?.focus();
+      setTimeout(() => {
+        const firstMenuItem = mobileMenuRef.current?.querySelector('a, button') as HTMLElement;
+        firstMenuItem?.focus();
+      }, 0);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [mobileMenuOpen]);
 
@@ -95,6 +138,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ currentPath }) => {
 
           {/* Desktop Navigation */}
           <nav
+            id="main-navigation"
             className="hidden md:flex items-center space-x-8"
             role="navigation"
             aria-label="Navegación principal"
@@ -187,7 +231,13 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ currentPath }) => {
 
         {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden" id="mobile-menu" ref={mobileMenuRef}>
+          <nav 
+            className="md:hidden" 
+            id="mobile-menu" 
+            ref={mobileMenuRef}
+            role="navigation"
+            aria-label="Menú de navegación móvil"
+          >
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
               {mainNavigation.items.map(item => (
                 <Link
@@ -241,7 +291,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ currentPath }) => {
                 )}
               </div>
             </div>
-          </div>
+          </nav>
         )}
       </div>
     </header>

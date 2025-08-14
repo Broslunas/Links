@@ -151,13 +151,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
+      <aside 
+        className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col"
+        role="complementary"
+        aria-label="Barra lateral de navegación del dashboard"
+      >
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-card border-r border-border px-6 py-4">
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center">
-            <Link href="/dashboard" className="flex items-center space-x-2">
+            <Link 
+              href="/dashboard" 
+              className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md"
+              aria-label="Broslunas Links - Ir al dashboard"
+            >
               <div className="h-8 w-8 rounded-lg flex items-center justify-center">
-                <img src="https://cdn.broslunas.com/favicon.png" alt="" />
+                <img 
+                  src="https://cdn.broslunas.com/favicon.png" 
+                  alt="Broslunas Logo" 
+                  width="32"
+                  height="32"
+                />
               </div>
               <span className="text-xl font-bold text-card-foreground">
                 Broslunas Links
@@ -166,27 +179,30 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex flex-1 flex-col">
+          <nav id="dashboard-navigation" className="flex flex-1 flex-col" role="navigation" aria-label="Navegación principal del dashboard">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
+                <h2 className="sr-only">Enlaces de navegación</h2>
                 <ul role="list" className="-mx-2 space-y-1">
                   {navigation.map(item => {
                     const isActive =
                       pathname === item.href ||
                       pathname.startsWith(item.href + '/');
                     return (
-                      <li key={item.name}>
+                      <li key={item.name} role="listitem">
                         <Link
                           href={item.href}
                           className={cn(
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors',
+                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
                             isActive
                               ? 'bg-primary text-primary-foreground'
                               : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                           )}
+                          aria-current={isActive ? 'page' : undefined}
+                          aria-label={`Ir a ${item.name}`}
                         >
-                          {item.icon}
-                          {item.name}
+                          <span aria-hidden="true">{item.icon}</span>
+                          <span>{item.name}</span>
                         </Link>
                       </li>
                     );
@@ -195,17 +211,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </li>
 
               {/* Sign out button */}
-              <li className="mt-auto">
+              <li className="mt-auto" role="listitem">
+                <h2 className="sr-only">Acciones de cuenta</h2>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-muted-foreground hover:text-foreground"
+                  className="w-full justify-start text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                   onClick={handleSignOut}
+                  aria-label="Cerrar sesión y salir del dashboard"
                 >
                   <svg
                     className="h-5 w-5 mr-3"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
@@ -214,31 +233,39 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                     />
                   </svg>
-                  Cerrar Sesión
+                  <span>Cerrar Sesión</span>
                 </Button>
               </li>
             </ul>
           </nav>
         </div>
-      </div>
+      </aside>
 
       {/* Mobile sidebar */}
-      <div
+      <aside
         className={cn(
           'fixed inset-y-0 z-50 flex w-64 flex-col transition-transform duration-300 ease-in-out lg:hidden',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
+        role="complementary"
+        aria-label="Barra lateral móvil de navegación del dashboard"
       >
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-card border-r border-border px-6 py-4">
           {/* Close button */}
           <div className="flex h-16 shrink-0 items-center justify-between">
             <Link
               href="/dashboard"
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md"
               onClick={onClose}
+              aria-label="Broslunas Links - Ir al dashboard"
             >
               <div className="h-8 w-8 rounded-lg flex items-center justify-center">
-                <img src="https://cdn.broslunas.com/favicon.png" alt="" />
+                <img 
+                  src="https://cdn.broslunas.com/favicon.png" 
+                  alt="Broslunas Logo" 
+                  width="32"
+                  height="32"
+                />
               </div>
               <span className="text-xl font-bold text-card-foreground">
                 Broslunas Links
@@ -248,13 +275,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               variant="ghost"
               size="icon"
               onClick={onClose}
-              aria-label="Close sidebar"
+              aria-label="Cerrar barra lateral"
             >
               <svg
                 className="h-6 w-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -267,28 +295,31 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex flex-1 flex-col">
+          <nav className="flex flex-1 flex-col" role="navigation" aria-label="Navegación principal del dashboard móvil">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
+                <h2 className="sr-only">Enlaces de navegación</h2>
                 <ul role="list" className="-mx-2 space-y-1">
                   {navigation.map(item => {
                     const isActive =
                       pathname === item.href ||
                       pathname.startsWith(item.href + '/');
                     return (
-                      <li key={item.name}>
+                      <li key={item.name} role="listitem">
                         <Link
                           href={item.href}
                           onClick={onClose}
                           className={cn(
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors',
+                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
                             isActive
                               ? 'bg-primary text-primary-foreground'
                               : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                           )}
+                          aria-current={isActive ? 'page' : undefined}
+                          aria-label={`Ir a ${item.name}`}
                         >
-                          {item.icon}
-                          {item.name}
+                          <span aria-hidden="true">{item.icon}</span>
+                          <span>{item.name}</span>
                         </Link>
                       </li>
                     );
@@ -297,17 +328,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </li>
 
               {/* Sign out button */}
-              <li className="mt-auto">
+              <li className="mt-auto" role="listitem">
+                <h2 className="sr-only">Acciones de cuenta</h2>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-muted-foreground hover:text-foreground"
+                  className="w-full justify-start text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                   onClick={handleSignOut}
+                  aria-label="Cerrar sesión y salir del dashboard"
                 >
                   <svg
                     className="h-5 w-5 mr-3"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
@@ -316,15 +350,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                     />
                   </svg>
-                  Cerrar Sesión
+                  <span>Cerrar Sesión</span>
                 </Button>
               </li>
             </ul>
           </nav>
         </div>
-      </div>
-    </>
-  );
-};
+      </aside>
+     </>
+   );
+ };
 
 export { Sidebar };
