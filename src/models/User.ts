@@ -25,6 +25,9 @@ export interface IUser extends Document {
         premium_type?: number;
         public_flags?: number;
     };
+    // API token for public API access
+    apiToken?: string;
+    apiTokenCreatedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -79,6 +82,16 @@ const UserSchema = new Schema<IUser>({
     providerData: {
         type: Schema.Types.Mixed,
         default: {},
+    },
+    // API token for public API access
+    apiToken: {
+        type: String,
+        unique: true,
+        sparse: true, // Allow null values but ensure uniqueness when present
+        trim: true,
+    },
+    apiTokenCreatedAt: {
+        type: Date,
     },
 }, {
     timestamps: true,

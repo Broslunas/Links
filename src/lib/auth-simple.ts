@@ -139,7 +139,7 @@ export const authOptions: NextAuthOptions = {
                 return true;
             } catch (error) {
                 console.error('❌ Error during sign in:', error);
-                console.error('❌ Error stack:', error.stack);
+                console.error('❌ Error stack:', (error as Error).stack);
                 return false;
             }
         },
