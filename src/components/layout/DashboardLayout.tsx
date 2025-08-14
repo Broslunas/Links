@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '../ui/Button';
@@ -17,6 +17,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/dashboard/' });
+  };
 
   // Redirect to login if not authenticated
   React.useEffect(() => {
@@ -96,6 +100,29 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     {session?.user?.email}
                   </p>
                 </div>
+                
+                {/* Logout button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="text-muted-foreground hover:text-foreground"
+                  title="Cerrar Sesión"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                </Button>
               </div>
             </div>
           </div>
