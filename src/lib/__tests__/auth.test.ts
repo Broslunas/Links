@@ -1,3 +1,13 @@
+// Mock dependencies before importing
+jest.mock('../db-utils', () => ({
+    connectDB: jest.fn(),
+}));
+
+jest.mock('../../models/User', () => ({
+    findOne: jest.fn(),
+    create: jest.fn(),
+}));
+
 import { authOptions } from '../auth-simple';
 
 describe('Auth Configuration', () => {

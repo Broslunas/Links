@@ -7,6 +7,25 @@ export interface User {
   image?: string;
   provider: 'github' | 'google' | 'discord';
   providerId: string;
+  // Discord-specific fields
+  discordUsername?: string;
+  discordDiscriminator?: string;
+  discordGlobalName?: string;
+  discordVerified?: boolean;
+  discordLocale?: string;
+  // Additional provider data
+  providerData?: {
+    username?: string;
+    discriminator?: string;
+    global_name?: string;
+    verified?: boolean;
+    locale?: string;
+    avatar?: string;
+    banner?: string;
+    accent_color?: number;
+    premium_type?: number;
+    public_flags?: number;
+  };
   createdAt: Date;
   updatedAt: Date;
 }

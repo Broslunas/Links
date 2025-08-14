@@ -22,6 +22,11 @@ export const authOptions: NextAuthOptions = {
         DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID!,
             clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+            authorization: {
+                params: {
+                    scope: 'identify email',
+                },
+            },
         }),
     ],
     pages: {
@@ -29,10 +34,22 @@ export const authOptions: NextAuthOptions = {
         error: '/auth/error',
     },
     callbacks: {
-        async signIn({ user, account }) {
+        async signIn({ user, account, profile }) {
             try {
+                console.log('🔐 SignIn callback triggered:', {
+                    provider: account?.provider,
+                    userEmail: user?.email,
+                    hasProfile: !!profile
+                });
+
                 if (!account || !user.email) {
+                    console.log('❌ Missing account or user email');
                     return false;
+                }
+
+                // Log Discord profile data for debugging
+                if (account.provider === 'discord') {
+                    console.log('🎮 Discord profile data:', JSON.stringify(profile, null, 2));
                 }
 
                 await connectDB();
@@ -45,27 +62,84 @@ export const authOptions: NextAuthOptions = {
                     ]
                 });
 
+                console.log('👤 Existing user found:', !!existingUser);
+
+                // Prepare user data with provider-specific information
+                const userData: any = {
+                    email: user.email,
+                    name: user.name || '',
+                    image: user.image,
+                    provider: account.provider as 'github' | 'google' | 'discord',
+                    providerId: account.providerAccountId,
+                };
+
+                // Add Discord-specific data if available
+                if (account.provider === 'discord' && profile) {
+                    const discordProfile = profile as any;
+                    console.log('🎮 Processing Discord profile data...');
+
+                    userData.discordUsername = discordProfile.username;
+                    userData.discordDiscriminator = discordProfile.discriminator;
+                    userData.discordGlobalName = discordProfile.global_name;
+                    userData.discordVerified = discordProfile.verified;
+                    userData.discordLocale = discordProfile.locale;
+
+                    // Store complete profile data for future reference
+                    userData.providerData = {
+                        username: discordProfile.username,
+                        discriminator: discordProfile.discriminator,
+                        global_name: discordProfile.global_name,
+                        verified: discordProfile.verified,
+                        locale: discordProfile.locale,
+                        avatar: discordProfile.avatar,
+                        banner: discordProfile.banner,
+                        accent_color: discordProfile.accent_color,
+                        premium_type: discordProfile.premium_type,
+                        public_flags: discordProfile.public_flags,
+                    };
+
+                    console.log('🎮 Discord userData prepared:', {
+                        discordUsername: userData.discordUsername,
+                        discordVerified: userData.discordVerified,
+                        hasProviderData: !!userData.providerData
+                    });
+                }
+
                 if (!existingUser) {
                     // Create user in our custom model
-                    existingUser = await User.create({
-                        email: user.email,
-                        name: user.name || '',
-                        image: user.image,
-                        provider: account.provider as 'github' | 'google' | 'discord',
-                        providerId: account.providerAccountId,
+                    console.log('➕ Creating new user with data:', userData);
+                    existingUser = await User.create(userData);
+                    console.log(`✅ Created new ${account.provider} user: ${user.email}`, {
+                        id: existingUser._id,
+                        provider: account.provider,
+                        discordData: account.provider === 'discord' ? userData.providerData : undefined
                     });
-                    console.log(`✅ Created new user: ${user.email}`);
                 } else {
-                    // Update existing user info if needed
+                    // Update existing user info
                     existingUser.name = user.name || existingUser.name;
                     existingUser.image = user.image || existingUser.image;
+
+                    // Update Discord-specific fields if this is a Discord login
+                    if (account.provider === 'discord' && profile) {
+                        const discordProfile = profile as any;
+                        console.log('🔄 Updating existing user with Discord data...');
+
+                        existingUser.discordUsername = discordProfile.username;
+                        existingUser.discordDiscriminator = discordProfile.discriminator;
+                        existingUser.discordGlobalName = discordProfile.global_name;
+                        existingUser.discordVerified = discordProfile.verified;
+                        existingUser.discordLocale = discordProfile.locale;
+                        existingUser.providerData = userData.providerData;
+                    }
+
                     await existingUser.save();
-                    console.log(`✅ Updated existing user: ${user.email}`);
+                    console.log(`✅ Updated existing ${account.provider} user: ${user.email}`);
                 }
 
                 return true;
             } catch (error) {
                 console.error('❌ Error during sign in:', error);
+                console.error('❌ Error stack:', error.stack);
                 return false;
             }
         },

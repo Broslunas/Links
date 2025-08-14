@@ -6,6 +6,25 @@ export interface IUser extends Document {
     image?: string;
     provider: 'github' | 'google' | 'discord';
     providerId: string;
+    // Discord-specific fields
+    discordUsername?: string;
+    discordDiscriminator?: string;
+    discordGlobalName?: string;
+    discordVerified?: boolean;
+    discordLocale?: string;
+    // Additional provider data
+    providerData?: {
+        username?: string;
+        discriminator?: string;
+        global_name?: string;
+        verified?: boolean;
+        locale?: string;
+        avatar?: string;
+        banner?: string;
+        accent_color?: number;
+        premium_type?: number;
+        public_flags?: number;
+    };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -35,6 +54,31 @@ const UserSchema = new Schema<IUser>({
         type: String,
         required: true,
         unique: true,
+    },
+    // Discord-specific fields
+    discordUsername: {
+        type: String,
+        trim: true,
+    },
+    discordDiscriminator: {
+        type: String,
+        trim: true,
+    },
+    discordGlobalName: {
+        type: String,
+        trim: true,
+    },
+    discordVerified: {
+        type: Boolean,
+    },
+    discordLocale: {
+        type: String,
+        trim: true,
+    },
+    // Additional provider data (flexible object for future extensions)
+    providerData: {
+        type: Schema.Types.Mixed,
+        default: {},
     },
 }, {
     timestamps: true,
