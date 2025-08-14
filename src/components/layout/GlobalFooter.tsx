@@ -20,8 +20,7 @@ const footerSections: NavigationSection[] = [
     items: [
       { label: 'Características', href: '/features' },
       { label: 'Precios', href: '/pricing' },
-      { label: 'API', href: '/api' },
-      { label: 'Integraciones', href: '/integrations' },
+      { label: 'API', href: '/docs' },
     ],
   },
   {
