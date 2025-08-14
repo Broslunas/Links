@@ -36,7 +36,7 @@ export default function DocsPage() {
 
     const loadDocs = async () => {
         try {
-            const response = await fetch('/docs');
+            const response = await fetch('/api/docs');
             if (!response.ok) {
                 throw new Error('Failed to load documentation');
             }
