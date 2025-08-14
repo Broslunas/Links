@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { DashboardLayout } from '../../../components/layout';
 import { LoadingSpinner, Button } from '../../../components/ui';
 import { ErrorBoundary } from '../../../components/ui/ErrorBoundary';
 import { Link, ApiResponse } from '../../../types';
@@ -212,8 +211,7 @@ export default function AnalyticsPage() {
 
   if (error) {
     return (
-      <DashboardLayout>
-        <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto">
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="text-center">
               <div className="text-red-500 mb-4">
@@ -239,13 +237,11 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">
@@ -589,7 +585,6 @@ export default function AnalyticsPage() {
             </div>
           </div>
         )}
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }

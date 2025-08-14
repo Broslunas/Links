@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { DashboardLayout } from '../../../components/layout';
 import { ToastContainer, ConfirmationModal } from '../../../components/ui';
 import { LinkList, LinkEditor } from '../../../components/features';
 import { useToast } from '../../../hooks/useToast';
@@ -104,7 +103,7 @@ export default function LinksPage() {
   }
 
   return (
-    <DashboardLayout>
+    <>
       <ToastContainer toasts={toasts} />
 
       <div className="space-y-6">
@@ -146,6 +145,6 @@ export default function LinksPage() {
         variant="danger"
         loading={deleteLoading}
       />
-    </DashboardLayout>
+    </>
   );
 }

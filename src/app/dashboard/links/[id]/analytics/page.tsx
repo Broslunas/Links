@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
-import { DashboardLayout } from '../../../../../components/layout';
+import { useSession } from 'next-auth/react';
 import { LoadingSpinner, Button } from '../../../../../components/ui';
-import { StatsViewer } from '../../../../../components/features/StatsViewer';
+import { StatsViewer } from '../../../../../components/features';
 import { Link, ApiResponse } from '../../../../../types';
 
 export default function LinkAnalyticsPage() {
@@ -81,8 +80,7 @@ export default function LinkAnalyticsPage() {
 
   if (error) {
     return (
-      <DashboardLayout>
-        <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto">
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="text-center">
               <div className="text-red-500 mb-4">
@@ -116,14 +114,12 @@ export default function LinkAnalyticsPage() {
             </div>
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 
   if (!link) {
     return (
-      <DashboardLayout>
-        <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto">
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="text-center">
               <p className="text-muted-foreground">Enlace no encontrado</p>
@@ -137,13 +133,11 @@ export default function LinkAnalyticsPage() {
             </div>
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -219,7 +213,6 @@ export default function LinkAnalyticsPage() {
 
         {/* Stats Viewer with Export Functionality */}
         <StatsViewer linkId={linkId} linkSlug={link.slug} />
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }

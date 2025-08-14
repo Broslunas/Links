@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { DashboardLayout } from '../../../components/layout';
 import { Button, Input, LoadingSpinner } from '../../../components/ui';
 import { ThemeToggle } from '../../../components/ui/ThemeToggle';
 import { useToast } from '../../../hooks/useToast';
@@ -127,7 +126,7 @@ export default function SettingsPage() {
     }
 
     return (
-        <DashboardLayout>
+        <>
             <ToastContainer toasts={toasts} />
 
             <div className="max-w-4xl mx-auto space-y-6">
@@ -355,6 +354,6 @@ export default function SettingsPage() {
                     </Button>
                 </div>
             </div>
-        </DashboardLayout>
+        </>
     );
 }
