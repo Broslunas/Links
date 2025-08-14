@@ -5,11 +5,9 @@ import { MongoDBAdapter } from '@next-auth/mongodb-adapter';
 import { MongoClient } from 'mongodb';
 import { connectDB } from './db-utils';
 import { config } from './config';
-import { debugAuth } from './debug';
 import User from '../models/User';
 
 // Debug configuration in development
-debugAuth();
 
 // MongoDB client for NextAuth adapter
 const client = new MongoClient(config.mongodb.uri);
