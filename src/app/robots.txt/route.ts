@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 export function GET() {
   const baseUrl = process.env.NEXTAUTH_URL || 'https://brl-links.vercel.app'
-  
+
   const robotsTxt = `User-agent: *
 Allow: /
 
@@ -15,7 +15,6 @@ Disallow: /auth/
 Allow: /
 Allow: /features
 Allow: /pricing
-Allow: /contact
 Allow: /help
 Allow: /status
 Allow: /privacy-policy

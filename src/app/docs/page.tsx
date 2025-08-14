@@ -36,7 +36,7 @@ export default function DocsPage() {
 
     const loadDocs = async () => {
         try {
-            const response = await fetch('/api/docs');
+            const response = await fetch('/docs');
             if (!response.ok) {
                 throw new Error('Failed to load documentation');
             }
@@ -168,10 +168,10 @@ export default function DocsPage() {
                                 <div key={endpoint} className="mb-8 last:mb-0">
                                     <div className="flex items-center gap-3 mb-4">
                                         <span className={`px-2 py-1 rounded text-xs font-medium ${endpoint.startsWith('POST')
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                : endpoint.startsWith('GET')
-                                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                            : endpoint.startsWith('GET')
+                                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                                             }`}>
                                             {endpoint.split(' ')[0]}
                                         </span>
@@ -242,10 +242,10 @@ export default function DocsPage() {
                                                 <div key={status}>
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <span className={`px-2 py-1 rounded text-xs font-medium ${status.startsWith('2')
-                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                                : status.startsWith('4')
-                                                                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                                                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                            : status.startsWith('4')
+                                                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                                                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                                                             }`}>
                                                             {status}
                                                         </span>

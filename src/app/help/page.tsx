@@ -74,7 +74,7 @@ export default function HelpPage() {
                 ¿Tienes una pregunta específica? No dudes en contactarnos.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/contact">
+                <Link href="https://broslunas.com/contacto">
                   <Button variant="default" size="lg">
                     Contactar Soporte
                   </Button>

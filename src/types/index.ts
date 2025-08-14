@@ -161,3 +161,6 @@ declare module 'next-auth/jwt' {
     provider?: 'github' | 'google' | 'discord';
   }
 }
+
+// Re-export navigation types
+export * from './navigation';

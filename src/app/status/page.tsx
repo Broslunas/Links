@@ -42,7 +42,7 @@ export default function StatusPage() {
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               Todos nuestros servicios están funcionando correctamente
             </p>
-            
+
             {/* Services Status */}
             <div className="grid md:grid-cols-2 gap-4 mb-8">
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -52,7 +52,7 @@ export default function StatusPage() {
                   <span className="text-sm text-green-600 dark:text-green-400">Operativo</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <span className="font-medium text-gray-900 dark:text-white">Base de Datos</span>
                 <div className="flex items-center">
@@ -60,7 +60,7 @@ export default function StatusPage() {
                   <span className="text-sm text-green-600 dark:text-green-400">Operativo</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <span className="font-medium text-gray-900 dark:text-white">Redirección de Enlaces</span>
                 <div className="flex items-center">
@@ -68,7 +68,7 @@ export default function StatusPage() {
                   <span className="text-sm text-green-600 dark:text-green-400">Operativo</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <span className="font-medium text-gray-900 dark:text-white">Análisis y Estadísticas</span>
                 <div className="flex items-center">
@@ -125,7 +125,7 @@ export default function StatusPage() {
                 <Button variant="default" size="lg">
                   Suscribirse a Actualizaciones
                 </Button>
-                <Link href="/contact">
+                <Link href="https://broslunas.com/contacto">
                   <Button variant="outline" size="lg">
                     Reportar Problema
                   </Button>

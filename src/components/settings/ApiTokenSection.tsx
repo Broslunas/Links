@@ -164,7 +164,7 @@ export function ApiTokenSection({ onSuccess, onError }: ApiTokenSectionProps) {
                         variant="outline"
                         size="sm"
                         className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-200 dark:hover:bg-blue-800"
-                        onClick={() => window.open('/api/docs', '_blank')}
+                        onClick={() => window.open('/docs', '_blank')}
                     >
                         <FiExternalLink className="mr-2" />
                         Ver Docs
