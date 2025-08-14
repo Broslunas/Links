@@ -15,12 +15,9 @@ export default function CallbackPage() {
     if (status === 'loading') return; // Still loading
 
     if (status === 'authenticated' && session) {
-      // Successfully authenticated, redirect to callback URL
-      console.log('Authentication successful, redirecting to:', callbackUrl);
-      router.push(callbackUrl);
+      // Successfully authenticated, redirect to callback URL      router.push(callbackUrl);
     } else if (status === 'unauthenticated') {
       // Not authenticated, redirect to sign in
-      console.log('Not authenticated, redirecting to sign in');
       router.push('/auth/signin');
     }
   }, [status, session, router, callbackUrl]);
