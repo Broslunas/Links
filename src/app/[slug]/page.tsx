@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation';
 import { handleRedirect, isValidSlug } from '../../lib/redirect-handler';
 import { connectDB } from '../../lib/db-utils';
 import Link from '../../models/Link';
+import TempLink from '../../models/TempLink';
 import { headers } from 'next/headers';
 
 interface SlugPageProps {
@@ -81,12 +82,21 @@ export async function generateMetadata({ params }: SlugPageProps) {
     try {
         await connectDB();
 
-        const link = await Link.findOne({
-            slug: slug.toLowerCase(),
-            isActive: true
-        });
+        // Check both regular links and temporary links
+        const [link, tempLink] = await Promise.all([
+            Link.findOne({
+                slug: slug.toLowerCase(),
+                isActive: true
+            }),
+            TempLink.findOne({
+                slug: slug.toLowerCase(),
+                expiresAt: { $gt: new Date() }
+            })
+        ]);
 
-        if (!link) {
+        const targetLink = link || tempLink;
+
+        if (!targetLink) {
             return {
                 title: 'Link Not Found',
                 description: 'The requested link could not be found.',
@@ -94,8 +104,8 @@ export async function generateMetadata({ params }: SlugPageProps) {
         }
 
         return {
-            title: link.title || 'Redirecting...',
-            description: link.description || `Redirecting to ${link.originalUrl}`,
+            title: targetLink.title || 'Redirecting...',
+            description: targetLink.description || `Redirecting to ${targetLink.originalUrl}`,
             robots: 'noindex, nofollow', // Don't index redirect pages
         };
     } catch (error) {

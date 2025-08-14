@@ -94,6 +94,30 @@ export interface LinkStats {
   clicksByBrowser: Array<{ browser: string; clicks: number }>;
   clicksByOS: Array<{ os: string; clicks: number }>;
 }
+
+export interface TempLink {
+  id: string;
+  originalUrl: string;
+  slug: string;
+  token: string;
+  title?: string;
+  description?: string;
+  clickCount: number;
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateTempLinkData {
+  originalUrl: string;
+  slug?: string;
+  title?: string;
+  description?: string;
+}
+
+export interface CreateTempLinkResponse extends TempLink {
+  shortUrl: string;
+}
 // NextAuth.js type extensions
 declare module 'next-auth' {
   interface Session {

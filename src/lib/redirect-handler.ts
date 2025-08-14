@@ -1,6 +1,7 @@
 import { connectDB } from './db-utils';
 import { extractAnalyticsData, hashIP } from './analytics';
 import Link from '../models/Link';
+import TempLink from '../models/TempLink';
 import AnalyticsEvent from '../models/AnalyticsEvent';
 
 export interface RedirectResult {
@@ -19,16 +20,26 @@ export async function handleRedirect(
     try {
         await connectDB();
 
-        // Find the link by slug
-        const link = await Link.findOne({
-            slug: slug.toLowerCase(),
-            isActive: true
-        });
+        // Find the link by slug (check both regular links and temporary links)
+        const [link, tempLink] = await Promise.all([
+            Link.findOne({
+                slug: slug.toLowerCase(),
+                isActive: true
+            }),
+            TempLink.findOne({
+                slug: slug.toLowerCase(),
+                expiresAt: { $gt: new Date() } // Only non-expired temp links
+            })
+        ]);
 
-        if (!link) {
+        // Determine which link to use (regular links take precedence)
+        const targetLink = link || tempLink;
+        const isTemporary = !link && !!tempLink;
+
+        if (!targetLink) {
             return {
                 success: false,
-                error: 'Link not found or inactive'
+                error: 'Link not found, inactive, or expired'
             };
         }
 
@@ -52,7 +63,7 @@ export async function handleRedirect(
         // Record analytics event (fire and forget - don't block redirect)
         try {
             const analyticsEvent = new AnalyticsEvent({
-                linkId: link._id,
+                linkId: targetLink._id,
                 ip: hashIP(clientIP),
                 country: analyticsData.country,
                 city: analyticsData.city,
@@ -66,10 +77,21 @@ export async function handleRedirect(
             });
 
             // Save analytics event and increment click count in parallel
-            await Promise.all([
-                analyticsEvent.save(),
-                Link.findByIdAndUpdate(link._id, { $inc: { clickCount: 1 } })
-            ]);
+            const updatePromises = [analyticsEvent.save()];
+
+            if (isTemporary) {
+                // Update temporary link click count
+                updatePromises.push(
+                    TempLink.findByIdAndUpdate(targetLink._id, { $inc: { clickCount: 1 } })
+                );
+            } else {
+                // Update regular link click count
+                updatePromises.push(
+                    Link.findByIdAndUpdate(targetLink._id, { $inc: { clickCount: 1 } })
+                );
+            }
+
+            await Promise.all(updatePromises);
         } catch (analyticsError) {
             // Log the error but don't block the redirect
             console.error('Error recording analytics:', analyticsError);
@@ -77,7 +99,7 @@ export async function handleRedirect(
 
         return {
             success: true,
-            originalUrl: link.originalUrl
+            originalUrl: targetLink.originalUrl
         };
 
     } catch (error) {

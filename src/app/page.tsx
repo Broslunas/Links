@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../lib/auth';
 import { Button } from '@/components/ui/Button';
+import { TempLinkCreator } from '@/components/TempLinkCreator';
 import { GlobalStats } from './api/stats/global/route';
 import { ApiResponse } from '@/types';
 
@@ -227,6 +228,26 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* Try It Now Section */}
+      {!session && (
+        <section className="py-20 bg-gray-50 dark:bg-gray-900">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                Pruébalo Ahora
+              </h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300">
+                Crea tu primer enlace temporal sin necesidad de registro
+              </p>
+            </div>
+
+            <div className="max-w-md mx-auto">
+              <TempLinkCreator />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-20">
