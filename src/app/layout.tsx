@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     siteName: 'Broslunas Links',
     images: [
       {
-        url: `${baseUrl}/og-image.svg`,
+        url: `${baseUrl}/og-image.png`,
         width: 1200,
         height: 630,
         alt: 'Broslunas Links - Acortador de URLs',
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     title: 'Broslunas Links - Acortador de URLs Moderno',
     description:
       'Un acortador de URLs moderno con análisis avanzados, dominios personalizados y potentes funciones de gestión de enlaces.',
-    images: [`${baseUrl}/og-image.svg`],
+    images: [`${baseUrl}/og-image.png`],
     creator: '@broslunas',
   },
   robots: {
