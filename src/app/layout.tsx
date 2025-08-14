@@ -9,16 +9,24 @@ import { ConditionalLayout } from '../components/layout/ConditionalLayout';
 
 const inter = Inter({ subsets: ['latin'] });
 
-const baseUrl = process.env.NEXTAUTH_URL || 'https://brl-links.vercel.app';
+const baseUrl = process.env.NEXTAUTH_URL || 'https://broslunas.link';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Broslunas Links - Modern URL Shortener',
-    template: '%s | Broslunas Links'
+    defalt: 'Broslunas Links - Acortador de URLs Moderno',
+    template: '%s | Broslunas Links',
   },
-  description: 'A modern URL shortener with advanced analytics, custom domains, and powerful link management features. Create, track, and optimize your links.',
-  keywords: ['url shortener', 'link shortener', 'analytics', 'custom domains', 'link management', 'qr codes'],
-  authors: [{ name: 'Broslunas Links Team' }],
+  description:
+    'Un acortador de URLs moderno con análisis avanzados, dominios personalizados y potentes funciones de gestión de enlaces. Crea, rastrea y optimiza tus enlaces.',
+  keywords: [
+    'acortador de urls',
+    'acortador de enlaces',
+    'análisis',
+    'dominios personalizados',
+    'gestión de enlaces',
+    'códigos qr',
+  ],
+  authors: [{ name: 'Equipo Broslunas Links' }],
   creator: 'Broslunas Links',
   publisher: 'Broslunas Links',
   metadataBase: new URL(baseUrl),
@@ -29,23 +37,25 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'es_ES',
     url: baseUrl,
-    title: 'Broslunas Links - Modern URL Shortener',
-    description: 'A modern URL shortener with advanced analytics, custom domains, and powerful link management features.',
+    title: 'Broslunas Links - Acortador de URLs',
+    description:
+      'Un acortador de URLs moderno con análisis avanzados, dominios personalizados y potentes funciones de gestión de enlaces.',
     siteName: 'Broslunas Links',
     images: [
       {
-        url: `${baseUrl}/og-image.png`,
+        url: `${baseUrl}/og-image.svg`,
         width: 1200,
         height: 630,
-        alt: 'Broslunas Links - Modern URL Shortener',
+        alt: 'Broslunas Links - Acortador de URLs',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Broslunas Links - Modern URL Shortener',
-    description: 'A modern URL shortener with advanced analytics, custom domains, and powerful link management features.',
-    images: [`${baseUrl}/og-image.png`],
+    title: 'Broslunas Links - Acortador de URLs Moderno',
+    description:
+      'Un acortador de URLs moderno con análisis avanzados, dominios personalizados y potentes funciones de gestión de enlaces.',
+    images: [`${baseUrl}/og-image.svg`],
     creator: '@broslunas',
   },
   robots: {
@@ -82,9 +92,7 @@ export default function RootLayout({
         <ErrorBoundary>
           <ThemeProvider>
             <SessionProvider>
-              <ConditionalLayout>
-                {children}
-              </ConditionalLayout>
+              <ConditionalLayout>{children}</ConditionalLayout>
               <CookieConsentModal />
             </SessionProvider>
           </ThemeProvider>

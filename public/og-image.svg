@@ -1,0 +1,67 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/> 
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Decorative elements -->
+  <circle cx="100" cy="100" r="50" fill="rgba(255,255,255,0.1)" opacity="0.5"/>
+  <circle cx="1100" cy="530" r="80" fill="rgba(255,255,255,0.1)" opacity="0.3"/>
+  <circle cx="200" cy="500" r="30" fill="rgba(255,255,255,0.1)" opacity="0.7"/>
+  
+  <!-- Main content container -->
+  <rect x="100" y="150" width="1000" height="330" rx="20" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+  
+  <!-- Logo/Icon -->
+  <g transform="translate(150, 200)">
+    <!-- Link icon -->
+    <rect x="0" y="20" width="60" height="8" rx="4" fill="white" filter="url(#glow)"/>
+    <rect x="20" y="0" width="8" height="60" rx="4" fill="white" filter="url(#glow)"/>
+    <circle cx="10" cy="10" r="8" fill="none" stroke="white" stroke-width="3" filter="url(#glow)"/>
+    <circle cx="50" cy="50" r="8" fill="none" stroke="white" stroke-width="3" filter="url(#glow)"/>
+  </g>
+  
+  <!-- Main title -->
+  <text x="300" y="280" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white" filter="url(#glow)">
+    Broslunas Links
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="300" y="320" font-family="Arial, sans-serif" font-size="24" fill="rgba(255,255,255,0.9)">
+    Acortador de URLs Moderno
+  </text>
+  
+  <!-- Description -->
+  <text x="300" y="360" font-family="Arial, sans-serif" font-size="18" fill="rgba(255,255,255,0.8)">
+    Análisis avanzados • Dominios personalizados • Gestión de enlaces
+  </text>
+  
+  <!-- Bottom decorative line -->
+  <line x1="300" y1="400" x2="950" y2="400" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+  
+  <!-- Small stats indicators -->
+  <g transform="translate(300, 420)">
+    <circle cx="0" cy="0" r="4" fill="#10b981"/>
+    <text x="15" y="5" font-family="Arial, sans-serif" font-size="14" fill="rgba(255,255,255,0.7)">Enlaces creados</text>
+    
+    <circle cx="150" cy="0" r="4" fill="#f59e0b"/>
+    <text x="165" y="5" font-family="Arial, sans-serif" font-size="14" fill="rgba(255,255,255,0.7)">Clicks rastreados</text>
+    
+    <circle cx="300" cy="0" r="4" fill="#ef4444"/>
+    <text x="315" y="5" font-family="Arial, sans-serif" font-size="14" fill="rgba(255,255,255,0.7)">Análisis en tiempo real</text>
+  </g>
+</svg>
