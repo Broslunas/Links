@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { mainNavigation } from '@/lib/navigation';
 import { isActiveNavItem, normalizePathname } from '@/lib/navigation-utils';
+import LogoutButton from '../auth/LogoutButton';
 
 interface GlobalHeaderProps {
   currentPath?: string;
@@ -129,16 +130,12 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ currentPath }) => {
                       Ir al Dashboard
                     </Button>
                   </Link>
-                  <Link href="/auth/signout">
-                    <Button variant="outline" size="sm">
-                      Cerrar Sesión
-                    </Button>
-                  </Link>
+                  <LogoutButton />
                 </div>
               ) : (
                 <div className="flex items-center space-x-3">
                   <Link href="/auth/signin">
-                    <Button variant="ghost" size="sm">
+                    <Button variant="default" size="sm">
                       Acceder
                     </Button>
                   </Link>
@@ -225,15 +222,9 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ currentPath }) => {
                         Ir al Dashboard
                       </Button>
                     </Link>
-                    <Link
-                      href="/auth/signout"
-                      className="block px-3 py-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Button variant="outline" size="sm" className="w-full">
-                        Cerrar Sesión
-                      </Button>
-                    </Link>
+                    <div className="px-3 py-2" onClick={() => setMobileMenuOpen(false)}>
+                      <LogoutButton />
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -242,8 +233,8 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ currentPath }) => {
                       className="block px-3 py-2"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <Button variant="ghost" size="sm" className="w-full">
-                        Acceder
+                      <Button variant="default" size="sm" className="w-full">
+                        Iniciar Sesión
                       </Button>
                     </Link>
                   </div>
