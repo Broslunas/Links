@@ -13,7 +13,7 @@ const baseUrl = process.env.NEXTAUTH_URL || 'https://broslunas.link';
 
 export const metadata: Metadata = {
   title: {
-    defalt: 'Broslunas Links - Acortador de URLs Moderno',
+    default: 'Broslunas Links - Acortador de URLs Moderno',
     template: '%s | Broslunas Links',
   },
   description:
