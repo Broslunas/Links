@@ -12,7 +12,7 @@ export const mainNavigation: MainNavigation = {
       href: '/features',
     },
     {
-      label: 'Precios (Proximamente)',
+      label: 'Precios ',
 
       href: '/pricing',
     },
@@ -38,7 +38,7 @@ export const footerNavigation: FooterNavigation = {
           href: '/features',
         },
         {
-          label: 'Precios (Proximamente)',
+          label: 'Precios ',
 
           href: '/pricing',
         },
