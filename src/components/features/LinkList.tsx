@@ -36,9 +36,7 @@ export function LinkList({
   const [filterStats, setFilterStats] = useState<FilterStats>('all');
   const [sortOption, setSortOption] = useState<SortOption>('newest');
 
-  // Multi-selection states
-  const [selectedLinks, setSelectedLinks] = useState<Set<string>>(new Set());
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
 
   // Tags states
   const [availableTags, setAvailableTags] = useState<string[]>([]);
@@ -49,143 +47,7 @@ export function LinkList({
     'all' | 'today' | 'week' | 'month'
   >('all');
 
-  // Multi-selection handlers
-  const toggleLinkSelection = (linkId: string) => {
-    setSelectedLinks(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(linkId)) {
-        newSet.delete(linkId);
-      } else {
-        newSet.add(linkId);
-      }
-      return newSet;
-    });
-  };
 
-  const selectAllLinks = () => {
-    const allLinkIds = new Set(filteredAndSortedLinks.map(link => link.slug));
-    setSelectedLinks(allLinkIds);
-  };
-
-  const deselectAllLinks = () => {
-    setSelectedLinks(new Set());
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedLinks.size === filteredAndSortedLinks.length) {
-      deselectAllLinks();
-    } else {
-      selectAllLinks();
-    }
-  };
-
-  const deleteSelectedLinks = async () => {
-    if (selectedLinks.size === 0) return;
-
-    const confirmDelete = window.confirm(
-      `¿Estás seguro de que quieres eliminar ${selectedLinks.size} enlace(s)?`
-    );
-    if (!confirmDelete) return;
-
-    try {
-      const deletePromises = Array.from(selectedLinks).map(linkId =>
-        fetch(`/api/links/${linkId}`, { method: 'DELETE' })
-      );
-
-      await Promise.all(deletePromises);
-      setSelectedLinks(new Set());
-      setIsSelectionMode(false);
-      fetchLinks();
-    } catch (error) {
-      console.error('Error deleting links:', error);
-    }
-  };
-
-  const toggleSelectedLinksStatus = async (activate: boolean) => {
-    if (selectedLinks.size === 0) return;
-
-    const action = activate ? 'activar' : 'desactivar';
-    const confirmAction = window.confirm(
-      `¿Estás seguro de que quieres ${action} ${selectedLinks.size} enlace(s)?`
-    );
-    if (!confirmAction) return;
-
-    try {
-      const updatePromises = Array.from(selectedLinks).map(linkId =>
-        fetch(`/api/links/${linkId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isActive: activate }),
-        })
-      );
-
-      await Promise.all(updatePromises);
-      setSelectedLinks(new Set());
-      fetchLinks();
-    } catch (error) {
-      console.error('Error updating links status:', error);
-    }
-  };
-
-  const toggleSelectedLinksStatsVisibility = async (makePublic: boolean) => {
-    if (selectedLinks.size === 0) return;
-
-    const action = makePublic ? 'hacer públicas' : 'hacer privadas';
-    const confirmAction = window.confirm(
-      `¿Estás seguro de que quieres ${action} las estadísticas de ${selectedLinks.size} enlace(s)?`
-    );
-    if (!confirmAction) return;
-
-    try {
-      const updatePromises = Array.from(selectedLinks).map(linkId =>
-        fetch(`/api/links/${linkId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ publicStats: makePublic }),
-        })
-      );
-
-      await Promise.all(updatePromises);
-      setSelectedLinks(new Set());
-      fetchLinks();
-    } catch (error) {
-      console.error('Error updating links stats visibility:', error);
-    }
-  };
-
-  const exportSelectedLinks = (format: 'csv' | 'json') => {
-    if (selectedLinks.size === 0) return;
-
-    const selectedLinksData = filteredAndSortedLinks.filter(link =>
-      selectedLinks.has(link.slug)
-    );
-
-    if (format === 'json') {
-      const dataStr = JSON.stringify(selectedLinksData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `enlaces_${new Date().toISOString().split('T')[0]}.json`;
-      link.click();
-    } else if (format === 'csv') {
-      const csvHeader =
-        'Título,URL Original,Slug,Clicks,Activo,Estadísticas Públicas,Fecha de Creación\n';
-      const csvData = selectedLinksData
-        .map(
-          link =>
-            `"${link.title}","${link.originalUrl}","${link.slug}",${link.clickCount},${link.isActive ? 'Sí' : 'No'},${link.isPublicStats ? 'Sí' : 'No'},"${new Date(link.createdAt).toLocaleDateString()}"`
-        )
-        .join('\n');
-
-      const dataBlob = new Blob([csvHeader + csvData], { type: 'text/csv' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `enlaces_${new Date().toISOString().split('T')[0]}.csv`;
-      link.click();
-    }
-  };
 
 
 
@@ -218,29 +80,11 @@ export function LinkList({
         return;
       }
 
-      // Ctrl/Cmd + A: Select all links
-      if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
-        event.preventDefault();
-        if (!isSelectionMode) {
-          setIsSelectionMode(true);
-        }
-        selectAllLinks();
-      }
-
-      // Escape: Exit selection mode or clear search
+      // Escape: Clear search
       if (event.key === 'Escape') {
-        if (isSelectionMode) {
-          setIsSelectionMode(false);
-          setSelectedLinks(new Set());
-        } else if (searchTerm) {
+        if (searchTerm) {
           setSearchTerm('');
         }
-      }
-
-      // Delete: Delete selected links
-      if (event.key === 'Delete' && selectedLinks.size > 0) {
-        event.preventDefault();
-        deleteSelectedLinks();
       }
 
       // Ctrl/Cmd + F: Focus search
@@ -253,17 +97,6 @@ export function LinkList({
           searchInput.focus();
         }
       }
-
-      // S: Toggle selection mode
-      if (event.key === 's' || event.key === 'S') {
-        event.preventDefault();
-        setIsSelectionMode(!isSelectionMode);
-        if (isSelectionMode) {
-          setSelectedLinks(new Set());
-        }
-      }
-
-
 
       // V: Toggle view mode
       if (event.key === 'v' || event.key === 'V') {
@@ -282,12 +115,8 @@ export function LinkList({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [
-    isSelectionMode,
-    selectedLinks,
     searchTerm,
     viewMode,
-    selectAllLinks,
-    deleteSelectedLinks,
   ]);
 
   const fetchLinks = async () => {
@@ -641,19 +470,7 @@ export function LinkList({
 
 
 
-            {/* Selection Mode Toggle */}
-            <button
-              onClick={() => {
-                setIsSelectionMode(!isSelectionMode);
-                if (isSelectionMode) {
-                  setSelectedLinks(new Set());
-                }
-              }}
-              className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
-              title="Atajo: S"
-            >
-              {isSelectionMode ? 'Cancelar' : 'Seleccionar'}
-            </button>
+
 
             {/* Keyboard shortcuts help */}
             <div className="relative group">
@@ -680,10 +497,6 @@ export function LinkList({
                   Atajos de teclado
                 </h4>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Ctrl/Cmd + A</span>
-                    <span className="text-gray-900">Seleccionar todo</span>
-                  </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Ctrl/Cmd + F</span>
                     <span className="text-gray-900">Buscar</span>
@@ -724,186 +537,7 @@ export function LinkList({
       </div>
 
       {/* Selection Actions Bar */}
-      {isSelectionMode && (
-        <div className="p-4 bg-muted/50 border-b border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={toggleSelectAll}
-                className="text-sm text-primary hover:text-primary/80 transition-colors"
-              >
-                {selectedLinks.size === filteredAndSortedLinks.length
-                  ? 'Deseleccionar todo'
-                  : 'Seleccionar todo'}
-              </button>
-              {selectedLinks.size > 0 && (
-                <span className="text-sm text-muted-foreground">
-                  {selectedLinks.size} enlace(s) seleccionado(s)
-                </span>
-              )}
-            </div>
-            {selectedLinks.size > 0 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  onClick={() => toggleSelectedLinksStatus(true)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  Activar
-                </Button>
-                <Button
-                  onClick={() => toggleSelectedLinksStatus(false)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                  Desactivar
-                </Button>
-                <Button
-                  onClick={() => toggleSelectedLinksStatsVisibility(true)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                  Hacer públicas
-                </Button>
-                <Button
-                  onClick={() => toggleSelectedLinksStatsVisibility(false)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                    />
-                  </svg>
-                  Hacer privadas
-                </Button>
-                <div className="flex items-center gap-1">
-                  <Button
-                    onClick={() => exportSelectedLinks('csv')}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-1"
-                  >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    CSV
-                  </Button>
-                  <Button
-                    onClick={() => exportSelectedLinks('json')}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-1"
-                  >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    JSON
-                  </Button>
-                </div>
-                <Button
-                  onClick={deleteSelectedLinks}
-                  variant="destructive"
-                  size="sm"
-                  className="flex items-center gap-1"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                  Eliminar
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+
 
       {/* Links List or Empty State */}
       {renderEmptyState() ||
@@ -913,33 +547,10 @@ export function LinkList({
             {filteredAndSortedLinks.map(link => (
               <div
                 key={link.id}
-                className={`p-6 hover:bg-muted/50 transition-colors ${
-                  isSelectionMode ? 'cursor-pointer' : ''
-                } ${
-                  selectedLinks.has(link.id)
-                    ? 'bg-primary/10 border-l-4 border-l-primary'
-                    : ''
-                }`}
-                onClick={() => {
-                  if (isSelectionMode) {
-                    toggleLinkSelection(link.id);
-                  }
-                }}
+                className="p-6 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
-                    {/* Selection Checkbox */}
-                    {isSelectionMode && (
-                      <div className="mt-1">
-                        <input
-                          type="checkbox"
-                          checked={selectedLinks.has(link.id)}
-                          onChange={() => toggleLinkSelection(link.id)}
-                          className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
-                        />
-                      </div>
-                    )}
-
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-medium text-card-foreground truncate">
@@ -1050,8 +661,7 @@ export function LinkList({
                     </div>
                   </div>
 
-                  {!isSelectionMode && (
-                    <div className="grid grid-cols-2 gap-2 ml-4 max-w-fit">
+                  <div className="grid grid-cols-2 gap-2 ml-4 max-w-fit">
                       <Button
                         onClick={() =>
                           (window.location.href = `/dashboard/links/${link.slug}/analytics`)
@@ -1172,7 +782,6 @@ export function LinkList({
                         Eliminar
                       </Button>
                     </div>
-                  )}
                 </div>
               </div>
             ))}
@@ -1184,20 +793,6 @@ export function LinkList({
               <table className="w-full">
                 <thead className="bg-muted/50">
                   <tr>
-                    {isSelectionMode && (
-                      <th className="px-4 py-3 text-left">
-                        <input
-                          type="checkbox"
-                          checked={
-                            selectedLinks.size ===
-                              filteredAndSortedLinks.length &&
-                            filteredAndSortedLinks.length > 0
-                          }
-                          onChange={toggleSelectAll}
-                          className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
-                        />
-                      </th>
-                    )}
                     <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                       Título
                     </th>
@@ -1219,31 +814,17 @@ export function LinkList({
                     <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                       Fecha
                     </th>
-                    {!isSelectionMode && (
-                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                        Acciones
-                      </th>
-                    )}
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredAndSortedLinks.map(link => (
                     <tr
                       key={link.id}
-                      className={`hover:bg-muted/30 transition-colors ${
-                        selectedLinks.has(link.id) ? 'bg-primary/5' : ''
-                      }`}
+                      className="hover:bg-muted/30 transition-colors"
                     >
-                      {isSelectionMode && (
-                        <td className="px-4 py-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedLinks.has(link.id)}
-                            onChange={() => toggleLinkSelection(link.id)}
-                            className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
-                          />
-                        </td>
-                      )}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-foreground">
@@ -1297,9 +878,8 @@ export function LinkList({
                           })}
                         </span>
                       </td>
-                      {!isSelectionMode && (
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1">
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
 
                             <Button
                               variant="outline"
@@ -1330,7 +910,6 @@ export function LinkList({
                             </Button>
                           </div>
                         </td>
-                      )}
                     </tr>
                   ))}
                 </tbody>
