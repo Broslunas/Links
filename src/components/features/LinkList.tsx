@@ -36,8 +36,6 @@ export function LinkList({
   const [filterStats, setFilterStats] = useState<FilterStats>('all');
   const [sortOption, setSortOption] = useState<SortOption>('newest');
 
-
-
   // Tags states
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [filterByTag, setFilterByTag] = useState<string>('');
@@ -46,10 +44,6 @@ export function LinkList({
   const [dateFilter, setDateFilter] = useState<
     'all' | 'today' | 'week' | 'month'
   >('all');
-
-
-
-
 
   const addTagToLink = async (linkId: string, tag: string) => {
     try {
@@ -65,8 +59,6 @@ export function LinkList({
       console.error('Error adding tag:', error);
     }
   };
-
-  
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -114,10 +106,7 @@ export function LinkList({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [
-    searchTerm,
-    viewMode,
-  ]);
+  }, [searchTerm, viewMode]);
 
   const fetchLinks = async () => {
     if (!session?.user?.id) return;
@@ -207,12 +196,7 @@ export function LinkList({
         }
       })();
 
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesStats &&
-        matchesDate
-      );
+      return matchesSearch && matchesStatus && matchesStats && matchesDate;
     });
 
     // Sort links
@@ -382,7 +366,7 @@ export function LinkList({
                     : 'bg-background text-foreground border border-border hover:bg-accent'
                 }`}
               >
-                📋 Tarjetas
+                Lista
               </button>
               <button
                 onClick={() => setViewMode('table')}
@@ -392,7 +376,7 @@ export function LinkList({
                     : 'bg-background text-foreground border border-border hover:bg-accent'
                 }`}
               >
-                📊 Tabla
+                Tarjeta
               </button>
             </div>
           </div>
@@ -468,10 +452,6 @@ export function LinkList({
               </select>
             </div>
 
-
-
-
-
             {/* Keyboard shortcuts help */}
             <div className="relative group">
               <button
@@ -537,7 +517,6 @@ export function LinkList({
       </div>
 
       {/* Selection Actions Bar */}
-
 
       {/* Links List or Empty State */}
       {renderEmptyState() ||
@@ -662,34 +641,60 @@ export function LinkList({
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 ml-4 max-w-fit">
-                      <Button
-                        onClick={() =>
-                          (window.location.href = `/dashboard/links/${link.slug}/analytics`)
-                        }
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-1"
+                    <Button
+                      onClick={() =>
+                        (window.location.href = `/dashboard/links/${link.slug}/analytics`)
+                      }
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                          />
-                        </svg>
-                        Estadísticas
-                      </Button>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                        />
+                      </svg>
+                      Estadísticas
+                    </Button>
 
+                    <Button
+                      onClick={() => {
+                        setSelectedLinkUrl(getShortUrl(link.slug));
+                        setQrModalOpen(true);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                        />
+                      </svg>
+                      Código QR
+                    </Button>
+
+                    {link.isPublicStats && (
                       <Button
                         onClick={() => {
-                          setSelectedLinkUrl(getShortUrl(link.slug));
-                          setQrModalOpen(true);
+                          const publicStatsUrl = `${window.location.origin}/stats/${link.slug}`;
+                          window.open(publicStatsUrl, '_blank');
                         }}
                         variant="outline"
                         size="sm"
@@ -705,219 +710,253 @@ export function LinkList({
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
                           />
                         </svg>
-                        Código QR
+                        Compartir Stats
                       </Button>
+                    )}
 
-                      {link.isPublicStats && (
-                        <Button
-                          onClick={() => {
-                            const publicStatsUrl = `${window.location.origin}/stats/${link.slug}`;
-                            window.open(publicStatsUrl, '_blank');
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1"
-                        >
-                          <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-                            />
-                          </svg>
-                          Compartir Stats
-                        </Button>
-                      )}
-
-                      <Button
-                        onClick={() => onEditLink(link)}
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-1"
+                    <Button
+                      onClick={() => onEditLink(link)}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                        Editar
-                      </Button>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                      Editar
+                    </Button>
 
-                      <Button
-                        onClick={() => onDeleteLink(link)}
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
+                    <Button
+                      onClick={() => onDeleteLink(link)}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                        Eliminar
-                      </Button>
-                    </div>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      Eliminar
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          /* Table View */
-          <div className="bg-card rounded-lg border border-border overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Título
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      URL Original
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Slug
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Clicks
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Estado
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Etiquetas
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Fecha
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredAndSortedLinks.map(link => (
-                    <tr
-                      key={link.id}
-                      className="hover:bg-muted/30 transition-colors"
+          /* Grid View */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredAndSortedLinks.map(link => (
+              <div
+                key={link.id}
+                className="bg-card rounded-lg border border-border p-4 hover:shadow-md transition-all duration-200 hover:border-primary/20 flex flex-col h-full"
+              >
+                {/* Header with title and status */}
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="font-semibold text-foreground text-sm line-clamp-2 flex-1 mr-2">
+                    {link.title}
+                  </h3>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                      link.isActive
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    }`}
+                  >
+                    {link.isActive ? 'Activo' : 'Inactivo'}
+                  </span>
+                </div>
+
+                {/* URLs */}
+                <div className="space-y-2 mb-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      URL Original:
+                    </p>
+                    <a
+                      href={link.slug}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline text-xs block truncate"
+                      title={link.originalUrl}
                     >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">
-                            {link.title}
-                          </span>
+                      {link.originalUrl}
+                    </a>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Enlace corto:
+                    </p>
+                    <a
+                      href={getShortUrl(link.slug)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline text-xs font-mono"
+                    >
+                      {link.slug}
+                    </a>
+                  </div>
+                </div>
 
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <a
-                          href={link.originalUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline text-sm max-w-xs truncate block"
-                        >
-                          {link.originalUrl}
-                        </a>
-                      </td>
-                      <td className="px-4 py-3">
-                        <a
-                          href={getShortUrl(link.slug)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline text-sm"
-                        >
-                          {link.slug}
-                        </a>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-semibold text-foreground">
-                          {link.clickCount}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            link.isActive
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                          }`}
-                        >
-                          {link.isActive ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                      
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-muted-foreground">
-                          {formatDistanceToNow(new Date(link.createdAt), {
-                            addSuffix: true,
-                            locale: es,
-                          })}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
+                {/* Stats */}
+                <div className="flex items-center justify-between mb-3 text-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-foreground">Clicks:</span>
+                    <span className="font-semibold text-foreground">
+                      {link.clickCount}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(link.createdAt), {
+                      addSuffix: true,
+                      locale: es,
+                    })}
+                  </span>
+                </div>
 
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedLinkUrl(getShortUrl(link.slug));
-                                setQrModalOpen(true);
-                              }}
-                              className="text-xs px-2 py-1"
-                            >
-                              QR
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onEditLink(link)}
-                              className="text-xs px-2 py-1"
-                            >
-                              ✏️
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onDeleteLink(link)}
-                              className="text-xs px-2 py-1 text-destructive hover:text-destructive"
-                            >
-                              🗑️
-                            </Button>
-                          </div>
-                        </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                {/* Actions */}
+                <div className="flex flex-wrap justify-center gap-1 mt-auto">
+                  <Button
+                    onClick={() =>
+                      (window.location.href = `/dashboard/links/${link.slug}/analytics`)
+                    }
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      setSelectedLinkUrl(getShortUrl(link.slug));
+                      setQrModalOpen(true);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                      />
+                    </svg>
+                  </Button>
+
+                  {link.isPublicStats && (
+                    <Button
+                      onClick={() => {
+                        const publicStatsUrl = `${window.location.origin}/stats/${link.slug}`;
+                        window.open(publicStatsUrl, '_blank');
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                        />
+                      </svg>
+                    </Button>
+                  )}
+
+                  <Button
+                    onClick={() => onEditLink(link)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                  </Button>
+
+                  <Button
+                    onClick={() => onDeleteLink(link)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
-        ))
-      }
+        ))}
       <QRCodeModal
         isOpen={qrModalOpen}
         onClose={() => setQrModalOpen(false)}
