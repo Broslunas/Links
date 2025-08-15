@@ -53,7 +53,7 @@ const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/20 backdrop-blur-md"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -61,7 +61,7 @@ const Modal: React.FC<ModalProps> = ({
       {/* Modal */}
       <div
         className={cn(
-          'relative w-full mx-4 bg-card border border-border rounded-lg shadow-lg animate-slide-up',
+          'relative w-full mx-4 bg-card/80 backdrop-blur-xl border border-border/50 rounded-lg shadow-2xl animate-slide-up',
           sizeClasses[size]
         )}
         role="dialog"

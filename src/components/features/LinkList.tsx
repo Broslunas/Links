@@ -796,7 +796,7 @@ export function LinkList({
                       URL Original:
                     </p>
                     <a
-                      href={link.slug}
+                      href={getShortUrl(link.slug)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline text-xs block truncate"

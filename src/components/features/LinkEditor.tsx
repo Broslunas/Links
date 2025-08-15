@@ -235,48 +235,50 @@ export function LinkEditor({
             )}
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center">
-              <input
-                id="isActive"
-                type="checkbox"
-                checked={formData.isActive}
-                onChange={e => handleInputChange('isActive', e.target.checked)}
-                disabled={loading}
-                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-              />
-              <label
-                htmlFor="isActive"
-                className="ml-2 block text-sm text-foreground"
-              >
-                El enlace está activo
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Estado del enlace
               </label>
+              <Button
+                type="button"
+                onClick={() => handleInputChange('isActive', !formData.isActive)}
+                disabled={loading}
+                variant={formData.isActive ? 'default' : 'outline'}
+                className={`w-full justify-center ${
+                  formData.isActive
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-600 dark:hover:bg-red-900/20'
+                }`}
+              >
+                {formData.isActive ? '✓ Enlace Activo' : '✗ Enlace Inactivo'}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1">
+                Los enlaces inactivos mostrarán una página 404 cuando se accedan
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground ml-6">
-              Los enlaces inactivos mostrarán una página 404 cuando se accedan
-            </p>
 
-            <div className="flex items-center">
-              <input
-                id="isPublicStats"
-                type="checkbox"
-                checked={formData.isPublicStats}
-                onChange={e =>
-                  handleInputChange('isPublicStats', e.target.checked)
-                }
-                disabled={loading}
-                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-              />
-              <label
-                htmlFor="isPublicStats"
-                className="ml-2 block text-sm text-foreground"
-              >
-                Habilitar estadísticas públicas
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Estadísticas públicas
               </label>
+              <Button
+                type="button"
+                onClick={() => handleInputChange('isPublicStats', !formData.isPublicStats)}
+                disabled={loading}
+                variant={formData.isPublicStats ? 'default' : 'outline'}
+                className={`w-full justify-center ${
+                  formData.isPublicStats
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-900/20'
+                }`}
+              >
+                {formData.isPublicStats ? '✓ Estadísticas Públicas' : '✗ Estadísticas Privadas'}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1">
+                Permitir que otros vean estadísticas agregadas para este enlace
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground ml-6">
-              Permitir que otros vean estadísticas agregadas para este enlace
-            </p>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
