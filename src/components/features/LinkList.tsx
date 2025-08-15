@@ -1,12 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button, LoadingSpinner } from '../ui';
 import { Link, ApiResponse } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { QRCodeModal } from './QRCodeModal';
+
+type FilterStatus = 'all' | 'active' | 'inactive';
+type FilterStats = 'all' | 'public' | 'private';
+type SortOption = 'newest' | 'oldest' | 'most_clicks';
 
 interface LinkListProps {
   onEditLink: (link: Link) => void;
@@ -25,6 +29,266 @@ export function LinkList({
   const [error, setError] = useState<string | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedLinkUrl, setSelectedLinkUrl] = useState('');
+
+  // Filter and search states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [filterStats, setFilterStats] = useState<FilterStats>('all');
+  const [sortOption, setSortOption] = useState<SortOption>('newest');
+
+  // Multi-selection states
+  const [selectedLinks, setSelectedLinks] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  // Tags states
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [filterByTag, setFilterByTag] = useState<string>('');
+
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [dateFilter, setDateFilter] = useState<
+    'all' | 'today' | 'week' | 'month'
+  >('all');
+
+  // Multi-selection handlers
+  const toggleLinkSelection = (linkId: string) => {
+    setSelectedLinks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(linkId)) {
+        newSet.delete(linkId);
+      } else {
+        newSet.add(linkId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllLinks = () => {
+    const allLinkIds = new Set(filteredAndSortedLinks.map(link => link.slug));
+    setSelectedLinks(allLinkIds);
+  };
+
+  const deselectAllLinks = () => {
+    setSelectedLinks(new Set());
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedLinks.size === filteredAndSortedLinks.length) {
+      deselectAllLinks();
+    } else {
+      selectAllLinks();
+    }
+  };
+
+  const deleteSelectedLinks = async () => {
+    if (selectedLinks.size === 0) return;
+
+    const confirmDelete = window.confirm(
+      `¿Estás seguro de que quieres eliminar ${selectedLinks.size} enlace(s)?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const deletePromises = Array.from(selectedLinks).map(linkId =>
+        fetch(`/api/links/${linkId}`, { method: 'DELETE' })
+      );
+
+      await Promise.all(deletePromises);
+      setSelectedLinks(new Set());
+      setIsSelectionMode(false);
+      fetchLinks();
+    } catch (error) {
+      console.error('Error deleting links:', error);
+    }
+  };
+
+  const toggleSelectedLinksStatus = async (activate: boolean) => {
+    if (selectedLinks.size === 0) return;
+
+    const action = activate ? 'activar' : 'desactivar';
+    const confirmAction = window.confirm(
+      `¿Estás seguro de que quieres ${action} ${selectedLinks.size} enlace(s)?`
+    );
+    if (!confirmAction) return;
+
+    try {
+      const updatePromises = Array.from(selectedLinks).map(linkId =>
+        fetch(`/api/links/${linkId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isActive: activate }),
+        })
+      );
+
+      await Promise.all(updatePromises);
+      setSelectedLinks(new Set());
+      fetchLinks();
+    } catch (error) {
+      console.error('Error updating links status:', error);
+    }
+  };
+
+  const toggleSelectedLinksStatsVisibility = async (makePublic: boolean) => {
+    if (selectedLinks.size === 0) return;
+
+    const action = makePublic ? 'hacer públicas' : 'hacer privadas';
+    const confirmAction = window.confirm(
+      `¿Estás seguro de que quieres ${action} las estadísticas de ${selectedLinks.size} enlace(s)?`
+    );
+    if (!confirmAction) return;
+
+    try {
+      const updatePromises = Array.from(selectedLinks).map(linkId =>
+        fetch(`/api/links/${linkId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ publicStats: makePublic }),
+        })
+      );
+
+      await Promise.all(updatePromises);
+      setSelectedLinks(new Set());
+      fetchLinks();
+    } catch (error) {
+      console.error('Error updating links stats visibility:', error);
+    }
+  };
+
+  const exportSelectedLinks = (format: 'csv' | 'json') => {
+    if (selectedLinks.size === 0) return;
+
+    const selectedLinksData = filteredAndSortedLinks.filter(link =>
+      selectedLinks.has(link.slug)
+    );
+
+    if (format === 'json') {
+      const dataStr = JSON.stringify(selectedLinksData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `enlaces_${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+    } else if (format === 'csv') {
+      const csvHeader =
+        'Título,URL Original,Slug,Clicks,Activo,Estadísticas Públicas,Fecha de Creación\n';
+      const csvData = selectedLinksData
+        .map(
+          link =>
+            `"${link.title}","${link.originalUrl}","${link.slug}",${link.clickCount},${link.isActive ? 'Sí' : 'No'},${link.isPublicStats ? 'Sí' : 'No'},"${new Date(link.createdAt).toLocaleDateString()}"`
+        )
+        .join('\n');
+
+      const dataBlob = new Blob([csvHeader + csvData], { type: 'text/csv' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `enlaces_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    }
+  };
+
+
+
+  const addTagToLink = async (linkId: string, tag: string) => {
+    try {
+      const link = links.find(l => l.id === linkId);
+
+      await fetch(`/api/links/${linkId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      fetchLinks();
+    } catch (error) {
+      console.error('Error adding tag:', error);
+    }
+  };
+
+  
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle shortcuts when not typing in input fields
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement ||
+        event.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+
+      // Ctrl/Cmd + A: Select all links
+      if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+        event.preventDefault();
+        if (!isSelectionMode) {
+          setIsSelectionMode(true);
+        }
+        selectAllLinks();
+      }
+
+      // Escape: Exit selection mode or clear search
+      if (event.key === 'Escape') {
+        if (isSelectionMode) {
+          setIsSelectionMode(false);
+          setSelectedLinks(new Set());
+        } else if (searchTerm) {
+          setSearchTerm('');
+        }
+      }
+
+      // Delete: Delete selected links
+      if (event.key === 'Delete' && selectedLinks.size > 0) {
+        event.preventDefault();
+        deleteSelectedLinks();
+      }
+
+      // Ctrl/Cmd + F: Focus search
+      if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
+        event.preventDefault();
+        const searchInput = document.querySelector(
+          'input[placeholder*="Buscar"]'
+        ) as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }
+
+      // S: Toggle selection mode
+      if (event.key === 's' || event.key === 'S') {
+        event.preventDefault();
+        setIsSelectionMode(!isSelectionMode);
+        if (isSelectionMode) {
+          setSelectedLinks(new Set());
+        }
+      }
+
+
+
+      // V: Toggle view mode
+      if (event.key === 'v' || event.key === 'V') {
+        event.preventDefault();
+        setViewMode(viewMode === 'cards' ? 'table' : 'cards');
+      }
+
+      // Number keys 1-4: Quick date filters
+      if (event.key >= '1' && event.key <= '4') {
+        event.preventDefault();
+        const dateFilters = ['all', 'today', 'week', 'month'] as const;
+        setDateFilter(dateFilters[parseInt(event.key) - 1]);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [
+    isSelectionMode,
+    selectedLinks,
+    searchTerm,
+    viewMode,
+    selectAllLinks,
+    deleteSelectedLinks,
+  ]);
 
   const fetchLinks = async () => {
     if (!session?.user?.id) return;
@@ -72,6 +336,84 @@ export function LinkList({
     return `${window.location.origin}/${slug}`;
   };
 
+  // Filter and sort links
+  const filteredAndSortedLinks = useMemo(() => {
+    let filtered = links.filter(link => {
+      // Search filter
+      const matchesSearch =
+        searchTerm === '' ||
+        link.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        link.originalUrl.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        link.slug.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Status filter
+      const matchesStatus =
+        filterStatus === 'all' ||
+        (filterStatus === 'active' && link.isActive) ||
+        (filterStatus === 'inactive' && !link.isActive);
+
+      // Stats filter
+      const matchesStats =
+        filterStats === 'all' ||
+        (filterStats === 'public' && link.isPublicStats) ||
+        (filterStats === 'private' && !link.isPublicStats);
+
+      // Date filter
+      const matchesDate = (() => {
+        if (dateFilter === 'all') return true;
+        const linkDate = new Date(link.createdAt);
+        const now = new Date();
+
+        switch (dateFilter) {
+          case 'today':
+            return linkDate.toDateString() === now.toDateString();
+          case 'week':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            return linkDate >= weekAgo;
+          case 'month':
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            return linkDate >= monthAgo;
+          default:
+            return true;
+        }
+      })();
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesStats &&
+        matchesDate
+      );
+    });
+
+    // Sort links
+    filtered.sort((a, b) => {
+      switch (sortOption) {
+        case 'oldest':
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        case 'most_clicks':
+          return b.clickCount - a.clickCount;
+        case 'newest':
+        default:
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+      }
+    });
+
+    return filtered;
+  }, [
+    links,
+    searchTerm,
+    filterStatus,
+    filterStats,
+    sortOption,
+    filterByTag,
+    dateFilter,
+  ]);
+
   if (loading) {
     return (
       <div className="bg-card rounded-lg border border-border p-6">
@@ -113,9 +455,9 @@ export function LinkList({
     );
   }
 
-  if (links.length === 0) {
-    return (
-      <div className="bg-card rounded-lg border border-border p-6">
+  const renderEmptyState = () => {
+    if (links.length === 0) {
+      return (
         <div className="text-center py-8">
           <svg
             className="h-12 w-12 text-muted-foreground mx-auto mb-4"
@@ -137,130 +479,273 @@ export function LinkList({
             Crea tu primer enlace corto para comenzar
           </p>
         </div>
-      </div>
-    );
-  }
+      );
+    }
+
+    if (filteredAndSortedLinks.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <svg
+            className="h-12 w-12 text-muted-foreground mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <p className="text-muted-foreground font-medium mb-2">
+            No se encontraron enlaces
+          </p>
+          <p className="text-muted-foreground text-sm">
+            Intenta ajustar los filtros de búsqueda
+          </p>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="bg-card rounded-lg border border-border">
-      <div className="divide-y divide-border">
-        {links.map(link => (
-          <div
-            key={link.id}
-            className="p-6 hover:bg-muted/50 transition-colors"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-medium text-card-foreground truncate">
-                    {link.title || 'Untitled Link'}
-                  </h3>
-                  {!link.isActive && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
-                      Inactivo
-                    </span>
-                  )}
-                  {link.isPublicStats && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-                      Estadísticas públicas
-                    </span>
-                  )}
-                </div>
+      {/* Navigation Bar with Filters */}
+      <div className="p-6 border-b border-border">
+        <div className="flex flex-col gap-4">
+          {/* Search Bar and View Mode */}
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  className="h-5 w-5 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar por título, URL o slug..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-border rounded-md leading-5 bg-background placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+              />
+            </div>
 
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      Enlace corto:
+            {/* View Mode Toggle */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode('cards')}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'cards'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background text-foreground border border-border hover:bg-accent'
+                }`}
+              >
+                📋 Tarjetas
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'table'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background text-foreground border border-border hover:bg-accent'
+                }`}
+              >
+                📊 Tabla
+              </button>
+            </div>
+          </div>
+
+          {/* Filters Row */}
+          <div className="flex flex-wrap gap-4 items-center">
+            {/* Status Filter */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Estado:
+              </label>
+              <select
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value as FilterStatus)}
+                className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              >
+                <option value="all">Todos</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
+              </select>
+            </div>
+
+            {/* Stats Filter */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Estadísticas:
+              </label>
+              <select
+                value={filterStats}
+                onChange={e => setFilterStats(e.target.value as FilterStats)}
+                className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              >
+                <option value="all">Todas</option>
+                <option value="public">Públicas</option>
+                <option value="private">Privadas</option>
+              </select>
+            </div>
+
+            {/* Date Filter */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Fecha:
+              </label>
+              <select
+                value={dateFilter}
+                onChange={e =>
+                  setDateFilter(
+                    e.target.value as 'all' | 'today' | 'week' | 'month'
+                  )
+                }
+                className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              >
+                <option value="all">Todas</option>
+                <option value="today">Hoy</option>
+                <option value="week">Esta semana</option>
+                <option value="month">Este mes</option>
+              </select>
+            </div>
+
+            {/* Sort Options */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Ordenar:
+              </label>
+              <select
+                value={sortOption}
+                onChange={e => setSortOption(e.target.value as SortOption)}
+                className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              >
+                <option value="newest">Más recientes</option>
+                <option value="oldest">Más antiguos</option>
+                <option value="most_clicks">Más clicks</option>
+              </select>
+            </div>
+
+
+
+            {/* Selection Mode Toggle */}
+            <button
+              onClick={() => {
+                setIsSelectionMode(!isSelectionMode);
+                if (isSelectionMode) {
+                  setSelectedLinks(new Set());
+                }
+              }}
+              className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+              title="Atajo: S"
+            >
+              {isSelectionMode ? 'Cancelar' : 'Seleccionar'}
+            </button>
+
+            {/* Keyboard shortcuts help */}
+            <div className="relative group">
+              <button
+                className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+                title="Atajos de teclado"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </button>
+              <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Atajos de teclado
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Ctrl/Cmd + A</span>
+                    <span className="text-gray-900">Seleccionar todo</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Ctrl/Cmd + F</span>
+                    <span className="text-gray-900">Buscar</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Escape</span>
+                    <span className="text-gray-900">Cancelar/Limpiar</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Delete</span>
+                    <span className="text-gray-900">
+                      Eliminar seleccionados
                     </span>
-                    <button
-                      onClick={() => copyToClipboard(getShortUrl(link.slug))}
-                      className="text-sm text-primary hover:text-primary/80 font-mono bg-muted px-2 py-1 rounded transition-colors"
-                      title="Click to copy"
-                    >
-                      <a target="_blank" href={getShortUrl(link.slug)}>
-                        {getShortUrl(link.slug)}
-                      </a>
-                    </button>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">S</span>
+                    <span className="text-gray-900">Modo selección</span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      Destino:
-                    </span>
-                    <a
-                      href={getShortUrl(link.slug)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary/80 truncate max-w-md"
-                      title={link.originalUrl}
-                    >
-                      {link.originalUrl}
-                    </a>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">V</span>
+                    <span className="text-gray-900">Cambiar vista</span>
                   </div>
-
-                  {link.description && (
-                    <div className="flex items-start gap-2">
-                      <span className="text-sm text-muted-foreground">
-                        Descripción:
-                      </span>
-                      <p className="text-sm text-card-foreground">
-                        {link.description}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                    {link.clickCount} clicks
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    Creado{' '}
-                    {formatDistanceToNow(new Date(link.createdAt), {
-                      addSuffix: true,
-                      locale: es,
-                    })}
-                  </span>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">1-4</span>
+                    <span className="text-gray-900">Filtros de fecha</span>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-2 ml-4 max-w-fit">
+            {/* Results Counter */}
+            <div className="ml-auto text-sm text-muted-foreground">
+              {filteredAndSortedLinks.length} de {links.length} enlaces
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Selection Actions Bar */}
+      {isSelectionMode && (
+        <div className="p-4 bg-muted/50 border-b border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={toggleSelectAll}
+                className="text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                {selectedLinks.size === filteredAndSortedLinks.length
+                  ? 'Deseleccionar todo'
+                  : 'Seleccionar todo'}
+              </button>
+              {selectedLinks.size > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {selectedLinks.size} enlace(s) seleccionado(s)
+                </span>
+              )}
+            </div>
+            {selectedLinks.size > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button
-                  onClick={() =>
-                    (window.location.href = `/dashboard/links/${link.slug}/analytics`)
-                  }
+                  onClick={() => toggleSelectedLinksStatus(true)}
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-1"
@@ -275,17 +760,13 @@ export function LinkList({
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  Estadísticas
+                  Activar
                 </Button>
-
                 <Button
-                  onClick={() => {
-                    setSelectedLinkUrl(getShortUrl(link.slug));
-                    setQrModalOpen(true);
-                  }}
+                  onClick={() => toggleSelectedLinksStatus(false)}
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-1"
@@ -300,18 +781,62 @@ export function LinkList({
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                      d="M6 18L18 6M6 6l12 12"
                     />
                   </svg>
-                  Código QR
+                  Desactivar
                 </Button>
-
-                {link.isPublicStats && (
+                <Button
+                  onClick={() => toggleSelectedLinksStatsVisibility(true)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                  Hacer públicas
+                </Button>
+                <Button
+                  onClick={() => toggleSelectedLinksStatsVisibility(false)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                    />
+                  </svg>
+                  Hacer privadas
+                </Button>
+                <div className="flex items-center gap-1">
                   <Button
-                    onClick={() => {
-                      const publicStatsUrl = `${window.location.origin}/stats/${link.slug}`;
-                      window.open(publicStatsUrl, '_blank');
-                    }}
+                    onClick={() => exportSelectedLinks('csv')}
                     variant="outline"
                     size="sm"
                     className="flex items-center gap-1"
@@ -326,40 +851,38 @@ export function LinkList({
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    Compartir Stats
+                    CSV
                   </Button>
-                )}
-
+                  <Button
+                    onClick={() => exportSelectedLinks('json')}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    JSON
+                  </Button>
+                </div>
                 <Button
-                  onClick={() => onEditLink(link)}
-                  variant="outline"
+                  onClick={deleteSelectedLinks}
+                  variant="destructive"
                   size="sm"
                   className="flex items-center gap-1"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                  Editar
-                </Button>
-
-                <Button
-                  onClick={() => onDeleteLink(link)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
                 >
                   <svg
                     className="h-4 w-4"
@@ -377,11 +900,445 @@ export function LinkList({
                   Eliminar
                 </Button>
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Links List or Empty State */}
+      {renderEmptyState() ||
+        (viewMode === 'cards' ? (
+          /* Cards View */
+          <div className="divide-y divide-border">
+            {filteredAndSortedLinks.map(link => (
+              <div
+                key={link.id}
+                className={`p-6 hover:bg-muted/50 transition-colors ${
+                  isSelectionMode ? 'cursor-pointer' : ''
+                } ${
+                  selectedLinks.has(link.id)
+                    ? 'bg-primary/10 border-l-4 border-l-primary'
+                    : ''
+                }`}
+                onClick={() => {
+                  if (isSelectionMode) {
+                    toggleLinkSelection(link.id);
+                  }
+                }}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    {/* Selection Checkbox */}
+                    {isSelectionMode && (
+                      <div className="mt-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedLinks.has(link.id)}
+                          onChange={() => toggleLinkSelection(link.id)}
+                          className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-medium text-card-foreground truncate">
+                          {link.title || 'Untitled Link'}
+                        </h3>
+
+                        {!link.isActive && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
+                            Inactivo
+                          </span>
+                        )}
+                        {link.isPublicStats && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                            Estadísticas públicas
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            Enlace corto:
+                          </span>
+                          <button
+                            onClick={() =>
+                              copyToClipboard(getShortUrl(link.slug))
+                            }
+                            className="text-sm text-primary hover:text-primary/80 font-mono bg-muted px-2 py-1 rounded transition-colors"
+                            title="Click to copy"
+                          >
+                            <a target="_blank" href={getShortUrl(link.slug)}>
+                              {getShortUrl(link.slug)}
+                            </a>
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            Destino:
+                          </span>
+                          <a
+                            href={getShortUrl(link.slug)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:text-primary/80 truncate max-w-md"
+                            title={link.originalUrl}
+                          >
+                            {link.originalUrl}
+                          </a>
+                        </div>
+
+                        {link.description && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-sm text-muted-foreground">
+                              Descripción:
+                            </span>
+                            <p className="text-sm text-card-foreground">
+                              {link.description}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                          {link.clickCount} clicks
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          Creado{' '}
+                          {formatDistanceToNow(new Date(link.createdAt), {
+                            addSuffix: true,
+                            locale: es,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {!isSelectionMode && (
+                    <div className="grid grid-cols-2 gap-2 ml-4 max-w-fit">
+                      <Button
+                        onClick={() =>
+                          (window.location.href = `/dashboard/links/${link.slug}/analytics`)
+                        }
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                          />
+                        </svg>
+                        Estadísticas
+                      </Button>
+
+                      <Button
+                        onClick={() => {
+                          setSelectedLinkUrl(getShortUrl(link.slug));
+                          setQrModalOpen(true);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                          />
+                        </svg>
+                        Código QR
+                      </Button>
+
+                      {link.isPublicStats && (
+                        <Button
+                          onClick={() => {
+                            const publicStatsUrl = `${window.location.origin}/stats/${link.slug}`;
+                            window.open(publicStatsUrl, '_blank');
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-1"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                            />
+                          </svg>
+                          Compartir Stats
+                        </Button>
+                      )}
+
+                      <Button
+                        onClick={() => onEditLink(link)}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                        Editar
+                      </Button>
+
+                      <Button
+                        onClick={() => onDeleteLink(link)}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                        Eliminar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Table View */
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50">
+                  <tr>
+                    {isSelectionMode && (
+                      <th className="px-4 py-3 text-left">
+                        <input
+                          type="checkbox"
+                          checked={
+                            selectedLinks.size ===
+                              filteredAndSortedLinks.length &&
+                            filteredAndSortedLinks.length > 0
+                          }
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
+                        />
+                      </th>
+                    )}
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Título
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      URL Original
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Slug
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Clicks
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Estado
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Etiquetas
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Fecha
+                    </th>
+                    {!isSelectionMode && (
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                        Acciones
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filteredAndSortedLinks.map(link => (
+                    <tr
+                      key={link.id}
+                      className={`hover:bg-muted/30 transition-colors ${
+                        selectedLinks.has(link.id) ? 'bg-primary/5' : ''
+                      }`}
+                    >
+                      {isSelectionMode && (
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedLinks.has(link.id)}
+                            onChange={() => toggleLinkSelection(link.id)}
+                            className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
+                          />
+                        </td>
+                      )}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">
+                            {link.title}
+                          </span>
+
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <a
+                          href={link.originalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline text-sm max-w-xs truncate block"
+                        >
+                          {link.originalUrl}
+                        </a>
+                      </td>
+                      <td className="px-4 py-3">
+                        <a
+                          href={getShortUrl(link.slug)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline text-sm"
+                        >
+                          {link.slug}
+                        </a>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-semibold text-foreground">
+                          {link.clickCount}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            link.isActive
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          }`}
+                        >
+                          {link.isActive ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-muted-foreground">
+                          {formatDistanceToNow(new Date(link.createdAt), {
+                            addSuffix: true,
+                            locale: es,
+                          })}
+                        </span>
+                      </td>
+                      {!isSelectionMode && (
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1">
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedLinkUrl(getShortUrl(link.slug));
+                                setQrModalOpen(true);
+                              }}
+                              className="text-xs px-2 py-1"
+                            >
+                              QR
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onEditLink(link)}
+                              className="text-xs px-2 py-1"
+                            >
+                              ✏️
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onDeleteLink(link)}
+                              className="text-xs px-2 py-1 text-destructive hover:text-destructive"
+                            >
+                              🗑️
+                            </Button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        ))}
-      </div>
-
+        ))
+      }
       <QRCodeModal
         isOpen={qrModalOpen}
         onClose={() => setQrModalOpen(false)}
