@@ -287,53 +287,6 @@ export const guides: Guide[] = [
     ],
   },
   {
-    id: 'api-setup',
-    slug: 'configurar-api',
-    title: 'Configurar la API',
-    description:
-      'Configura y usa la API de Broslunas Links en tus aplicaciones para automatizar la creación de enlaces',
-    category: 'api',
-    difficulty: 'Avanzado',
-    estimatedTime: '10 minutos',
-    steps: [
-      {
-        title: 'Genera tu token API',
-        content:
-          'Ve a Configuración > API en tu dashboard y genera un nuevo token de acceso. Guárdalo de forma segura.\n\nEste token te permitirá acceder a todas las funciones de la API de forma programática.',
-        tip: 'Nunca compartas tu token API públicamente. Trátalo como una contraseña.',
-        code: '// Ejemplo de token\nconst API_TOKEN = "brl_1234567890abcdef";',
-      },
-      {
-        title: 'Configura la autenticación',
-        content:
-          'Incluye tu token en el header Authorization: Bearer tu-token-aqui en todas las solicitudes.\n\nEste header debe estar presente en cada llamada a la API.',
-        code: 'const headers = {\n  "Authorization": "Bearer brl_1234567890abcdef",\n  "Content-Type": "application/json"\n};',
-        tip: 'Usa variables de entorno para almacenar tu token de forma segura.',
-      },
-      {
-        title: 'Prueba la conexión',
-        content:
-          'Haz una solicitud GET a /api/user/profile para verificar que tu token funciona correctamente.\n\nEsta llamada te devolverá información básica de tu cuenta.',
-        code: 'fetch("https://broslunas.link/api/user/profile", {\n  headers: headers\n})\n.then(response => response.json())\n.then(data => console.log(data));',
-        tip: 'Si recibes un error 401, verifica que tu token sea correcto.',
-      },
-      {
-        title: 'Crea enlaces via API',
-        content:
-          'Usa POST /api/links con los datos del enlace para crear enlaces programáticamente.\n\nPuedes crear múltiples enlaces de forma automatizada.',
-        code: 'const linkData = {\n  "url": "https://ejemplo.com",\n  "customSlug": "mi-enlace",\n  "title": "Mi Enlace"\n};\n\nfetch("https://broslunas.link/api/links", {\n  method: "POST",\n  headers: headers,\n  body: JSON.stringify(linkData)\n});',
-        tip: 'El customSlug es opcional. Si no lo proporcionas, se generará automáticamente.',
-      },
-      {
-        title: 'Consulta estadísticas',
-        content:
-          'Usa GET /api/links/:id/analytics para obtener datos de análisis de tus enlaces.\n\nPuedes integrar estas estadísticas en tus propias aplicaciones.',
-        code: 'fetch("https://broslunas.link/api/links/abc123/analytics", {\n  headers: headers\n})\n.then(response => response.json())\n.then(analytics => {\n  console.log(`Clics totales: ${analytics.totalClicks}`);\n});',
-        tip: 'Las estadísticas se actualizan en tiempo real.',
-      },
-    ],
-  },
-  {
     id: 'bulk-links',
     slug: 'crear-enlaces-masivos',
     title: 'Crear enlaces en lote',
