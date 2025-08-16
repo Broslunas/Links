@@ -114,20 +114,39 @@ export function verifyResourceOwnership(authUserId: string, resourceUserId: stri
 /**
  * Middleware para endpoints que solo permiten desarrollo
  */
-export function requireDevelopment(): void {
-  if (process.env.NODE_ENV !== 'development') {
-    throw new AppError(
-      ErrorCode.NOT_ALLOWED,
-      'This endpoint is only available in development mode',
-      403
-    );
-  }
+export function requireDevelopment<T extends any[]>(
+  handler: (request: NextRequest, ...args: T) => Promise<Response>
+) {
+  return async (request: NextRequest, ...args: T): Promise<Response> => {
+    try {
+      if (process.env.NODE_ENV !== 'development') {
+        return createErrorResponse(
+          new AppError(
+            ErrorCode.NOT_ALLOWED,
+            'This endpoint is only available in development mode',
+            403
+          )
+        );
+      }
+      
+      return await handler(request, ...args);
+    } catch (error) {
+      console.error('[Development Middleware Error]:', error);
+      return createErrorResponse(
+        new AppError(
+          ErrorCode.INTERNAL_ERROR,
+          'Request failed',
+          500
+        )
+      );
+    }
+  };
 }
 
 /**
  * Middleware para endpoints públicos con rate limiting opcional
  */
-export async function withPublicAccess<T extends any[]>(
+export function withPublicAccess<T extends any[]>(
   handler: (request: NextRequest, ...args: T) => Promise<Response>,
   options?: {
     requireAuth?: boolean;
@@ -136,9 +155,12 @@ export async function withPublicAccess<T extends any[]>(
 ) {
   return async (request: NextRequest, ...args: T): Promise<Response> => {
     try {
-      // Si se requiere autenticación, usar withAuth
+      // Si se requiere autenticación, crear un handler compatible con withAuth
       if (options?.requireAuth) {
-        return withAuth(handler)(request, ...args);
+        const authHandler = async (request: NextRequest, auth: AuthContext, ...handlerArgs: T) => {
+          return await handler(request, ...handlerArgs);
+        };
+        return withAuth(authHandler)(request, ...args);
       }
       
       // Para endpoints públicos, continuar sin autenticación
