@@ -164,3 +164,6 @@ declare module 'next-auth/jwt' {
 
 // Re-export navigation types
 export * from './navigation';
+
+// Re-export API v1 types
+export * from './api-v1';

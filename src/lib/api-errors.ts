@@ -13,6 +13,7 @@ export enum ErrorCode {
   INVALID_SLUG = 'INVALID_SLUG',
   SLUG_TAKEN = 'SLUG_TAKEN',
   INVALID_USER_ID = 'INVALID_USER_ID',
+  INVALID_PARAMETER = 'INVALID_PARAMETER',
 
   // Resource errors
   NOT_FOUND = 'NOT_FOUND',
@@ -166,6 +167,7 @@ export const getErrorMessage = (code: ErrorCode, defaultMessage?: string): strin
     [ErrorCode.INVALID_SLUG]: 'El slug debe contener solo letras minúsculas, números, guiones y guiones bajos',
     [ErrorCode.SLUG_TAKEN]: 'Este slug ya está en uso. Por favor, elige otro',
     [ErrorCode.INVALID_USER_ID]: 'ID de usuario inválido',
+    [ErrorCode.INVALID_PARAMETER]: 'El parámetro proporcionado no es válido',
 
     [ErrorCode.NOT_FOUND]: 'El recurso solicitado no fue encontrado',
     [ErrorCode.LINK_NOT_FOUND]: 'El enlace solicitado no existe o ha sido eliminado',
@@ -216,20 +218,20 @@ export const getErrorSeverity = (error: AppError | Error): 'low' | 'medium' | 'h
 // Helper to sanitize error details for client response
 export const sanitizeErrorDetails = (details: any, isDevelopment: boolean = false): any => {
   if (!details) return undefined;
-  
+
   if (isDevelopment) {
     return details;
   }
-  
+
   // In production, only return safe details
   const safeFields = ['slug', 'url', 'limit', 'window', 'quota', 'field'];
   const sanitized: any = {};
-  
+
   for (const field of safeFields) {
     if (details[field] !== undefined) {
       sanitized[field] = details[field];
     }
   }
-  
+
   return Object.keys(sanitized).length > 0 ? sanitized : undefined;
 };

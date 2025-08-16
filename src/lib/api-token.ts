@@ -44,15 +44,37 @@ export async function generateUserApiToken(userId: string): Promise<string> {
 }
 
 /**
+ * Validate API token format
+ */
+export function isValidTokenFormat(token: string): boolean {
+    if (!token || typeof token !== 'string') {
+        return false;
+    }
+
+    // Check if token starts with 'uls_' and has exactly 64 hex characters after
+    const tokenRegex = /^uls_[a-f0-9]{64}$/;
+    return tokenRegex.test(token);
+}
+
+/**
  * Validate API token and return user
  */
 export async function validateApiToken(token: string) {
-    if (!token || !token.startsWith('uls_')) {
+    if (!isValidTokenFormat(token)) {
         return null;
     }
 
     const user = await User.findOne({ apiToken: token });
     return user;
+}
+
+/**
+ * Update the lastUsedAt timestamp for an API token
+ */
+export async function updateTokenLastUsed(userId: string): Promise<void> {
+    await User.findByIdAndUpdate(userId, {
+        apiTokenLastUsedAt: new Date(),
+    });
 }
 
 /**
@@ -63,6 +85,7 @@ export async function revokeApiToken(userId: string): Promise<void> {
         $unset: {
             apiToken: 1,
             apiTokenCreatedAt: 1,
+            apiTokenLastUsedAt: 1,
         },
     });
 }

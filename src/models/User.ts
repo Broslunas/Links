@@ -28,6 +28,7 @@ export interface IUser extends Document {
     // API token for public API access
     apiToken?: string;
     apiTokenCreatedAt?: Date;
+    apiTokenLastUsedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -91,6 +92,9 @@ const UserSchema = new Schema<IUser>({
         trim: true,
     },
     apiTokenCreatedAt: {
+        type: Date,
+    },
+    apiTokenLastUsedAt: {
         type: Date,
     },
 }, {

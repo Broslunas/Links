@@ -6,6 +6,7 @@ import { Button, Input, LoadingSpinner } from '../../../components/ui';
 import { ThemeToggle } from '../../../components/ui/ThemeToggle';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/ui';
+import { ApiTokenManager } from '../../../components/dashboard/ApiTokenManager';
 
 interface UserSettings {
   name: string;
@@ -290,6 +291,9 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* API Token Management */}
+        <ApiTokenManager />
 
         {/* Data & Privacy */}
         <div className="bg-card rounded-lg border border-border p-6">
