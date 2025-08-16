@@ -73,7 +73,7 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
       // Create a canvas element
       const canvas = document.createElement('canvas');
       const downloadSize = qrOptions.size; // Use the actual QR size for download (not the responsive size)
-      const margin = qrOptions.includeMargin ? 30 : 0; // Use margin option
+      const margin = 30; // Always include margin for branding
 
       canvas.width = downloadSize;
       canvas.height = downloadSize + margin; // Increase canvas height to accommodate margin and text
@@ -93,19 +93,17 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
         // Draw QR code
         ctx.drawImage(img, 0, 0, downloadSize, downloadSize);
 
-        // Add text at the bottom if margin is included
-        if (qrOptions.includeMargin) {
-          ctx.font = 'bold 14px Arial';
-          ctx.fillStyle = '#444444';
-          ctx.textAlign = 'center';
+        // Add text at the bottom with margin
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#444444';
+        ctx.textAlign = 'center';
 
-          // Position for text - now below the QR code with margin
-          const textY = downloadSize + margin / 2 + 5; // Position text in the middle of the margin area
-          const textX = downloadSize / 2;
+        // Position for text - now below the QR code with margin
+        const textY = downloadSize + margin / 2 + 5; // Position text in the middle of the margin area
+        const textX = downloadSize / 2;
 
-          // Draw text centered
-          ctx.fillText('Creado con broslunas.link', textX, textY);
-        }
+        // Draw text centered
+        ctx.fillText('Creado con broslunas.link', textX, textY);
 
         // Convert to PNG
         try {
@@ -154,7 +152,7 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
       onClose={onClose}
       title={title || 'Código QR Personalizable'}
       description="Escanea este código para acceder al enlace"
-      size={showCustomizer ? "full" : "sm"}
+      size={showCustomizer ? "xl" : "sm"}
     >
       <div className={`${showCustomizer ? 'flex flex-col xl:grid xl:grid-cols-2 gap-4 md:gap-6' : 'flex flex-col items-center'} p-4 md:p-6 max-h-[90vh] overflow-y-auto`}>
         {/* QR Code Preview */}
@@ -170,14 +168,11 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
                 level={qrOptions.level}
                 fgColor={qrOptions.fgColor}
                 bgColor={qrOptions.bgColor}
-                includeMargin={qrOptions.includeMargin}
               />
             </div>
-            {qrOptions.includeMargin && (
-              <p className="text-center text-xs sm:text-sm mt-2" style={{ color: '#444444' }}>
-                Creado con broslunas.link
-              </p>
-            )}
+            <p className="text-center text-xs sm:text-sm mt-2" style={{ color: '#444444' }}>
+              Creado con broslunas.link
+            </p>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground text-center break-all mb-4 px-2">
             {url}

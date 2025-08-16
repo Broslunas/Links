@@ -21,7 +21,6 @@ export function useQRPreferences() {
           bgColor: parsedPreferences.bgColor || defaultQROptions.bgColor,
           size: parsedPreferences.size || defaultQROptions.size,
           level: parsedPreferences.level || defaultQROptions.level,
-          includeMargin: parsedPreferences.includeMargin ?? defaultQROptions.includeMargin,
           style: parsedPreferences.style || defaultQROptions.style,
         };
         setPreferences(validatedPreferences);

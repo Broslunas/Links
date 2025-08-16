@@ -8,7 +8,6 @@ export interface QRCustomizationOptions {
   bgColor: string;
   size: number;
   level: 'L' | 'M' | 'Q' | 'H';
-  includeMargin: boolean;
   style: 'squares' | 'dots' | 'rounded';
 }
 
@@ -195,25 +194,7 @@ export function QRCustomizer({ options, onChange, onReset }: QRCustomizerProps) 
         </div>
       </div>
 
-      {/* Opciones Adicionales */}
-      <div>
-        <h4 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-2 sm:mb-3">
-          Opciones Adicionales
-        </h4>
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 cursor-pointer touch-manipulation">
-            <input
-              type="checkbox"
-              checked={options.includeMargin}
-              onChange={(e) => onChange({ ...options, includeMargin: e.target.checked })}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="text-xs text-gray-700 dark:text-gray-300">
-              Incluir margen alrededor del código
-            </span>
-          </label>
-        </div>
-      </div>
+
 
       {/* Botón de Reset */}
       <div className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -234,8 +215,7 @@ export function QRCustomizer({ options, onChange, onReset }: QRCustomizerProps) 
 export const defaultQROptions: QRCustomizationOptions = {
   fgColor: '#000000',
   bgColor: '#FFFFFF',
-  size: 240,
-  level: 'Q',
-  includeMargin: true,
+  size: 256,
+  level: 'M',
   style: 'squares',
 };
