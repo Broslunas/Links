@@ -2,22 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/db-utils';
 import Link from '../../../../models/Link';
 import { ApiResponse } from '../../../../types';
+import { requireDevelopment } from '../../../../lib/auth-middleware';
 
-export async function GET(request: NextRequest) {
-  // Only allow in development
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json<ApiResponse>(
-      {
-        success: false,
-        error: {
-          code: 'NOT_ALLOWED',
-          message: 'Debug endpoint only available in development',
-        },
-        timestamp: new Date().toISOString(),
-      },
-      { status: 403 }
-    );
-  }
+export const GET = requireDevelopment(async (request: NextRequest) => {
 
   try {
     // Test database connection
@@ -90,4 +77,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

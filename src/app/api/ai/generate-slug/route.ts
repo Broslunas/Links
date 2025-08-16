@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withAuth, AuthContext } from '../../../../lib/auth-middleware';
 
 interface DeepSeekResponse {
   choices: {
@@ -8,7 +9,7 @@ interface DeepSeekResponse {
   }[];
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => {
   try {
     const { url } = await request.json();
 
@@ -125,4 +126,4 @@ Solo responde con el slug, sin explicaciones adicionales.`;
       { status: 500 }
     );
   }
-}
+});

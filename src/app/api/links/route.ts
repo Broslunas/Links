@@ -1,29 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import mongoose from 'mongoose';
-import { authOptions } from '../../../lib/auth-simple';
 import { connectDB, generateSlug, isValidUrl } from '../../../lib/db-utils';
-import { validateUserSession } from '../../../lib/user-utils';
 import Link from '../../../models/Link';
 import { CreateLinkData, ApiResponse } from '../../../types';
 import { createSuccessResponse, createErrorResponse, withErrorHandler, validateRequest, validateUrl, validateSlug, parseRequestBody } from '../../../lib/api-response';
 import { createError, AppError, ErrorCode } from '../../../lib/api-errors';
+import { withAuth, AuthContext } from '../../../lib/auth-middleware';
 
 // GET /api/links - Get user's links
-export const GET = withErrorHandler(async (request: NextRequest) => {
-    const session = await getServerSession(authOptions);
-    const userValidation = validateUserSession(session);
-
-    if (!userValidation.isValid) {
-        if (userValidation.error === 'Authentication required') {
-            throw createError.unauthorized();
-        }
-        throw createError.validation(userValidation.error!);
-    }
-
+export const GET = withAuth(async (request: NextRequest, auth: AuthContext) => {
     await connectDB();
 
-    const links = await Link.find({ userId: userValidation.userId })
+    const links = await Link.find({ userId: auth.userId })
         .sort({ createdAt: -1 })
         .lean();
 
@@ -31,17 +19,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 });
 
 // POST /api/links - Create new link
-export const POST = withErrorHandler(async (request: NextRequest) => {
-    const session = await getServerSession(authOptions);
-    const userValidation = validateUserSession(session);
-
-    if (!userValidation.isValid) {
-        if (userValidation.error === 'Authentication required') {
-            throw createError.unauthorized();
-        }
-        throw createError.validation(userValidation.error!);
-    }
-
+export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => {
     const body: CreateLinkData = await parseRequestBody<CreateLinkData>(request);
     const { originalUrl, slug, title, description, isPublicStats = false } = body;
 
@@ -81,7 +59,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
     // Create the link
     const newLink = new Link({
-        userId: userValidation.userId,
+        userId: auth.userId,
         originalUrl: sanitizedUrl,
         slug: finalSlug,
         title: title?.trim() || undefined,
