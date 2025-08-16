@@ -19,14 +19,12 @@ const footerSections: NavigationSection[] = [
     title: 'Producto',
     items: [
       { label: 'Características', href: '/features' },
-      { label: 'API', href: '/docs' },
     ],
   },
   {
     title: 'Soporte',
     items: [
       { label: 'Ayuda', href: '/help' },
-      { label: 'Documentación', href: '/docs' },
       {
         label: 'Contacto',
         href: 'https://broslunas.com/contacto',

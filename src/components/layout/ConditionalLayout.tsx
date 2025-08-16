@@ -17,7 +17,6 @@ const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
     const knownRoutes = [
         '/dashboard',
         '/auth',
-        '/docs',
         '/api',
         '/help',
         '/features',

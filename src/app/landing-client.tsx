@@ -32,9 +32,8 @@ const FeatureCard = ({
 
   return (
     <div
-      className={`group relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100/50 dark:border-gray-700/50 overflow-hidden ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-      }`}
+      className={`group relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100/50 dark:border-gray-700/50 overflow-hidden ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        }`}
     >
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-900/20 dark:to-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -109,9 +108,8 @@ const StatCard = ({
 
   return (
     <div
-      className={`text-center transform transition-all duration-700 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-      }`}
+      className={`text-center transform transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        }`}
     >
       <div className={`text-4xl md:text-5xl font-bold ${color} mb-2`}>
         {displayValue}
@@ -209,11 +207,10 @@ export default function LandingClient({
         <section className="relative overflow-hidden pt-20 pb-32">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div
-              className={`text-center transform transition-all duration-1000 ${
-                headerVisible
-                  ? 'opacity-100 translate-y-0'
-                  : 'opacity-0 translate-y-8'
-              }`}
+              className={`text-center transform transition-all duration-1000 ${headerVisible
+                ? 'opacity-100 translate-y-0'
+                : 'opacity-0 translate-y-8'
+                }`}
             >
               <h1 className="text-6xl md:text-8xl font-bold mb-8">
                 <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
@@ -231,11 +228,10 @@ export default function LandingClient({
               </p>
 
               <div
-                className={`flex flex-col sm:flex-row gap-6 justify-center items-center mb-16 transform transition-all duration-1000 delay-300 ${
-                  heroVisible
-                    ? 'opacity-100 translate-y-0'
-                    : 'opacity-0 translate-y-4'
-                }`}
+                className={`flex flex-col sm:flex-row gap-6 justify-center items-center mb-16 transform transition-all duration-1000 delay-300 ${heroVisible
+                  ? 'opacity-100 translate-y-0'
+                  : 'opacity-0 translate-y-4'
+                  }`}
               >
                 {session ? (
                   <Link href="/dashboard">
@@ -256,25 +252,7 @@ export default function LandingClient({
                         Comenzar Gratis
                       </Button>
                     </Link>
-                    <Link
-                      href="/docs"
-                      className="group flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 font-semibold text-lg"
-                    >
-                      Ver Documentación API
-                      <svg
-                        className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 8l4 4m0 0l-4 4m4-4H3"
-                        />
-                      </svg>
-                    </Link>
+
                   </>
                 )}
               </div>
@@ -413,25 +391,6 @@ export default function LandingClient({
                         >
                           Crear Cuenta Gratis
                         </Button>
-                      </Link>
-                      <Link
-                        href="/docs"
-                        className="group flex items-center text-white hover:text-gray-200 font-semibold text-lg"
-                      >
-                        Explorar API
-                        <svg
-                          className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17 8l4 4m0 0l-4 4m4-4H3"
-                          />
-                        </svg>
                       </Link>
                     </>
                   )}

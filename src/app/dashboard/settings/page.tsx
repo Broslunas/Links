@@ -266,11 +266,6 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
-                {/* API Token Section */}
-                <ApiTokenSection
-                    onSuccess={(message) => success(message, 'API')}
-                    onError={(message) => error(message, 'Error')}
-                />
 
                 {/* Data & Privacy */}
                 <div className="bg-card rounded-lg border border-border p-6">

@@ -12,10 +12,6 @@ export const mainNavigation: MainNavigation = {
       href: '/features',
     },
     {
-      label: 'API',
-      href: '/docs',
-    },
-    {
       label: 'Ayuda',
       href: '/help',
     },
@@ -33,10 +29,6 @@ export const footerNavigation: FooterNavigation = {
           href: '/features',
         },
         {
-          label: 'API',
-          href: '/docs',
-        },
-        {
           label: 'Integraciones',
           href: '/integrations',
         },
@@ -48,10 +40,6 @@ export const footerNavigation: FooterNavigation = {
         {
           label: 'Ayuda',
           href: '/help',
-        },
-        {
-          label: 'Documentación',
-          href: '/docs',
         },
         {
           label: 'Contacto',

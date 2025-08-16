@@ -211,20 +211,6 @@ describe('ConditionalLayout', () => {
             expect(screen.queryByTestId('global-layout')).not.toBeInTheDocument();
         });
 
-        it('should render GlobalLayout for /docs route', () => {
-            mockUsePathname.mockReturnValue('/docs');
-
-            render(
-                <ConditionalLayout>
-                    <TestContent />
-                </ConditionalLayout>
-            );
-
-            expect(screen.getByTestId('global-layout')).toBeInTheDocument();
-            expect(screen.queryByTestId('redirect-layout')).not.toBeInTheDocument();
-            expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
-        });
-
         it('should render GlobalLayout for /status route', () => {
             mockUsePathname.mockReturnValue('/status');
 
