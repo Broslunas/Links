@@ -21,6 +21,12 @@ jest.mock('../GlobalLayout', () => ({
     ),
 }));
 
+jest.mock('../RedirectLayout', () => ({
+    RedirectLayout: ({ children }: { children: React.ReactNode }) => (
+        <div data-testid="redirect-layout">{children}</div>
+    ),
+}));
+
 const mockUsePathname = usePathname as jest.MockedFunction<typeof usePathname>;
 
 describe('ConditionalLayout', () => {
@@ -174,9 +180,39 @@ describe('ConditionalLayout', () => {
         });
     });
 
-    describe('Edge Cases', () => {
-        it('should render GlobalLayout for routes that contain "dashboard" but do not start with it', () => {
-            mockUsePathname.mockReturnValue('/user-dashboard');
+    describe('Redirect Routes', () => {
+        it('should render RedirectLayout for single slug routes', () => {
+            mockUsePathname.mockReturnValue('/abc123');
+
+            render(
+                <ConditionalLayout>
+                    <TestContent />
+                </ConditionalLayout>
+            );
+
+            expect(screen.getByTestId('redirect-layout')).toBeInTheDocument();
+            expect(screen.getByTestId('test-content')).toBeInTheDocument();
+            expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('global-layout')).not.toBeInTheDocument();
+        });
+
+        it('should render RedirectLayout for short link slugs', () => {
+            mockUsePathname.mockReturnValue('/xyz789');
+
+            render(
+                <ConditionalLayout>
+                    <TestContent />
+                </ConditionalLayout>
+            );
+
+            expect(screen.getByTestId('redirect-layout')).toBeInTheDocument();
+            expect(screen.getByTestId('test-content')).toBeInTheDocument();
+            expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('global-layout')).not.toBeInTheDocument();
+        });
+
+        it('should render GlobalLayout for /docs route', () => {
+            mockUsePathname.mockReturnValue('/docs');
 
             render(
                 <ConditionalLayout>
@@ -185,8 +221,135 @@ describe('ConditionalLayout', () => {
             );
 
             expect(screen.getByTestId('global-layout')).toBeInTheDocument();
+            expect(screen.queryByTestId('redirect-layout')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
+        });
+
+        it('should render GlobalLayout for /status route', () => {
+            mockUsePathname.mockReturnValue('/status');
+
+            render(
+                <ConditionalLayout>
+                    <TestContent />
+                </ConditionalLayout>
+            );
+
+            expect(screen.getByTestId('global-layout')).toBeInTheDocument();
+            expect(screen.queryByTestId('redirect-layout')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
+        });
+
+        it('should render GlobalLayout for nested auth routes', () => {
+            mockUsePathname.mockReturnValue('/auth/callback');
+
+            render(
+                <ConditionalLayout>
+                    <TestContent />
+                </ConditionalLayout>
+            );
+
+            expect(screen.getByTestId('global-layout')).toBeInTheDocument();
+            expect(screen.queryByTestId('redirect-layout')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
+        });
+
+        it('should render GlobalLayout for nested payment routes', () => {
+            mockUsePathname.mockReturnValue('/payment/success');
+
+            render(
+                <ConditionalLayout>
+                    <TestContent />
+                </ConditionalLayout>
+            );
+
+            expect(screen.getByTestId('global-layout')).toBeInTheDocument();
+            expect(screen.queryByTestId('redirect-layout')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
+        });
+
+        it('should render GlobalLayout for nested stats routes', () => {
+            mockUsePathname.mockReturnValue('/stats/abc123');
+
+            render(
+                <ConditionalLayout>
+                    <TestContent />
+                </ConditionalLayout>
+            );
+
+            expect(screen.getByTestId('global-layout')).toBeInTheDocument();
+            expect(screen.queryByTestId('redirect-layout')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
+        });
+
+        it('should render GlobalLayout for multi-segment paths that are not known routes', () => {
+            mockUsePathname.mockReturnValue('/unknown/nested/path');
+
+            render(
+                <ConditionalLayout>
+                    <TestContent />
+                </ConditionalLayout>
+            );
+
+            expect(screen.getByTestId('global-layout')).toBeInTheDocument();
+            expect(screen.queryByTestId('redirect-layout')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
+        });
+
+        it('should render RedirectLayout for valid slug patterns', () => {
+            const validSlugs = ['abc123', 'test-slug', 'my_link', 'x1y2z3'];
+
+            validSlugs.forEach(slug => {
+                mockUsePathname.mockReturnValue(`/${slug}`);
+
+                const { unmount } = render(
+                    <ConditionalLayout>
+                        <TestContent />
+                    </ConditionalLayout>
+                );
+
+                expect(screen.getByTestId('redirect-layout')).toBeInTheDocument();
+                expect(screen.queryByTestId('global-layout')).not.toBeInTheDocument();
+                expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
+
+                unmount();
+            });
+        });
+
+        it('should render GlobalLayout for invalid slug patterns', () => {
+            const invalidSlugs = ['Test-Slug', 'test slug', 'test@slug', 'test.slug'];
+
+            invalidSlugs.forEach(slug => {
+                mockUsePathname.mockReturnValue(`/${slug}`);
+
+                const { unmount } = render(
+                    <ConditionalLayout>
+                        <TestContent />
+                    </ConditionalLayout>
+                );
+
+                expect(screen.getByTestId('global-layout')).toBeInTheDocument();
+                expect(screen.queryByTestId('redirect-layout')).not.toBeInTheDocument();
+                expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
+
+                unmount();
+            });
+        });
+    });
+
+    describe('Edge Cases', () => {
+        it('should render RedirectLayout for routes that contain "dashboard" but do not start with it', () => {
+            mockUsePathname.mockReturnValue('/user-dashboard');
+
+            render(
+                <ConditionalLayout>
+                    <TestContent />
+                </ConditionalLayout>
+            );
+
+            expect(screen.getByTestId('redirect-layout')).toBeInTheDocument();
             expect(screen.getByTestId('test-content')).toBeInTheDocument();
             expect(screen.queryByTestId('dashboard-layout')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('global-layout')).not.toBeInTheDocument();
         });
 
         it('should render GlobalLayout for empty pathname', () => {

@@ -6,7 +6,7 @@ export default function Loading() {
             <div className="text-center">
                 <LoadingSpinner size="lg" />
                 <p className="mt-4 text-gray-600 dark:text-gray-400">
-                    Redirecting you to your destination...
+                    Redirigiendo a tu destino...
                 </p>
             </div>
         </div>

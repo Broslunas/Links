@@ -1,9 +1,27 @@
-import { redirect, notFound } from 'next/navigation';
-import { handleRedirect, isValidSlug } from '../../lib/redirect-handler';
+import { notFound } from 'next/navigation';
+import { isValidSlug } from '../../lib/redirect-handler';
 import { connectDB } from '../../lib/db-utils';
 import Link from '../../models/Link';
 import TempLink from '../../models/TempLink';
 import { headers } from 'next/headers';
+import { RedirectPage } from '../../components/ui/RedirectPage';
+import { extractAnalyticsData, hashIP } from '../../lib/analytics';
+import AnalyticsEvent from '../../models/AnalyticsEvent';
+
+// Custom error classes for better error handling
+class ExpiredLinkError extends Error {
+  constructor(message: string, public expirationDate?: Date) {
+    super(message);
+    this.name = 'ExpiredLinkError';
+  }
+}
+
+class DatabaseConnectionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DatabaseConnectionError';
+  }
+}
 
 interface SlugPageProps {
   params: {
@@ -19,6 +37,88 @@ export default async function SlugPage({ params }: SlugPageProps) {
     notFound();
   }
 
+  try {
+    await connectDB();
+  } catch (dbError) {
+    console.error('Database connection error:', dbError);
+    throw new DatabaseConnectionError('Unable to connect to database for redirect processing');
+  }
+
+  try {
+    // Find the link by slug (check both regular links and temporary links)
+    // First check for expired temp links to provide specific error messaging
+    const expiredTempLink = await TempLink.findOne({
+      slug: slug.toLowerCase(),
+      expiresAt: { $lte: new Date() }, // Only expired temp links
+    });
+
+    if (expiredTempLink) {
+      throw new ExpiredLinkError(
+        `This temporary link expired on ${expiredTempLink.expiresAt.toLocaleDateString('es-ES')}`,
+        expiredTempLink.expiresAt
+      );
+    }
+
+    // Now check for active links
+    const [link, tempLink] = await Promise.all([
+      Link.findOne({
+        slug: slug.toLowerCase(),
+        isActive: true,
+      }),
+      TempLink.findOne({
+        slug: slug.toLowerCase(),
+        expiresAt: { $gt: new Date() }, // Only non-expired temp links
+      }),
+    ]);
+
+    // Determine which link to use (regular links take precedence)
+    const targetLink = link || tempLink;
+    const isTemporary = !link && !!tempLink;
+
+    if (!targetLink) {
+      notFound();
+    }
+
+    // Record analytics in the background (fire and forget)
+    recordAnalytics(targetLink, isTemporary).catch((error) => {
+      console.error('Error recording analytics:', error);
+    });
+
+    // Render the redirect page with destination URL and metadata
+    return (
+      <RedirectPage
+        destinationUrl={targetLink.originalUrl}
+        title={targetLink.title || undefined}
+        redirectDelay={3000}
+      />
+    );
+  } catch (error) {
+    // Re-throw custom errors to be handled by error boundary
+    if (error instanceof ExpiredLinkError || error instanceof DatabaseConnectionError) {
+      throw error;
+    }
+
+    console.error('Error in slug page:', error);
+
+    // For other database/server errors, throw a generic server error
+    if (error instanceof Error && (
+      error.message.includes('database') ||
+      error.message.includes('connection') ||
+      error.message.includes('timeout')
+    )) {
+      throw new Error('Server error occurred while processing redirect');
+    }
+
+    // For unknown errors, show 404
+    notFound();
+  }
+}
+
+// Separate function to handle analytics recording
+async function recordAnalytics(
+  targetLink: any,
+  isTemporary: boolean
+) {
   try {
     // Get request headers for analytics
     const headersList = headers();
@@ -41,26 +141,53 @@ export default async function SlugPage({ params }: SlugPageProps) {
       },
     });
 
-    const result = await handleRedirect(slug, mockRequest);
+    // Extract analytics data
+    const analyticsData = await extractAnalyticsData(mockRequest);
 
-    if (!result.success || !result.originalUrl) {
-      notFound();
+    // Get client IP
+    let clientIP = '127.0.0.1';
+    if (forwardedFor) {
+      clientIP = forwardedFor.split(',')[0].trim();
+    } else if (realIP) {
+      clientIP = realIP;
+    } else if (cfConnectingIP) {
+      clientIP = cfConnectingIP;
     }
-    // Redirect to the original URL
-    redirect(result.originalUrl);
+
+    // Record analytics event
+    const analyticsEvent = new AnalyticsEvent({
+      linkId: targetLink._id,
+      ip: hashIP(clientIP),
+      country: analyticsData.country,
+      city: analyticsData.city,
+      region: analyticsData.region,
+      language: analyticsData.language,
+      userAgent: analyticsData.userAgent,
+      device: analyticsData.device,
+      os: analyticsData.os,
+      browser: analyticsData.browser,
+      referrer: analyticsData.referrer,
+    });
+
+    // Save analytics event and increment click count in parallel
+    const updatePromises = [analyticsEvent.save()];
+
+    if (isTemporary) {
+      // Update temporary link click count
+      updatePromises.push(
+        TempLink.findByIdAndUpdate(targetLink._id, { $inc: { clickCount: 1 } })
+      );
+    } else {
+      // Update regular link click count
+      updatePromises.push(
+        Link.findByIdAndUpdate(targetLink._id, { $inc: { clickCount: 1 } })
+      );
+    }
+
+    await Promise.all(updatePromises);
   } catch (error) {
-    // Check if this is a Next.js redirect (which is expected behavior)
-    if (
-      error &&
-      typeof error === 'object' &&
-      'digest' in error &&
-      typeof error.digest === 'string' &&
-      error.digest.includes('NEXT_REDIRECT')
-    ) {
-      throw error;
-    }
-
-    notFound();
+    console.error('Error recording analytics:', error);
+    throw error;
   }
 }
 

@@ -6,3 +6,4 @@ export { LoadingSpinner } from './LoadingSpinner';
 export { ErrorBoundary, DefaultErrorFallback } from './ErrorBoundary';
 export { Toast, ToastContainer } from './Toast';
 export { ConfirmationModal } from './ConfirmationModal';
+export { RedirectPage } from './RedirectPage';
