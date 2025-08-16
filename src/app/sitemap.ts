@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://brl-links.vercel.app'
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://broslunas.link'
 
   // Static routes
   const staticRoutes = [
@@ -13,12 +13,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/features`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/pricing`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
