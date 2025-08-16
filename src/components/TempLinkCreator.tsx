@@ -5,11 +5,13 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { CreateTempLinkResponse } from '@/types';
 import { toast } from 'sonner';
+import { Sparkles, Loader2 } from 'lucide-react';
 
 export function TempLinkCreator() {
     const [url, setUrl] = useState('');
     const [slug, setSlug] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isGeneratingSlug, setIsGeneratingSlug] = useState(false);
     const [result, setResult] = useState<CreateTempLinkResponse | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -53,6 +55,38 @@ export function TempLinkCreator() {
             toast.error(error instanceof Error ? error.message : 'Error creating temporary link');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const generateSlugWithAI = async () => {
+        if (!url.trim()) {
+            toast.error('Por favor ingresa una URL primero');
+            return;
+        }
+
+        setIsGeneratingSlug(true);
+        try {
+            const response = await fetch('/api/ai/generate-slug', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url.trim() }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Error generando slug con IA');
+            }
+
+            setSlug(data.slug);
+            toast.success('¡Slug generado con IA!');
+        } catch (error) {
+            console.error('Error generating slug with AI:', error);
+            toast.error(error instanceof Error ? error.message : 'Error generando slug con IA');
+        } finally {
+            setIsGeneratingSlug(false);
         }
     };
 
@@ -108,16 +142,39 @@ export function TempLinkCreator() {
                         <label htmlFor="temp-slug" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Slug personalizado (opcional)
                         </label>
-                        <Input
-                            id="temp-slug"
-                            type="text"
-                            value={slug}
-                            onChange={(e) => setSlug(e.target.value)}
-                            placeholder="mi-enlace"
-                            disabled={isLoading}
-                            pattern="[a-z0-9-_]+"
-                            title="Solo letras minúsculas, números, guiones y guiones bajos"
-                        />
+                        <div className="flex gap-2">
+                            <Input
+                                id="temp-slug"
+                                type="text"
+                                value={slug}
+                                onChange={(e) => setSlug(e.target.value)}
+                                placeholder="mi-enlace"
+                                disabled={isLoading || isGeneratingSlug}
+                                pattern="[a-z0-9-_]+"
+                                title="Solo letras minúsculas, números, guiones y guiones bajos"
+                                className="flex-1"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={generateSlugWithAI}
+                                disabled={isLoading || isGeneratingSlug || !url.trim()}
+                                className="px-3 py-2 min-w-[100px]"
+                            >
+                                {isGeneratingSlug ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <Sparkles className="h-4 w-4 mr-1" />
+                                        IA
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Usa IA para generar un slug descriptivo basado en tu URL
+                        </p>
                     </div>
 
                     <Button
