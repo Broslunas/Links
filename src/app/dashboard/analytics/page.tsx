@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { LoadingSpinner, Button } from '../../../components/ui';
 import { ErrorBoundary } from '../../../components/ui/ErrorBoundary';
+import { AnalyticsSummaryModal } from '../../../components/features/AnalyticsSummaryModal';
 import { Link, ApiResponse } from '../../../types';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import {
@@ -53,6 +54,7 @@ export default function AnalyticsPage() {
   );
   const [links, setLinks] = useState<Link[]>([]);
   const [showAllPopular, setShowAllPopular] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -252,6 +254,12 @@ export default function AnalyticsPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              onClick={() => setShowSummaryModal(true)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              🤖 Resumen IA
+            </Button>
             {DATE_RANGES.map(range => (
               <button
                 key={range.label}
@@ -585,6 +593,13 @@ export default function AnalyticsPage() {
             </div>
           </div>
         )}
+
+        {/* Analytics Summary Modal */}
+        <AnalyticsSummaryModal
+          isOpen={showSummaryModal}
+          onClose={() => setShowSummaryModal(false)}
+          selectedDays={selectedRange.days}
+        />
     </div>
   );
 }

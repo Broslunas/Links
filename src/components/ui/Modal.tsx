@@ -50,7 +50,7 @@ const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/20 backdrop-blur-md"
@@ -61,7 +61,7 @@ const Modal: React.FC<ModalProps> = ({
       {/* Modal */}
       <div
         className={cn(
-          'relative w-full mx-4 bg-card/80 backdrop-blur-xl border border-border/50 rounded-lg shadow-2xl animate-slide-up',
+          'relative w-full max-h-[90vh] bg-card/80 backdrop-blur-xl border border-border/50 rounded-lg shadow-2xl animate-slide-up overflow-hidden',
           sizeClasses[size]
         )}
         role="dialog"
@@ -71,15 +71,15 @@ const Modal: React.FC<ModalProps> = ({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-border">
-            <div>
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border">
+            <div className="flex-1 min-w-0 pr-4">
               {title && (
-                <h2 id="modal-title" className="text-lg font-semibold text-card-foreground">
+                <h2 id="modal-title" className="text-base sm:text-lg font-semibold text-card-foreground truncate">
                   {title}
                 </h2>
               )}
               {description && (
-                <p id="modal-description" className="text-sm text-muted-foreground mt-1">
+                <p id="modal-description" className="text-xs sm:text-sm text-muted-foreground mt-1">
                   {description}
                 </p>
               )}
@@ -111,7 +111,7 @@ const Modal: React.FC<ModalProps> = ({
         )}
         
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {children}
         </div>
       </div>
