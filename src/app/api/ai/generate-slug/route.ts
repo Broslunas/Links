@@ -30,22 +30,44 @@ export async function POST(request: NextRequest) {
     // Extraer dominio y path de la URL para el contexto
     let domain = '';
     let path = '';
+    let contextInfo = '';
+    
     try {
       const urlObj = new URL(url);
-      domain = urlObj.hostname;
+      domain = urlObj.hostname.replace('www.', '');
       path = urlObj.pathname;
+      
+      // Crear información de contexto más rica
+      const domainParts = domain.split('.');
+      const siteName = domainParts[0];
+      const pathParts = path.split('/').filter(part => part.length > 0);
+      
+      contextInfo = `Dominio: ${domain}\nNombre del sitio: ${siteName}`;
+      if (pathParts.length > 0) {
+        contextInfo += `\nRuta: ${pathParts.join(' > ')}`;
+      }
     } catch (e) {
       // Si no es una URL válida, usar la cadena completa
+      contextInfo = `URL: ${url}`;
     }
 
-    const prompt = `Genera un slug corto, descriptivo y amigable para la siguiente URL: ${url}
+    const prompt = `Genera un slug corto, descriptivo y amigable para la siguiente URL.
+
+${contextInfo}
+URL completa: ${url}
 
 El slug debe:
 - Ser corto (máximo 15 caracteres)
 - Usar solo letras minúsculas, números y guiones
-- Ser descriptivo del contenido
-- Ser fácil de recordar
+- Incorporar el nombre del dominio o sitio cuando sea relevante
+- Ser descriptivo del contenido basado en la ruta
+- Ser fácil de recordar y profesional
 - No incluir caracteres especiales
+
+Ejemplos:
+- Para youtube.com/watch?v=abc123 → "youtube-video"
+- Para github.com/user/repo → "github-repo"
+- Para docs.google.com/document/123 → "google-doc"
 
 Solo responde con el slug, sin explicaciones adicionales.`;
 

@@ -5,6 +5,9 @@ import { Button, Input } from '../ui';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { ApiResponse, CreateLinkData } from '../../types';
 import { handleFetchError, showSuccessToast, withToastHandler } from '../../lib/client-error-handler';
+import { isValidUrl, isValidSlug } from '../../lib/validations';
+import { toast } from 'sonner';
+import { Sparkles, Loader2 } from 'lucide-react';
 
 interface LinkCreatorProps {
   onLinkCreated?: (link: any) => void;
@@ -37,6 +40,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingSlug, setIsGeneratingSlug] = useState(false);
   const [createdLink, setCreatedLink] = useState<any>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -195,18 +199,60 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
     }
   };
 
-  const resetForm = () => {
-    setCreatedLink(null);
-    setFormData({
-      originalUrl: '',
-      slug: '',
-      title: '',
-      description: '',
-      isPublicStats: false,
-    });
-    setErrors({});
-    setShowAdvanced(false);
-  };
+  const generateSlugWithAI = async () => {
+     if (!formData.originalUrl) {
+       toast.error('Por favor ingresa una URL primero');
+       return;
+     }
+ 
+     if (!isValidUrl(formData.originalUrl)) {
+        toast.error('Por favor ingresa una URL válida');
+        return;
+      }
+ 
+     setIsGeneratingSlug(true);
+     try {
+       const response = await fetch('/api/ai/generate-slug', {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify({ url: formData.originalUrl }),
+       });
+ 
+       if (!response.ok) {
+         throw new Error('Error al generar el slug');
+       }
+ 
+       const data = await response.json();
+       setFormData(prev => ({ ...prev, slug: data.slug }));
+       
+       // Limpiar error de slug si existía
+       if (errors.slug) {
+         setErrors(prev => ({ ...prev, slug: undefined }));
+       }
+       
+       toast.success('¡Slug generado con IA!');
+     } catch (error) {
+       console.error('Error generating slug:', error);
+       toast.error('Error al generar el slug con IA');
+     } finally {
+       setIsGeneratingSlug(false);
+     }
+   };
+ 
+    const resetForm = () => {
+        setCreatedLink(null);
+        setFormData({
+          originalUrl: '',
+          slug: '',
+          title: '',
+          description: '',
+          isPublicStats: false
+        });
+        setErrors({});
+        setShowAdvanced(false);
+     };
 
   if (createdLink) {
     return (
@@ -345,16 +391,41 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
         {showAdvanced && (
           <div className="space-y-4 pt-2 border-t border-border">
             <div>
-              <Input
-                label="Enlace personalizado (opcional)"
-                placeholder="mi-enlace-personalizado"
-                value={formData.slug}
-                onChange={e =>
-                  handleInputChange('slug', e.target.value.toLowerCase())
-                }
-                error={errors.slug}
-                helperText="Déjelo en blanco para generarlo automáticamente. Solo se permiten letras minúsculas, números, guiones y guiones bajos."
-              />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    label="Enlace personalizado (opcional)"
+                    placeholder="mi-enlace-personalizado"
+                    value={formData.slug}
+                    onChange={e =>
+                      handleInputChange('slug', e.target.value.toLowerCase())
+                    }
+                    error={errors.slug}
+                    helperText="Déjelo en blanco para generarlo automáticamente. Solo se permiten letras minúsculas, números, guiones y guiones bajos."
+                  />
+                </div>
+                <div className="flex flex-col justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generateSlugWithAI}
+                    disabled={isGeneratingSlug || !formData.originalUrl}
+                    className="mb-6 px-3 py-2 h-10"
+                  >
+                    {isGeneratingSlug ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              {!formData.originalUrl && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 Ingresa una URL primero para generar un slug con IA
+                </p>
+              )}
             </div>
 
             <div>
