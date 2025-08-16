@@ -10,7 +10,7 @@ export type {
   HelpCategory,
   Guide,
   GuideStep
-} from '../data/help-center/faq-data';
+} from '@/data/help-center/faq-data';
 
 // Re-exportar funciones de utilidad
 export {
