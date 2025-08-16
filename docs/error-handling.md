@@ -1,6 +1,6 @@
 # Sistema de Manejo de Errores
 
-Este documento describe el sistema completo de manejo de errores implementado en la aplicación BRL Links.
+Este documento describe el sistema completo de manejo de errores implementado en la aplicación Broslunas Links.
 
 ## Arquitectura del Sistema
 
@@ -14,6 +14,7 @@ El sistema de manejo de errores está compuesto por varios niveles:
 ## Páginas de Error
 
 ### Página 404 (Not Found)
+
 - **Ubicación**: `src/app/not-found.tsx`
 - **Características**:
   - Mensaje amigable "Link Not Found"
@@ -22,6 +23,7 @@ El sistema de manejo de errores está compuesto por varios niveles:
   - Diseño consistente con la aplicación
 
 ### Página 500 (Server Error)
+
 - **Ubicación**: `src/app/error.tsx` y `src/app/global-error.tsx`
 - **Características**:
   - Manejo de errores del servidor
@@ -32,6 +34,7 @@ El sistema de manejo de errores está compuesto por varios niveles:
 ## Error Boundaries
 
 ### Componente ErrorBoundary
+
 - **Ubicación**: `src/components/ui/ErrorBoundary.tsx`
 - **Uso**: Ya implementado a nivel de aplicación en `layout.tsx`
 - **Características**:
@@ -41,6 +44,7 @@ El sistema de manejo de errores está compuesto por varios niveles:
   - Logging automático de errores
 
 ### Implementación en Componentes Críticos
+
 - **LinkCreator**: Envuelto con ErrorBoundary específico
 - **Analytics Dashboard**: Protegido con ErrorBoundary para gráficos
 - **Layout Principal**: ErrorBoundary global ya implementado
@@ -50,12 +54,14 @@ El sistema de manejo de errores está compuesto por varios niveles:
 ### Códigos de Error Estandarizados
 
 #### Errores de Autenticación
+
 - `UNAUTHORIZED` - Autenticación requerida
 - `FORBIDDEN` - Acceso denegado
 - `INVALID_TOKEN` - Token inválido
 - `SESSION_EXPIRED` - Sesión expirada
 
 #### Errores de Validación
+
 - `VALIDATION_ERROR` - Error de validación general
 - `INVALID_URL` - URL inválida
 - `INVALID_SLUG` - Slug inválido
@@ -63,22 +69,26 @@ El sistema de manejo de errores está compuesto por varios niveles:
 - `INVALID_USER_ID` - ID de usuario inválido
 
 #### Errores de Recursos
+
 - `NOT_FOUND` - Recurso no encontrado
 - `LINK_NOT_FOUND` - Enlace no encontrado
 - `USER_NOT_FOUND` - Usuario no encontrado
 - `RESOURCE_EXISTS` - Recurso ya existe
 
 #### Errores de Rate Limiting
+
 - `RATE_LIMIT_EXCEEDED` - Límite de solicitudes excedido
 - `TOO_MANY_REQUESTS` - Demasiadas solicitudes
 
 #### Errores del Servidor
+
 - `INTERNAL_ERROR` - Error interno del servidor
 - `DATABASE_ERROR` - Error de base de datos
 - `EXTERNAL_SERVICE_ERROR` - Error de servicio externo
 - `CONFIGURATION_ERROR` - Error de configuración
 
 #### Errores de Lógica de Negocio
+
 - `LINK_INACTIVE` - Enlace inactivo
 - `LINK_EXPIRED` - Enlace expirado
 - `QUOTA_EXCEEDED` - Cuota excedida
@@ -86,12 +96,14 @@ El sistema de manejo de errores está compuesto por varios niveles:
 ### Utilidades de API
 
 #### `src/lib/api-errors.ts`
+
 - Definición de códigos de error
 - Clase `AppError` para errores estructurados
 - Funciones helper para crear errores comunes
 - Utilidades para logging y sanitización
 
 #### `src/lib/api-response.ts`
+
 - `createSuccessResponse()` - Respuestas exitosas estandarizadas
 - `createErrorResponse()` - Respuestas de error estandarizadas
 - `withErrorHandler()` - Wrapper para manejo automático de errores
@@ -101,21 +113,25 @@ El sistema de manejo de errores está compuesto por varios niveles:
 ### Ejemplo de Uso en API Routes
 
 ```typescript
-import { withErrorHandler, createSuccessResponse, validateRequest } from '@/lib/api-response';
+import {
+  withErrorHandler,
+  createSuccessResponse,
+  validateRequest,
+} from '@/lib/api-response';
 import { createError } from '@/lib/api-errors';
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const session = await getServerSession(authOptions);
-  
+
   if (!session) {
     throw createError.unauthorized();
   }
-  
+
   const body = await parseRequestBody(request);
   validateRequest(body, ['requiredField'], ['optionalField']);
-  
+
   // Lógica de la API...
-  
+
   return createSuccessResponse(data, 201);
 });
 ```
@@ -125,12 +141,14 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 ### `src/lib/client-error-handler.ts`
 
 #### Funciones Principales
+
 - `handleApiError()` - Maneja errores de API con notificaciones
 - `handleFetchError()` - Maneja errores de fetch requests
 - `showToast()` - Muestra notificaciones toast
 - `withToastHandler()` - Wrapper para operaciones con toast
 
 #### Tipos de Toast
+
 - `success` - Operaciones exitosas
 - `error` - Errores críticos
 - `warning` - Advertencias y validaciones
@@ -145,29 +163,29 @@ const handleSubmit = async () => {
   const operation = async () => {
     const response = await fetch('/api/endpoint', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       await handleFetchError(response, {
-        onValidationError: (details) => {
+        onValidationError: details => {
           // Manejar errores de validación
-        }
+        },
       });
       throw new Error('Request failed');
     }
-    
+
     return response.json();
   };
-  
+
   await withToastHandler(operation, {
     loadingMessage: 'Procesando...',
     successMessage: '¡Operación exitosa!',
     showLoading: true,
     showSuccess: true,
-    onSuccess: (result) => {
+    onSuccess: result => {
       // Manejar éxito
-    }
+    },
   });
 };
 ```
@@ -175,23 +193,27 @@ const handleSubmit = async () => {
 ## Características del Sistema
 
 ### Logging Inteligente
+
 - Errores del servidor (5xx) se registran automáticamente
 - Errores de cliente (4xx) se registran selectivamente
 - Detalles sensibles se sanitizan en producción
 - Stack traces disponibles en desarrollo
 
 ### Mensajes Localizados
+
 - Todos los mensajes de error en español
 - Mensajes técnicos vs. mensajes de usuario
 - Contexto específico para cada tipo de error
 
 ### Recuperación Automática
+
 - Botones de "Reintentar" en interfaces de error
 - Mecanismo de retry para requests fallidos
 - Detección de errores de red
 - Manejo de sesiones expiradas
 
 ### Experiencia de Usuario
+
 - Notificaciones toast no intrusivas
 - Feedback visual inmediato
 - Acciones contextuales (ej: "Iniciar sesión")
@@ -200,6 +222,7 @@ const handleSubmit = async () => {
 ## Mejores Prácticas
 
 ### Para Desarrolladores
+
 1. Usar `withErrorHandler()` en todas las rutas de API
 2. Implementar ErrorBoundary en componentes críticos
 3. Usar `withToastHandler()` para operaciones asíncronas
@@ -207,6 +230,7 @@ const handleSubmit = async () => {
 5. Proporcionar mensajes de error específicos y accionables
 
 ### Para Mantenimiento
+
 1. Monitorear logs de errores regularmente
 2. Actualizar mensajes de error basado en feedback de usuarios
 3. Revisar y optimizar códigos de error según patrones de uso
@@ -215,10 +239,12 @@ const handleSubmit = async () => {
 ## Configuración
 
 ### Variables de Entorno
+
 - `NODE_ENV` - Controla el nivel de detalle en errores
 - Configuración de logging según el entorno
 
 ### Dependencias
+
 - `sonner` - Para notificaciones toast
 - `next-auth` - Para manejo de sesiones
 - `mongoose` - Para errores de base de datos
@@ -226,11 +252,13 @@ const handleSubmit = async () => {
 ## Monitoreo y Métricas
 
 ### Logging
+
 - Todos los errores del servidor se registran con contexto
 - Errores de autenticación se registran para seguridad
 - Stack traces disponibles para debugging
 
 ### Métricas Recomendadas
+
 - Tasa de errores por endpoint
 - Tipos de error más comunes
 - Tiempo de recuperación de errores

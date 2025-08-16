@@ -18,15 +18,19 @@ export interface HelpCategory {
 
 export interface GuideStep {
   title: string;
-  description: string;
+  content: string;
+  code?: string;
+  tip?: string;
   image?: string;
 }
 
 export interface Guide {
   id: string;
+  slug: string;
   title: string;
   description: string;
   category: string;
+  difficulty: 'Principiante' | 'Intermedio' | 'Avanzado';
   steps: GuideStep[];
   estimatedTime: string;
 }
@@ -36,7 +40,7 @@ export const helpCategories: HelpCategory[] = [
   {
     id: 'getting-started',
     title: 'Primeros Pasos',
-    description: 'Aprende lo básico para comenzar a usar BRL Links',
+    description: 'Aprende lo básico para comenzar a usar Broslunas Links',
     icon: 'rocket',
     color: 'blue',
   },
@@ -75,9 +79,9 @@ export const faqData: FAQItem[] = [
   // Primeros Pasos
   {
     id: 'what-is-brl-links',
-    question: '¿Qué es BRL Links?',
+    question: '¿Qué es Broslunas Links?',
     answer:
-      'BRL Links es un acortador de URLs avanzado que te permite crear enlaces cortos personalizados, rastrear estadísticas detalladas y gestionar todos tus enlaces desde un dashboard intuitivo.',
+      'Broslunas Links es un acortador de URLs avanzado que te permite crear enlaces cortos personalizados, rastrear estadísticas detalladas y gestionar todos tus enlaces desde un dashboard intuitivo.',
     category: 'getting-started',
     tags: ['básico', 'introducción'],
   },
@@ -91,9 +95,9 @@ export const faqData: FAQItem[] = [
   },
   {
     id: 'is-free',
-    question: '¿Es gratis usar BRL Links?',
+    question: '¿Es gratis usar Broslunas Links?',
     answer:
-      'Sí, BRL Links ofrece un plan gratuito generoso que incluye enlaces ilimitados, estadísticas básicas y personalización de enlaces. También tenemos planes premium con funciones avanzadas.',
+      'Sí, Broslunas Links ofrece un plan gratuito generoso que incluye enlaces ilimitados, estadísticas básicas y personalización de enlaces. También tenemos planes premium con funciones avanzadas.',
     category: 'getting-started',
     tags: ['precio', 'gratis', 'planes'],
   },
@@ -111,7 +115,7 @@ export const faqData: FAQItem[] = [
     id: 'custom-slugs',
     question: '¿Puedo personalizar mis enlaces cortos?',
     answer:
-      'Sí, puedes crear enlaces personalizados como brl.ink/mi-enlace. Solo asegúrate de que el nombre no esté ya en uso.',
+      'Sí, puedes crear enlaces personalizados como broslunas.link/mi-enlace. Solo asegúrate de que el nombre no esté ya en uso.',
     category: 'link-management',
     tags: ['personalización', 'slug', 'custom'],
   },
@@ -199,104 +203,218 @@ export const faqData: FAQItem[] = [
 export const guides: Guide[] = [
   {
     id: 'first-link',
+    slug: 'crear-primer-enlace',
     title: 'Crear tu primer enlace',
-    description: 'Aprende a crear y personalizar tu primer enlace corto',
+    description:
+      'Aprende a crear y personalizar tu primer enlace corto paso a paso',
     category: 'getting-started',
+    difficulty: 'Principiante',
     estimatedTime: '2 minutos',
     steps: [
       {
         title: 'Accede a tu dashboard',
-        description:
-          'Inicia sesión en tu cuenta y ve al dashboard principal donde verás el formulario de creación de enlaces.',
+        content:
+          'Inicia sesión en tu cuenta y ve al dashboard principal donde verás el formulario de creación de enlaces.\n\nUna vez que hayas iniciado sesión, serás redirigido automáticamente a tu panel de control personal.',
+        tip: 'Si es tu primera vez, tómate un momento para familiarizarte con la interfaz.',
       },
       {
         title: 'Pega tu URL',
-        description:
-          'En el campo "Enlace original", pega la URL larga que deseas acortar. Asegúrate de incluir http:// o https://.',
+        content:
+          'En el campo "Enlace original", pega la URL larga que deseas acortar. Asegúrate de incluir http:// o https://.\n\nEjemplo de URL válida: https://www.ejemplo.com/pagina-muy-larga-con-parametros',
+        code: 'https://www.ejemplo.com/mi-pagina-larga?param1=valor&param2=otro-valor',
+        tip: 'Las URLs sin protocolo (http/https) pueden no funcionar correctamente.',
       },
       {
         title: 'Personaliza (opcional)',
-        description:
-          'Si deseas un enlace personalizado, escribe tu texto preferido en el campo "Enlace personalizado". Debe ser único.',
+        content:
+          'Si deseas un enlace personalizado, escribe tu texto preferido en el campo "Enlace personalizado". Debe ser único.\n\nPor ejemplo, en lugar de broslunas.link/abc123, puedes tener broslunas.link/mi-enlace',
+        tip: 'Los enlaces personalizados son más fáciles de recordar y compartir.',
       },
       {
         title: 'Agrega título y descripción',
-        description:
-          'Añade un título descriptivo y una descripción opcional para organizar mejor tus enlaces.',
+        content:
+          'Añade un título descriptivo y una descripción opcional para organizar mejor tus enlaces.\n\nEsto te ayudará a identificar rápidamente tus enlaces en el dashboard.',
+        tip: 'Un buen título te ahorrará tiempo cuando busques enlaces específicos más tarde.',
       },
       {
         title: 'Crea el enlace',
-        description:
-          'Haz clic en "Crear Enlace" y tu enlace corto estará listo para usar y compartir.',
+        content:
+          'Haz clic en "Crear Enlace" y tu enlace corto estará listo para usar y compartir.\n\nEl sistema verificará que tu enlace personalizado esté disponible y creará el enlace inmediatamente.',
+        tip: 'Copia el enlace inmediatamente después de crearlo para empezar a usarlo.',
       },
     ],
   },
   {
     id: 'analytics-guide',
+    slug: 'entender-estadisticas',
     title: 'Entender tus estadísticas',
     description:
-      'Aprende a interpretar y usar los datos de análisis de tus enlaces',
+      'Aprende a interpretar y usar los datos de análisis de tus enlaces para optimizar tu estrategia',
     category: 'analytics',
+    difficulty: 'Intermedio',
     estimatedTime: '5 minutos',
     steps: [
       {
         title: 'Accede a las estadísticas',
-        description:
-          'En tu dashboard, haz clic en cualquier enlace para ver su página de estadísticas detalladas.',
+        content:
+          'En tu dashboard, haz clic en cualquier enlace para ver su página de estadísticas detalladas.\n\nTambién puedes usar el botón "Ver Analytics" que aparece al pasar el cursor sobre cada enlace.',
+        tip: 'Los enlaces con más clics aparecen primero en tu dashboard.',
       },
       {
         title: 'Revisa los clics totales',
-        description:
-          'El número principal muestra todos los clics. Los "clics únicos" muestran visitantes únicos basados en IP.',
+        content:
+          'El número principal muestra todos los clics. Los "clics únicos" muestran visitantes únicos basados en IP.\n\nLa diferencia entre ambos te indica si tienes visitantes recurrentes.',
+        tip: 'Un alto ratio de clics únicos vs totales indica contenido viral o de una sola visita.',
       },
       {
         title: 'Analiza la geografía',
-        description:
-          'El mapa muestra de dónde vienen tus visitantes. Útil para entender tu audiencia global.',
+        content:
+          'El mapa muestra de dónde vienen tus visitantes. Útil para entender tu audiencia global.\n\nPuedes hacer clic en cada país para ver estadísticas más detalladas.',
+        tip: 'Usa esta información para adaptar tu contenido a diferentes regiones.',
       },
       {
         title: 'Examina dispositivos y navegadores',
-        description:
-          'Ve qué dispositivos y navegadores usan tus visitantes para optimizar tu contenido.',
+        content:
+          'Ve qué dispositivos y navegadores usan tus visitantes para optimizar tu contenido.\n\nEsta información es crucial para el diseño responsive.',
+        tip: 'Si la mayoría usa móviles, asegúrate de que tu sitio de destino sea mobile-friendly.',
       },
       {
         title: 'Usa los gráficos temporales',
-        description:
-          'Los gráficos muestran la actividad a lo largo del tiempo. Identifica patrones y picos de tráfico.',
+        content:
+          'Los gráficos muestran la actividad a lo largo del tiempo. Identifica patrones y picos de tráfico.\n\nPuedes cambiar el rango de fechas para análisis más específicos.',
+        tip: 'Los picos de tráfico pueden indicar cuándo tu audiencia está más activa.',
       },
     ],
   },
   {
     id: 'api-setup',
+    slug: 'configurar-api',
     title: 'Configurar la API',
-    description: 'Configura y usa la API de BRL Links en tus aplicaciones',
+    description:
+      'Configura y usa la API de Broslunas Links en tus aplicaciones para automatizar la creación de enlaces',
     category: 'api',
+    difficulty: 'Avanzado',
     estimatedTime: '10 minutos',
     steps: [
       {
         title: 'Genera tu token API',
-        description:
-          'Ve a Configuración > API en tu dashboard y genera un nuevo token de acceso. Guárdalo de forma segura.',
+        content:
+          'Ve a Configuración > API en tu dashboard y genera un nuevo token de acceso. Guárdalo de forma segura.\n\nEste token te permitirá acceder a todas las funciones de la API de forma programática.',
+        tip: 'Nunca compartas tu token API públicamente. Trátalo como una contraseña.',
+        code: '// Ejemplo de token\nconst API_TOKEN = "brl_1234567890abcdef";',
       },
       {
         title: 'Configura la autenticación',
-        description:
-          'Incluye tu token en el header Authorization: Bearer tu-token-aqui en todas las solicitudes.',
+        content:
+          'Incluye tu token en el header Authorization: Bearer tu-token-aqui en todas las solicitudes.\n\nEste header debe estar presente en cada llamada a la API.',
+        code: 'const headers = {\n  "Authorization": "Bearer brl_1234567890abcdef",\n  "Content-Type": "application/json"\n};',
+        tip: 'Usa variables de entorno para almacenar tu token de forma segura.',
       },
       {
         title: 'Prueba la conexión',
-        description:
-          'Haz una solicitud GET a /api/user/profile para verificar que tu token funciona correctamente.',
+        content:
+          'Haz una solicitud GET a /api/user/profile para verificar que tu token funciona correctamente.\n\nEsta llamada te devolverá información básica de tu cuenta.',
+        code: 'fetch("https://broslunas.link/api/user/profile", {\n  headers: headers\n})\n.then(response => response.json())\n.then(data => console.log(data));',
+        tip: 'Si recibes un error 401, verifica que tu token sea correcto.',
       },
       {
         title: 'Crea enlaces via API',
-        description:
-          'Usa POST /api/links con los datos del enlace para crear enlaces programáticamente.',
+        content:
+          'Usa POST /api/links con los datos del enlace para crear enlaces programáticamente.\n\nPuedes crear múltiples enlaces de forma automatizada.',
+        code: 'const linkData = {\n  "url": "https://ejemplo.com",\n  "customSlug": "mi-enlace",\n  "title": "Mi Enlace"\n};\n\nfetch("https://broslunas.link/api/links", {\n  method: "POST",\n  headers: headers,\n  body: JSON.stringify(linkData)\n});',
+        tip: 'El customSlug es opcional. Si no lo proporcionas, se generará automáticamente.',
       },
       {
         title: 'Consulta estadísticas',
-        description:
-          'Usa GET /api/links/:id/analytics para obtener datos de análisis de tus enlaces.',
+        content:
+          'Usa GET /api/links/:id/analytics para obtener datos de análisis de tus enlaces.\n\nPuedes integrar estas estadísticas en tus propias aplicaciones.',
+        code: 'fetch("https://broslunas.link/api/links/abc123/analytics", {\n  headers: headers\n})\n.then(response => response.json())\n.then(analytics => {\n  console.log(`Clics totales: ${analytics.totalClicks}`);\n});',
+        tip: 'Las estadísticas se actualizan en tiempo real.',
+      },
+    ],
+  },
+  {
+    id: 'bulk-links',
+    slug: 'crear-enlaces-masivos',
+    title: 'Crear enlaces en lote',
+    description:
+      'Aprende a crear múltiples enlaces de forma eficiente usando herramientas avanzadas',
+    category: 'link-management',
+    difficulty: 'Intermedio',
+    estimatedTime: '8 minutos',
+    steps: [
+      {
+        title: 'Prepara tu lista de URLs',
+        content:
+          'Organiza todas las URLs que deseas acortar en un archivo CSV o lista de texto.\n\nCada línea debe contener una URL válida con su protocolo (http/https).',
+        code: 'https://ejemplo.com/pagina1\nhttps://ejemplo.com/pagina2\nhttps://ejemplo.com/pagina3',
+        tip: 'Verifica que todas las URLs sean válidas antes de proceder.',
+      },
+      {
+        title: 'Accede a la herramienta de lote',
+        content:
+          'En tu dashboard, busca la opción "Crear en lote" o "Bulk Creation" en el menú de herramientas.\n\nEsta función está disponible para usuarios con plan premium.',
+        tip: 'Si no ves esta opción, considera actualizar tu plan para acceder a funciones avanzadas.',
+      },
+      {
+        title: 'Carga tu archivo',
+        content:
+          'Sube tu archivo CSV o pega tu lista de URLs en el campo de texto proporcionado.\n\nEl sistema validará automáticamente cada URL antes de procesarla.',
+        tip: 'Puedes procesar hasta 1000 URLs de una vez con el plan premium.',
+      },
+      {
+        title: 'Configura opciones globales',
+        content:
+          'Define configuraciones que se aplicarán a todos los enlaces: prefijo personalizado, etiquetas, fecha de expiración.\n\nEstas opciones te ayudarán a organizar mejor tus enlaces masivos.',
+        tip: 'Usa etiquetas descriptivas para poder filtrar fácilmente tus enlaces después.',
+      },
+      {
+        title: 'Procesa y descarga resultados',
+        content:
+          'Inicia el proceso de creación masiva y descarga el archivo con todos los enlaces cortos generados.\n\nEl archivo incluirá la URL original, el enlace corto y cualquier error encontrado.',
+        tip: 'Guarda el archivo de resultados como respaldo de todos tus enlaces creados.',
+      },
+    ],
+  },
+  {
+    id: 'custom-domains',
+    slug: 'dominios-personalizados',
+    title: 'Configurar dominios personalizados',
+    description: 'Usa tu propio dominio para crear enlaces cortos con tu marca',
+    category: 'account',
+    difficulty: 'Avanzado',
+    estimatedTime: '15 minutos',
+    steps: [
+      {
+        title: 'Prepara tu dominio',
+        content:
+          'Necesitas tener un dominio propio y acceso a su configuración DNS.\n\nPuedes usar un subdominio como links.tudominio.com o un dominio completamente nuevo.',
+        tip: 'Los subdominios son más fáciles de configurar y no afectan tu sitio web principal.',
+      },
+      {
+        title: 'Agrega el dominio en Broslunas Links',
+        content:
+          'Ve a Configuración > Dominios personalizados y agrega tu dominio.\n\nEl sistema te proporcionará los registros DNS que necesitas configurar.',
+        code: 'Tipo: CNAME\nNombre: links\nValor: custom.broslunas.link',
+        tip: 'Copia exactamente los valores proporcionados para evitar errores de configuración.',
+      },
+      {
+        title: 'Configura los registros DNS',
+        content:
+          'En tu proveedor de DNS, agrega los registros CNAME proporcionados por Broslunas Links.\n\nLos cambios DNS pueden tardar hasta 24 horas en propagarse completamente.',
+        tip: 'Usa herramientas como nslookup o dig para verificar que los cambios se hayan aplicado.',
+      },
+      {
+        title: 'Verifica la configuración',
+        content:
+          'Regresa a Broslunas Links y verifica tu dominio. El sistema confirmará que la configuración es correcta.\n\nUna vez verificado, podrás usar tu dominio personalizado inmediatamente.',
+        tip: 'Si la verificación falla, espera unas horas más para que se complete la propagación DNS.',
+      },
+      {
+        title: 'Crea enlaces con tu dominio',
+        content:
+          'Al crear nuevos enlaces, selecciona tu dominio personalizado de la lista desplegable.\n\nTodos los enlaces futuros usarán tu dominio por defecto si así lo configuras.',
+        tip: 'Los enlaces con dominio personalizado se ven más profesionales y generan más confianza.',
       },
     ],
   },

@@ -6,14 +6,15 @@ import {
   GuideList,
   getFAQByCategory,
   getGuidesByCategory,
-  helpCategories
+  helpCategories,
 } from '@/components/help-center';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'Primeros Pasos - Centro de Ayuda | BRL Links',
-  description: 'Aprende los conceptos básicos para comenzar a usar BRL Links y crear tus primeros enlaces cortos.',
-  keywords: 'primeros pasos, tutorial, guía básica, comenzar, BRL Links',
+  title: 'Primeros Pasos - Centro de Ayuda | Broslunas Links',
+  description:
+    'Aprende los conceptos básicos para comenzar a usar Broslunas Links y crear tus primeros enlaces cortos.',
+  keywords: 'primeros pasos, tutorial, guía básica, comenzar, Broslunas Links',
 };
 
 export default function GettingStartedPage() {
@@ -30,9 +31,7 @@ export default function GettingStartedPage() {
               Categoría no encontrada
             </h1>
             <Link href="/help">
-              <Button variant="outline">
-                ← Volver al Centro de Ayuda
-              </Button>
+              <Button variant="outline">← Volver al Centro de Ayuda</Button>
             </Link>
           </div>
         </div>
@@ -47,17 +46,24 @@ export default function GettingStartedPage() {
         <div className="max-w-4xl mx-auto mb-12">
           {/* Breadcrumb */}
           <nav className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-6">
-            <Link href="/help" className="hover:text-gray-700 dark:hover:text-gray-200">
+            <Link
+              href="/help"
+              className="hover:text-gray-700 dark:hover:text-gray-200"
+            >
               Centro de Ayuda
             </Link>
             <span>/</span>
-            <span className="text-gray-900 dark:text-white">{category.title}</span>
+            <span className="text-gray-900 dark:text-white">
+              {category.title}
+            </span>
           </nav>
 
           {/* Category Header */}
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center" 
-                 style={{ backgroundColor: category.color + '20' }}>
+            <div
+              className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: category.color + '20' }}
+            >
               <span className="text-2xl">{category.icon}</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
@@ -85,7 +91,7 @@ export default function GettingStartedPage() {
                     <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium mr-3 mt-0.5">
                       1
                     </span>
-                    <span>Crea tu cuenta gratuita en BRL Links</span>
+                    <span>Crea tu cuenta gratuita en Broslunas Links</span>
                   </li>
                   <li className="flex items-start">
                     <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium mr-3 mt-0.5">
@@ -103,7 +109,9 @@ export default function GettingStartedPage() {
                     <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium mr-3 mt-0.5">
                       4
                     </span>
-                    <span>¡Comparte tu enlace y monitorea las estadísticas!</span>
+                    <span>
+                      ¡Comparte tu enlace y monitorea las estadísticas!
+                    </span>
                   </li>
                 </ol>
               </div>
@@ -133,9 +141,7 @@ export default function GettingStartedPage() {
             </div>
             <div className="mt-8 text-center">
               <Link href="/dashboard">
-                <Button size="lg">
-                  Comenzar Ahora
-                </Button>
+                <Button size="lg">Comenzar Ahora</Button>
               </Link>
             </div>
           </div>
@@ -146,7 +152,31 @@ export default function GettingStartedPage() {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                 📚 Guías Paso a Paso
               </h2>
-              <GuideList guides={guides} />
+              <div className="grid gap-6 md:grid-cols-2">
+                {guides.map(guide => (
+                  <Link key={guide.id} href={`/help/guide/${guide.slug}`}>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-shadow cursor-pointer">
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {guide.title}
+                        </h3>
+                        <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full">
+                          {guide.difficulty}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
+                        {guide.description}
+                      </p>
+                      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                        <span>⏱️ {guide.estimatedTime}</span>
+                        <span className="text-blue-600 dark:text-blue-400 hover:underline">
+                          Ver guía →
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
 
@@ -164,8 +194,18 @@ export default function GettingStartedPage() {
           {faqs.length === 0 && guides.length === 0 && (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <svg
+                  className="w-8 h-8 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -180,9 +220,7 @@ export default function GettingStartedPage() {
           {/* Back Navigation */}
           <div className="text-center">
             <Link href="/help">
-              <Button variant="outline">
-                ← Volver al Centro de Ayuda
-              </Button>
+              <Button variant="outline">← Volver al Centro de Ayuda</Button>
             </Link>
           </div>
         </div>

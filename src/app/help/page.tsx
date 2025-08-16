@@ -13,7 +13,7 @@ import {
   guides,
   searchFAQ,
   getFAQByCategory,
-  getGuidesByCategory
+  getGuidesByCategory,
 } from '@/components/help-center';
 import { cn } from '@/lib/utils';
 
@@ -33,10 +33,12 @@ export default function HelpPage() {
     // Aplicar filtro de búsqueda
     if (searchQuery) {
       filteredFAQs = searchFAQ(searchQuery, selectedCategory || undefined);
-      filteredGuides = guides.filter(guide => 
-        guide.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        guide.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (!selectedCategory || guide.category === selectedCategory)
+      filteredGuides = guides.filter(
+        guide =>
+          guide.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          guide.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          !selectedCategory ||
+          guide.category === selectedCategory
       );
     } else if (selectedCategory) {
       filteredFAQs = getFAQByCategory(selectedCategory);
@@ -65,9 +67,10 @@ export default function HelpPage() {
             Centro de Ayuda
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-            Encuentra respuestas a tus preguntas y aprende a usar BRL Links
+            Encuentra respuestas a tus preguntas y aprende a usar Broslunas
+            Links
           </p>
-          
+
           {/* Search Box */}
           <SearchBox onSearch={handleSearch} className="mb-8" />
         </div>
@@ -79,11 +82,11 @@ export default function HelpPage() {
               Explora por Categorías
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {helpCategories.map((category) => {
+              {helpCategories.map(category => {
                 const categoryFAQs = getFAQByCategory(category.id);
                 const categoryGuides = getGuidesByCategory(category.id);
                 const totalItems = categoryFAQs.length + categoryGuides.length;
-                
+
                 return (
                   <CategoryCard
                     key={category.id}
@@ -116,7 +119,10 @@ export default function HelpPage() {
                   <>
                     <span>/</span>
                     <span className="text-gray-900 dark:text-white">
-                      {helpCategories.find(cat => cat.id === selectedCategory)?.title}
+                      {
+                        helpCategories.find(cat => cat.id === selectedCategory)
+                          ?.title
+                      }
                     </span>
                   </>
                 )}
@@ -138,21 +144,24 @@ export default function HelpPage() {
                   <button
                     onClick={() => setActiveTab('all')}
                     className={cn(
-                      "py-2 px-1 border-b-2 font-medium text-sm",
+                      'py-2 px-1 border-b-2 font-medium text-sm',
                       activeTab === 'all'
-                        ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
                     )}
                   >
-                    Todo ({filteredContent.faqs.length + filteredContent.guides.length})
+                    Todo (
+                    {filteredContent.faqs.length +
+                      filteredContent.guides.length}
+                    )
                   </button>
                   <button
                     onClick={() => setActiveTab('faq')}
                     className={cn(
-                      "py-2 px-1 border-b-2 font-medium text-sm",
+                      'py-2 px-1 border-b-2 font-medium text-sm',
                       activeTab === 'faq'
-                        ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
                     )}
                   >
                     Preguntas Frecuentes ({filteredContent.faqs.length})
@@ -160,10 +169,10 @@ export default function HelpPage() {
                   <button
                     onClick={() => setActiveTab('guides')}
                     className={cn(
-                      "py-2 px-1 border-b-2 font-medium text-sm",
+                      'py-2 px-1 border-b-2 font-medium text-sm',
                       activeTab === 'guides'
-                        ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
                     )}
                   >
                     Guías ({filteredContent.guides.length})
@@ -175,50 +184,67 @@ export default function HelpPage() {
             {/* Content */}
             <div className="space-y-12">
               {/* FAQs */}
-              {(activeTab === 'all' || activeTab === 'faq') && filteredContent.faqs.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                    Preguntas Frecuentes
-                  </h3>
-                  <FAQList faqs={filteredContent.faqs} showCategory={!selectedCategory} />
-                </div>
-              )}
+              {(activeTab === 'all' || activeTab === 'faq') &&
+                filteredContent.faqs.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                      Preguntas Frecuentes
+                    </h3>
+                    <FAQList
+                      faqs={filteredContent.faqs}
+                      showCategory={!selectedCategory}
+                    />
+                  </div>
+                )}
 
               {/* Guides */}
-              {(activeTab === 'all' || activeTab === 'guides') && filteredContent.guides.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                    Guías Paso a Paso
-                  </h3>
-                  <GuideList guides={filteredContent.guides} />
-                </div>
-              )}
+              {(activeTab === 'all' || activeTab === 'guides') &&
+                filteredContent.guides.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                      Guías Paso a Paso
+                    </h3>
+                    <GuideList guides={filteredContent.guides} />
+                  </div>
+                )}
 
               {/* No results */}
-              {filteredContent.faqs.length === 0 && filteredContent.guides.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+              {filteredContent.faqs.length === 0 &&
+                filteredContent.guides.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-8 h-8 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      No se encontraron resultados
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-6">
+                      Intenta con otros términos de búsqueda o explora las
+                      categorías.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedCategory(null);
+                      }}
+                      variant="outline"
+                    >
+                      Ver todas las categorías
+                    </Button>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    No se encontraron resultados
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-6">
-                    Intenta con otros términos de búsqueda o explora las categorías.
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setSearchQuery('');
-                      setSelectedCategory(null);
-                    }}
-                    variant="outline"
-                  >
-                    Ver todas las categorías
-                  </Button>
-                </div>
-              )}
+                )}
             </div>
           </div>
         )}
@@ -250,9 +276,7 @@ export default function HelpPage() {
         {/* Back to Home */}
         <div className="text-center mt-8">
           <Link href="/">
-            <Button variant="outline">
-              ← Volver al Inicio
-            </Button>
+            <Button variant="outline">← Volver al Inicio</Button>
           </Link>
         </div>
       </div>

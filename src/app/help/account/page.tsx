@@ -11,10 +11,11 @@ import {
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'Cuenta - Centro de Ayuda | BRL Links',
+  title: 'Cuenta - Centro de Ayuda | Broslunas Links',
   description:
-    'Gestiona tu cuenta, configuración, seguridad y preferencias en BRL Links.',
-  keywords: 'cuenta, perfil, configuración, seguridad, contraseña, BRL Links',
+    'Gestiona tu cuenta, configuración, seguridad y preferencias en Broslunas Links.',
+  keywords:
+    'cuenta, perfil, configuración, seguridad, contraseña, Broslunas Links',
 };
 
 export default function AccountPage() {
