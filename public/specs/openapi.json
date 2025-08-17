@@ -1,0 +1,1316 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "URL Shortener API",
+    "description": "API pública para gestionar enlaces acortados, analíticas y tokens de autenticación. Esta API permite a los desarrolladores integrar las funcionalidades del acortador de URLs en sus aplicaciones externas.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "url": "https://example.com/support"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://example.com/api/v1",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Development server"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/links": {
+      "get": {
+        "summary": "Obtener enlaces del usuario",
+        "description": "Recupera todos los enlaces del usuario autenticado con soporte para paginación, búsqueda y ordenamiento.",
+        "operationId": "getLinks",
+        "tags": ["Enlaces"],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número de página (empezando desde 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Número de elementos por página (máximo 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "example": 20
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Término de búsqueda para filtrar enlaces por título, descripción, slug o URL",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "example": "github"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "Campo por el cual ordenar los resultados",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "clickCount", "title"],
+              "default": "createdAt"
+            },
+            "example": "clickCount"
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "description": "Orden de los resultados",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            },
+            "example": "desc"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de enlaces recuperada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Link"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Respuesta exitosa con enlaces",
+                    "value": {
+                      "success": true,
+                      "data": [
+                        {
+                          "id": "507f1f77bcf86cd799439011",
+                          "originalUrl": "https://github.com/user/repo",
+                          "slug": "github-repo",
+                          "title": "Mi Repositorio de GitHub",
+                          "description": "Repositorio principal del proyecto",
+                          "shortUrl": "https://example.com/github-repo",
+                          "isPublicStats": true,
+                          "isActive": true,
+                          "clickCount": 42,
+                          "createdAt": "2024-01-15T10:30:00.000Z",
+                          "updatedAt": "2024-01-15T10:30:00.000Z"
+                        }
+                      ],
+                      "pagination": {
+                        "page": 1,
+                        "limit": 20,
+                        "total": 1,
+                        "totalPages": 1
+                      },
+                      "timestamp": "2024-01-15T10:30:00.000Z"
+                    }
+                  },
+                  "empty": {
+                    "summary": "Sin enlaces",
+                    "value": {
+                      "success": true,
+                      "data": [],
+                      "pagination": {
+                        "page": 1,
+                        "limit": 20,
+                        "total": 0,
+                        "totalPages": 0
+                      },
+                      "timestamp": "2024-01-15T10:30:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear un nuevo enlace",
+        "description": "Crea un nuevo enlace acortado. Si no se proporciona un slug personalizado, se generará uno automáticamente.",
+        "operationId": "createLink",
+        "tags": ["Enlaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLinkRequest"
+              },
+              "examples": {
+                "basic": {
+                  "summary": "Enlace básico",
+                  "value": {
+                    "originalUrl": "https://github.com/user/repo"
+                  }
+                },
+                "complete": {
+                  "summary": "Enlace completo",
+                  "value": {
+                    "originalUrl": "https://github.com/user/repo",
+                    "slug": "my-github",
+                    "title": "Mi Repositorio de GitHub",
+                    "description": "Repositorio principal del proyecto",
+                    "isPublicStats": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Enlace creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Link"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "507f1f77bcf86cd799439011",
+                    "originalUrl": "https://github.com/user/repo",
+                    "slug": "my-github",
+                    "title": "Mi Repositorio de GitHub",
+                    "description": "Repositorio principal del proyecto",
+                    "shortUrl": "https://example.com/my-github",
+                    "isPublicStats": true,
+                    "isActive": true,
+                    "clickCount": 0,
+                    "createdAt": "2024-01-15T10:30:00.000Z",
+                    "updatedAt": "2024-01-15T10:30:00.000Z"
+                  },
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "description": "Slug ya existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "SLUG_TAKEN",
+                    "message": "Slug 'my-github' is already taken",
+                    "details": {
+                      "slug": "my-github",
+                      "suggestedSlugs": ["my-github1", "my-github2", "my-github-abc"]
+                    }
+                  },
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/links/{id}": {
+      "put": {
+        "summary": "Actualizar un enlace",
+        "description": "Actualiza un enlace existente. Solo se pueden actualizar los enlaces que pertenecen al usuario autenticado.",
+        "operationId": "updateLink",
+        "tags": ["Enlaces"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID único del enlace",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$"
+            },
+            "example": "507f1f77bcf86cd799439011"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLinkRequest"
+              },
+              "examples": {
+                "partial": {
+                  "summary": "Actualización parcial",
+                  "value": {
+                    "title": "Nuevo título del enlace"
+                  }
+                },
+                "complete": {
+                  "summary": "Actualización completa",
+                  "value": {
+                    "originalUrl": "https://github.com/user/new-repo",
+                    "title": "Nuevo Repositorio",
+                    "description": "Descripción actualizada",
+                    "isPublicStats": false,
+                    "isActive": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Enlace actualizado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Link"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "id": "507f1f77bcf86cd799439011",
+                    "originalUrl": "https://github.com/user/new-repo",
+                    "slug": "my-github",
+                    "title": "Nuevo Repositorio",
+                    "description": "Descripción actualizada",
+                    "shortUrl": "https://example.com/my-github",
+                    "isPublicStats": false,
+                    "isActive": true,
+                    "clickCount": 42,
+                    "createdAt": "2024-01-15T10:30:00.000Z",
+                    "updatedAt": "2024-01-15T11:00:00.000Z"
+                  },
+                  "timestamp": "2024-01-15T11:00:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar un enlace",
+        "description": "Elimina permanentemente un enlace. Solo se pueden eliminar los enlaces que pertenecen al usuario autenticado.",
+        "operationId": "deleteLink",
+        "tags": ["Enlaces"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID único del enlace",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$"
+            },
+            "example": "507f1f77bcf86cd799439011"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Enlace eliminado exitosamente"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/analytics/links/{id}": {
+      "get": {
+        "summary": "Obtener analíticas de un enlace",
+        "description": "Recupera las estadísticas detalladas de un enlace específico, incluyendo clics por fecha, países, referrers y tipos de dispositivo.",
+        "operationId": "getLinkAnalytics",
+        "tags": ["Analíticas"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID único del enlace",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$"
+            },
+            "example": "507f1f77bcf86cd799439011"
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Fecha de inicio para filtrar analíticas (formato ISO 8601)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2024-01-01"
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Fecha de fin para filtrar analíticas (formato ISO 8601)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2024-01-31"
+          },
+          {
+            "name": "groupBy",
+            "in": "query",
+            "description": "Agrupación temporal de los datos",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["day", "week", "month"],
+              "default": "day"
+            },
+            "example": "day"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Analíticas del enlace recuperadas exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/LinkAnalytics"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "linkId": "507f1f77bcf86cd799439011",
+                    "totalClicks": 156,
+                    "uniqueClicks": 89,
+                    "clicksByDate": [
+                      {
+                        "date": "2024-01-15",
+                        "clicks": 23,
+                        "uniqueClicks": 18
+                      },
+                      {
+                        "date": "2024-01-16",
+                        "clicks": 31,
+                        "uniqueClicks": 24
+                      }
+                    ],
+                    "topCountries": [
+                      {
+                        "country": "ES",
+                        "clicks": 45
+                      },
+                      {
+                        "country": "US",
+                        "clicks": 32
+                      }
+                    ],
+                    "topReferrers": [
+                      {
+                        "referrer": "twitter.com",
+                        "clicks": 28
+                      },
+                      {
+                        "referrer": "linkedin.com",
+                        "clicks": 19
+                      }
+                    ],
+                    "deviceTypes": [
+                      {
+                        "type": "mobile",
+                        "clicks": 89
+                      },
+                      {
+                        "type": "desktop",
+                        "clicks": 67
+                      }
+                    ]
+                  },
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/analytics/summary": {
+      "get": {
+        "summary": "Obtener resumen de analíticas",
+        "description": "Recupera un resumen de las estadísticas generales de todos los enlaces del usuario, incluyendo totales y comparativas mensuales.",
+        "operationId": "getAnalyticsSummary",
+        "tags": ["Analíticas"],
+        "responses": {
+          "200": {
+            "description": "Resumen de analíticas recuperado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AnalyticsSummary"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "totalLinks": 15,
+                    "totalClicks": 1247,
+                    "totalUniqueClicks": 892,
+                    "clicksThisMonth": 234,
+                    "clicksLastMonth": 189,
+                    "topPerformingLinks": [
+                      {
+                        "id": "507f1f77bcf86cd799439011",
+                        "slug": "github-repo",
+                        "title": "Mi Repositorio de GitHub",
+                        "clicks": 156
+                      },
+                      {
+                        "id": "507f1f77bcf86cd799439012",
+                        "slug": "portfolio",
+                        "title": "Mi Portfolio",
+                        "clicks": 98
+                      }
+                    ]
+                  },
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API Token",
+        "description": "Token de API generado desde el dashboard del usuario. Formato: `uls_` seguido de 64 caracteres hexadecimales."
+      }
+    },
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "required": ["success", "timestamp"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indica si la operación fue exitosa"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp de la respuesta en formato ISO 8601"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiResponse"
+          },
+          {
+            "type": "object",
+            "required": ["error"],
+            "properties": {
+              "success": {
+                "type": "boolean",
+                "enum": [false]
+              },
+              "error": {
+                "$ref": "#/components/schemas/ApiError"
+              }
+            }
+          }
+        ]
+      },
+      "ApiError": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código de error específico",
+            "enum": [
+              "INVALID_TOKEN",
+              "TOKEN_EXPIRED",
+              "TOKEN_MALFORMED",
+              "RATE_LIMIT_EXCEEDED",
+              "DAILY_QUOTA_EXCEEDED",
+              "LINK_NOT_FOUND",
+              "LINK_ACCESS_DENIED",
+              "SLUG_ALREADY_EXISTS",
+              "INVALID_URL_FORMAT",
+              "INVALID_SLUG_FORMAT",
+              "MISSING_REQUIRED_FIELD",
+              "VALIDATION_ERROR",
+              "UNAUTHORIZED",
+              "FORBIDDEN",
+              "NOT_FOUND",
+              "INTERNAL_ERROR"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensaje descriptivo del error"
+          },
+          "details": {
+            "type": "object",
+            "description": "Detalles adicionales del error",
+            "additionalProperties": true
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "required": ["page", "limit", "total", "totalPages"],
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Página actual"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Número de elementos por página"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Número total de elementos"
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Número total de páginas"
+          }
+        }
+      },
+      "Link": {
+        "type": "object",
+        "required": [
+          "id",
+          "originalUrl",
+          "slug",
+          "shortUrl",
+          "isPublicStats",
+          "isActive",
+          "clickCount",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID único del enlace",
+            "pattern": "^[0-9a-fA-F]{24}$",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "originalUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "description": "URL original completa",
+            "example": "https://github.com/user/repo"
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9-_]+$",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Código corto único del enlace",
+            "example": "github-repo"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Título descriptivo del enlace",
+            "example": "Mi Repositorio de GitHub"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Descripción detallada del enlace",
+            "example": "Repositorio principal del proyecto con código fuente"
+          },
+          "shortUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL acortada completa",
+            "example": "https://example.com/github-repo"
+          },
+          "isPublicStats": {
+            "type": "boolean",
+            "description": "Indica si las estadísticas son públicas",
+            "example": true
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Indica si el enlace está activo",
+            "example": true
+          },
+          "clickCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Número total de clics",
+            "example": 42
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de creación en formato ISO 8601",
+            "example": "2024-01-15T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de última actualización en formato ISO 8601",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        }
+      },
+      "CreateLinkRequest": {
+        "type": "object",
+        "required": ["originalUrl"],
+        "properties": {
+          "originalUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "description": "URL original que se desea acortar",
+            "example": "https://github.com/user/repo"
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9-_]+$",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Código corto personalizado (opcional). Si no se proporciona, se genera automáticamente",
+            "example": "my-github"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Título descriptivo del enlace",
+            "example": "Mi Repositorio de GitHub"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Descripción detallada del enlace",
+            "example": "Repositorio principal del proyecto"
+          },
+          "isPublicStats": {
+            "type": "boolean",
+            "default": false,
+            "description": "Indica si las estadísticas deben ser públicas",
+            "example": true
+          }
+        }
+      },
+      "UpdateLinkRequest": {
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "originalUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "description": "Nueva URL original",
+            "example": "https://github.com/user/new-repo"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true,
+            "description": "Nuevo título del enlace",
+            "example": "Nuevo Repositorio"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true,
+            "description": "Nueva descripción del enlace",
+            "example": "Descripción actualizada"
+          },
+          "isPublicStats": {
+            "type": "boolean",
+            "description": "Cambiar visibilidad de estadísticas",
+            "example": false
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Activar o desactivar el enlace",
+            "example": true
+          }
+        }
+      },
+      "LinkAnalytics": {
+        "type": "object",
+        "required": [
+          "linkId",
+          "totalClicks",
+          "uniqueClicks",
+          "clicksByDate",
+          "topCountries",
+          "topReferrers",
+          "deviceTypes"
+        ],
+        "properties": {
+          "linkId": {
+            "type": "string",
+            "description": "ID del enlace analizado",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "totalClicks": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Número total de clics",
+            "example": 156
+          },
+          "uniqueClicks": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Número de clics únicos (por IP)",
+            "example": 89
+          },
+          "clicksByDate": {
+            "type": "array",
+            "description": "Clics agrupados por fecha",
+            "items": {
+              "type": "object",
+              "required": ["date", "clicks", "uniqueClicks"],
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "description": "Fecha en formato YYYY-MM-DD, YYYY-WXX, o YYYY-MM según agrupación",
+                  "example": "2024-01-15"
+                },
+                "clicks": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Número de clics en esta fecha",
+                  "example": 23
+                },
+                "uniqueClicks": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Número de clics únicos en esta fecha",
+                  "example": 18
+                }
+              }
+            }
+          },
+          "topCountries": {
+            "type": "array",
+            "description": "Países con más clics (máximo 10)",
+            "items": {
+              "type": "object",
+              "required": ["country", "clicks"],
+              "properties": {
+                "country": {
+                  "type": "string",
+                  "description": "Código de país ISO 3166-1 alpha-2",
+                  "example": "ES"
+                },
+                "clicks": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Número de clics desde este país",
+                  "example": 45
+                }
+              }
+            }
+          },
+          "topReferrers": {
+            "type": "array",
+            "description": "Sitios de referencia con más clics (máximo 10)",
+            "items": {
+              "type": "object",
+              "required": ["referrer", "clicks"],
+              "properties": {
+                "referrer": {
+                  "type": "string",
+                  "description": "Dominio del sitio de referencia",
+                  "example": "twitter.com"
+                },
+                "clicks": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Número de clics desde este referrer",
+                  "example": 28
+                }
+              }
+            }
+          },
+          "deviceTypes": {
+            "type": "array",
+            "description": "Tipos de dispositivo utilizados",
+            "items": {
+              "type": "object",
+              "required": ["type", "clicks"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Tipo de dispositivo",
+                  "enum": ["mobile", "desktop", "tablet", "unknown"],
+                  "example": "mobile"
+                },
+                "clicks": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Número de clics desde este tipo de dispositivo",
+                  "example": 89
+                }
+              }
+            }
+          }
+        }
+      },
+      "AnalyticsSummary": {
+        "type": "object",
+        "required": [
+          "totalLinks",
+          "totalClicks",
+          "totalUniqueClicks",
+          "clicksThisMonth",
+          "clicksLastMonth",
+          "topPerformingLinks"
+        ],
+        "properties": {
+          "totalLinks": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Número total de enlaces activos",
+            "example": 15
+          },
+          "totalClicks": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Número total de clics en todos los enlaces",
+            "example": 1247
+          },
+          "totalUniqueClicks": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Número total de clics únicos (por IP)",
+            "example": 892
+          },
+          "clicksThisMonth": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Clics en el mes actual",
+            "example": 234
+          },
+          "clicksLastMonth": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Clics en el mes anterior",
+            "example": 189
+          },
+          "topPerformingLinks": {
+            "type": "array",
+            "description": "Enlaces con mejor rendimiento (máximo 10)",
+            "items": {
+              "type": "object",
+              "required": ["id", "slug", "clicks"],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "ID del enlace",
+                  "example": "507f1f77bcf86cd799439011"
+                },
+                "slug": {
+                  "type": "string",
+                  "description": "Slug del enlace",
+                  "example": "github-repo"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Título del enlace",
+                  "example": "Mi Repositorio de GitHub"
+                },
+                "clicks": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Número total de clics",
+                  "example": 156
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Solicitud inválida - Error en los parámetros o datos enviados",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "validation": {
+                "summary": "Error de validación",
+                "value": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "originalUrl is required and must be a string",
+                    "details": {
+                      "field": "originalUrl"
+                    }
+                  },
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              },
+              "invalidUrl": {
+                "summary": "URL inválida",
+                "value": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_URL_FORMAT",
+                    "message": "Invalid URL format",
+                    "details": {
+                      "url": "not-a-valid-url"
+                    }
+                  },
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "No autorizado - Token de API faltante o inválido",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "missingToken": {
+                "summary": "Token faltante",
+                "value": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_TOKEN",
+                    "message": "Authorization header with Bearer token is required"
+                  },
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              },
+              "invalidToken": {
+                "summary": "Token inválido",
+                "value": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_TOKEN",
+                    "message": "Invalid API token"
+                  },
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Prohibido - El usuario no tiene permisos para acceder a este recurso",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "LINK_ACCESS_DENIED",
+                "message": "You don't have permission to access this link"
+              },
+              "timestamp": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "No encontrado - El recurso solicitado no existe",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "LINK_NOT_FOUND",
+                "message": "Link not found"
+              },
+              "timestamp": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        }
+      },
+      "RateLimitExceeded": {
+        "description": "Límite de velocidad excedido - Demasiadas solicitudes",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "description": "Número máximo de solicitudes permitidas",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "description": "Número de solicitudes restantes en la ventana actual",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          "X-RateLimit-Reset": {
+            "description": "Timestamp cuando se reinicia el límite",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          "Retry-After": {
+            "description": "Segundos hasta que se puede hacer otra solicitud",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "RATE_LIMIT_EXCEEDED",
+                "message": "Rate limit exceeded. Maximum 100 requests per hour",
+                "details": {
+                  "limit": 100,
+                  "window": "1h"
+                }
+              },
+              "timestamp": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Error interno del servidor",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "INTERNAL_ERROR",
+                "message": "An internal server error occurred"
+              },
+              "timestamp": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Enlaces",
+      "description": "Operaciones para gestionar enlaces acortados"
+    },
+    {
+      "name": "Analíticas",
+      "description": "Operaciones para obtener estadísticas y analíticas de enlaces"
+    }
+  ]
+}

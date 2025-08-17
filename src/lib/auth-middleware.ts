@@ -1,0 +1,278 @@
+import { NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth-simple';
+import { validateUserSession } from './user-utils';
+import { validateApiToken, updateTokenLastUsed } from './api-token';
+import { createErrorResponse } from './api-response';
+import { AppError, ErrorCode } from './api-errors';
+import Link from '../models/Link';
+
+export interface AuthContext {
+  userId: string;
+  user: {
+    id: string;
+    email?: string | null;
+    name?: string | null;
+    provider?: 'github' | 'google' | 'discord';
+  };
+  authMethod: 'session' | 'api_token';
+}
+
+/**
+ * Middleware para autenticar requests usando sesión o API token
+ */
+export async function authenticateRequest(request: NextRequest): Promise<AuthContext> {
+  // Intentar autenticación por API token primero
+  const authHeader = request.headers.get('authorization');
+  const apiToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  if (apiToken) {
+    const user = await validateApiToken(apiToken);
+    if (!user) {
+      throw new AppError(
+        ErrorCode.INVALID_TOKEN,
+        'Invalid API token',
+        401
+      );
+    }
+
+    // Update lastUsedAt timestamp for the API token
+    await updateTokenLastUsed(user._id.toString());
+
+    return {
+      userId: user._id.toString(),
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        provider: user.provider
+      },
+      authMethod: 'api_token'
+    };
+  }
+
+  // Intentar autenticación por sesión
+  const session = await getServerSession(authOptions);
+  const userValidation = validateUserSession(session);
+
+  if (!userValidation.isValid || !userValidation.userId) {
+    throw new AppError(
+      ErrorCode.UNAUTHORIZED,
+      'Authentication required',
+      401
+    );
+  }
+
+  return {
+    userId: userValidation.userId.toString(),
+    user: {
+      id: session!.user.id,
+      email: session!.user.email,
+      name: session!.user.name,
+      provider: session!.user.provider || 'github'
+    },
+    authMethod: 'session'
+  };
+}
+
+/**
+ * Wrapper para endpoints que requieren autenticación
+ */
+export function withAuth<T extends any[]>(
+  handler: (request: NextRequest, auth: AuthContext, ...args: T) => Promise<Response>
+) {
+  return async (request: NextRequest, ...args: T): Promise<Response> => {
+    try {
+      const auth = await authenticateRequest(request);
+      return await handler(request, auth, ...args);
+    } catch (error) {
+      if (error instanceof AppError) {
+        return createErrorResponse(error);
+      }
+
+      console.error('[Auth Middleware Error]:', error);
+      return createErrorResponse(
+        new AppError(
+          ErrorCode.INTERNAL_ERROR,
+          'Authentication failed',
+          500
+        )
+      );
+    }
+  };
+}
+
+/**
+ * Verificar si el usuario autenticado es propietario del recurso
+ */
+export function verifyResourceOwnership(authUserId: string, resourceUserId: string): void {
+  if (authUserId !== resourceUserId) {
+    throw new AppError(
+      ErrorCode.FORBIDDEN,
+      'Access denied: You can only access your own resources',
+      403
+    );
+  }
+}
+
+/**
+ * Verificar si el usuario autenticado puede acceder al recurso a través de la API
+ * Específicamente diseñado para endpoints de API pública
+ */
+export function verifyApiResourceOwnership(authUserId: string, resourceUserId: string): void {
+  if (authUserId !== resourceUserId) {
+    throw new AppError(
+      ErrorCode.FORBIDDEN,
+      'Access denied: You can only access your own resources through the API',
+      403
+    );
+  }
+}
+
+/**
+ * Verificar si el usuario autenticado es propietario de un enlace específico
+ * Busca el enlace en la base de datos y verifica la propiedad
+ */
+export async function verifyLinkOwnership(authUserId: string, linkId: string): Promise<void> {
+  try {
+    const link = await Link.findById(linkId);
+
+    if (!link) {
+      throw new AppError(
+        ErrorCode.LINK_NOT_FOUND,
+        'Link not found',
+        404
+      );
+    }
+
+    if (link.userId.toString() !== authUserId) {
+      throw new AppError(
+        ErrorCode.FORBIDDEN,
+        'Access denied: You can only access your own links',
+        403
+      );
+    }
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    // Handle invalid ObjectId format
+    if (error instanceof Error && error.name === 'CastError') {
+      throw new AppError(
+        ErrorCode.LINK_NOT_FOUND,
+        'Invalid link ID format',
+        404
+      );
+    }
+
+    throw new AppError(
+      ErrorCode.DATABASE_ERROR,
+      'Error verifying link ownership',
+      500
+    );
+  }
+}
+
+/**
+ * Verificar si el usuario autenticado es propietario de un enlace por slug
+ * Busca el enlace por slug y verifica la propiedad
+ */
+export async function verifyLinkOwnershipBySlug(authUserId: string, slug: string): Promise<void> {
+  try {
+    const link = await Link.findOne({ slug });
+
+    if (!link) {
+      throw new AppError(
+        ErrorCode.LINK_NOT_FOUND,
+        `Link with slug '${slug}' not found`,
+        404
+      );
+    }
+
+    if (link.userId.toString() !== authUserId) {
+      throw new AppError(
+        ErrorCode.FORBIDDEN,
+        'Access denied: You can only access your own links',
+        403
+      );
+    }
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError(
+      ErrorCode.DATABASE_ERROR,
+      'Error verifying link ownership',
+      500
+    );
+  }
+}
+
+/**
+ * Middleware para endpoints que solo permiten desarrollo
+ */
+export function requireDevelopment<T extends any[]>(
+  handler: (request: NextRequest, ...args: T) => Promise<Response>
+) {
+  return async (request: NextRequest, ...args: T): Promise<Response> => {
+    try {
+      if (process.env.NODE_ENV !== 'development') {
+        return createErrorResponse(
+          new AppError(
+            ErrorCode.NOT_ALLOWED,
+            'This endpoint is only available in development mode',
+            403
+          )
+        );
+      }
+
+      return await handler(request, ...args);
+    } catch (error) {
+      console.error('[Development Middleware Error]:', error);
+      return createErrorResponse(
+        new AppError(
+          ErrorCode.INTERNAL_ERROR,
+          'Request failed',
+          500
+        )
+      );
+    }
+  };
+}
+
+/**
+ * Middleware para endpoints públicos con rate limiting opcional
+ */
+export function withPublicAccess<T extends any[]>(
+  handler: (request: NextRequest, ...args: T) => Promise<Response>,
+  options?: {
+    requireAuth?: boolean;
+    allowAnonymous?: boolean;
+  }
+) {
+  return async (request: NextRequest, ...args: T): Promise<Response> => {
+    try {
+      // Si se requiere autenticación, crear un handler compatible con withAuth
+      if (options?.requireAuth) {
+        const authHandler = async (request: NextRequest, auth: AuthContext, ...handlerArgs: T) => {
+          return await handler(request, ...handlerArgs);
+        };
+        return withAuth(authHandler)(request, ...args);
+      }
+
+      // Para endpoints públicos, continuar sin autenticación
+      return await handler(request, ...args);
+    } catch (error) {
+      console.error('[Public Access Error]:', error);
+      return createErrorResponse(
+        new AppError(
+          ErrorCode.INTERNAL_ERROR,
+          'Request failed',
+          500
+        )
+      );
+    }
+  };
+}
