@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PublicStatsViewer } from '../../../components/features';
+import { ModernPublicStatsViewer } from '../../../components/features';
 import { LoadingSpinner, Button } from '../../../components/ui';
 import { Link, ApiResponse } from '../../../types';
 
@@ -164,14 +164,14 @@ export default function PublicStatsPage({ params }: PublicStatsPageProps) {
           </div>
 
           {/* Public Stats Viewer */}
-          <PublicStatsViewer
-            linkId={params.linkId}
-            linkInfo={{
-              slug: link.slug,
-              title: link.title,
-              description: link.description,
-            }}
-          />
+          <ModernPublicStatsViewer
+          linkId={params.linkId}
+          linkInfo={{
+            slug: link.slug,
+            title: link.title,
+            description: link.description,
+          }}
+        />
 
           {/* Footer */}
           <div className="bg-card rounded-lg border border-border p-6">

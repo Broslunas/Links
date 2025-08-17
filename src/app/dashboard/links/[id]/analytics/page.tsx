@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { LoadingSpinner, Button } from '../../../../../components/ui';
-import { StatsViewer } from '../../../../../components/features';
+import { ModernStatsViewer } from '../../../../../components/features';
 import { Link, ApiResponse } from '../../../../../types';
 
 export default function LinkAnalyticsPage() {
@@ -212,7 +212,7 @@ export default function LinkAnalyticsPage() {
         </div>
 
         {/* Stats Viewer with Export Functionality */}
-        <StatsViewer linkId={linkId} linkSlug={link.slug} />
+        <ModernStatsViewer linkId={linkId} linkSlug={link.slug} />
     </div>
   );
 }

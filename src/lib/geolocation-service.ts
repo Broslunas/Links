@@ -147,9 +147,14 @@ export class GeolocationService {
   private async getFromIPAPI(ip: string): Promise<GeoLocation | null> {
     try {
       console.log(`🔄 [GeolocationService] Consultando IP-API para: ${ip}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city,timezone,isp`, {
-        timeout: 5000
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -182,9 +187,14 @@ export class GeolocationService {
   private async getFromIPInfo(ip: string): Promise<GeoLocation | null> {
     try {
       console.log(`🔄 [GeolocationService] Consultando IPInfo para: ${ip}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       const response = await fetch(`https://ipinfo.io/${ip}/json`, {
-        timeout: 5000
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -219,9 +229,14 @@ export class GeolocationService {
     try {
       console.log(`🔄 [GeolocationService] Consultando IP Geolocation para: ${ip}`);
       // Usando el servicio gratuito sin API key (limitado)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       const response = await fetch(`https://api.ipgeolocation.io/ipgeo?ip=${ip}`, {
-        timeout: 5000
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
