@@ -34,7 +34,7 @@ const sizeOptions = [
   { value: 256, label: 'M', description: 'Mediano' },
   { value: 320, label: 'L', description: 'Grande' },
   { value: 384, label: 'XL', description: 'Muy grande' },
-  { value: 512, label: 'XXL', description: 'Extra grande' }
+  { value: 512, label: 'XXL', description: 'Extra grande' },
 ];
 
 const levelOptions = [
@@ -44,7 +44,11 @@ const levelOptions = [
   { label: 'Máximo (H)', value: 'H' as const, description: '~30% corrección' },
 ];
 
-export function QRCustomizer({ options, onChange, onReset }: QRCustomizerProps) {
+export function QRCustomizer({
+  options,
+  onChange,
+  onReset,
+}: QRCustomizerProps) {
   const handleColorPreset = (fg: string, bg: string) => {
     onChange({ ...options, fgColor: fg, bgColor: bg });
   };
@@ -65,7 +69,7 @@ export function QRCustomizer({ options, onChange, onReset }: QRCustomizerProps) 
           Combinaciones de Colores
         </h4>
         <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-          {presetColors.map((preset) => (
+          {presetColors.map(preset => (
             <button
               key={preset.name}
               onClick={() => handleColorPreset(preset.fg, preset.bg)}
@@ -107,13 +111,13 @@ export function QRCustomizer({ options, onChange, onReset }: QRCustomizerProps) 
               <input
                 type="color"
                 value={options.fgColor}
-                onChange={(e) => handleCustomColor('fg', e.target.value)}
+                onChange={e => handleCustomColor('fg', e.target.value)}
                 className="w-10 h-8 sm:w-8 sm:h-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer touch-manipulation"
               />
               <input
                 type="text"
                 value={options.fgColor}
-                onChange={(e) => handleCustomColor('fg', e.target.value)}
+                onChange={e => handleCustomColor('fg', e.target.value)}
                 className="flex-1 px-2 py-1.5 sm:py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 placeholder="#000000"
               />
@@ -127,44 +131,18 @@ export function QRCustomizer({ options, onChange, onReset }: QRCustomizerProps) 
               <input
                 type="color"
                 value={options.bgColor}
-                onChange={(e) => handleCustomColor('bg', e.target.value)}
+                onChange={e => handleCustomColor('bg', e.target.value)}
                 className="w-10 h-8 sm:w-8 sm:h-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer touch-manipulation"
               />
               <input
                 type="text"
                 value={options.bgColor}
-                onChange={(e) => handleCustomColor('bg', e.target.value)}
+                onChange={e => handleCustomColor('bg', e.target.value)}
                 className="flex-1 px-2 py-1.5 sm:py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 placeholder="#FFFFFF"
               />
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Tamaño */}
-      <div>
-        <h4 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-2 sm:mb-3">
-          Tamaño
-        </h4>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
-          {sizeOptions.map((size) => (
-            <button
-              key={size.value}
-              onClick={() => onChange({ ...options, size: size.value })}
-              className={`p-2 sm:p-3 text-xs font-medium rounded-lg border transition-all active:scale-95 touch-manipulation min-h-[60px] sm:min-h-[70px] ${
-                options.size === size.value
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                  : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
-              title={`${size.description} (${size.value}px)`}
-            >
-              <div className="text-center">
-                <div className="font-bold text-sm sm:text-base">{size.label}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{size.value}px</div>
-              </div>
-            </button>
-          ))}
         </div>
       </div>
 
@@ -174,7 +152,7 @@ export function QRCustomizer({ options, onChange, onReset }: QRCustomizerProps) 
           Corrección de Errores
         </h4>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
-          {levelOptions.map((level) => (
+          {levelOptions.map(level => (
             <button
               key={level.value}
               onClick={() => onChange({ ...options, level: level.value })}
@@ -186,15 +164,17 @@ export function QRCustomizer({ options, onChange, onReset }: QRCustomizerProps) 
               title={level.description}
             >
               <div className="text-center">
-                <div className="text-lg sm:text-xl font-bold">{level.value}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{level.label}</div>
+                <div className="text-lg sm:text-xl font-bold">
+                  {level.value}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {level.label}
+                </div>
               </div>
             </button>
           ))}
         </div>
       </div>
-
-
 
       {/* Botón de Reset */}
       <div className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
