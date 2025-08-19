@@ -103,7 +103,7 @@ export default function SettingsPage() {
         fileName: fileName,
         exportDate: new Date().toISOString(),
         exportId: exportId,
-        summary: summary // Include summary with totals
+        summary: summary, // Include summary with totals
       };
 
       await fetch(
@@ -378,22 +378,6 @@ export default function SettingsPage() {
                 ) : (
                   'Exportar Datos'
                 )}
-              </Button>
-            </div>
-
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-              <h3 className="text-sm font-medium text-yellow-900 dark:text-yellow-100 mb-2">
-                Eliminar Todos los Datos
-              </h3>
-              <p className="text-sm text-yellow-700 dark:text-yellow-200 mb-3">
-                Elimina permanentemente todos tus enlaces y datos analíticos.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-yellow-300 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-600 dark:text-yellow-200 dark:hover:bg-yellow-800"
-              >
-                Eliminar Datos
               </Button>
             </div>
           </div>
