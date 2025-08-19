@@ -5,6 +5,7 @@ import { connectDB } from '../../../lib/db-utils';
 import Link from '../../../models/Link';
 import AnalyticsEvent from '../../../models/AnalyticsEvent';
 import User from '../../../models/User';
+import TempExport from '../../../models/TempExport';
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,20 +85,20 @@ export async function POST(request: NextRequest) {
     // Generate a unique ID for this export
     const exportId = `export_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Store export data in memory cache
-    global.exportCache = global.exportCache || new Map();
-    global.exportCache.set(exportId, {
+    // Store export data in database with 1 hour expiration
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+    
+    await TempExport.create({
+      exportId,
+      userId: user._id.toString(),
+      email: session.user.email,
       data: exportData,
-      createdAt: new Date(),
-      email: session.user.email
+      expiresAt
     });
     
-    // Clean up old exports (older than 1 hour)
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    global.exportCache.forEach((value, key) => {
-      if (value.createdAt < oneHourAgo) {
-        global.exportCache!.delete(key);
-      }
+    // Clean up old exports (older than 1 hour) - optional manual cleanup
+    await TempExport.deleteMany({
+      expiresAt: { $lt: new Date() }
     });
     
     const downloadUrl = `${request.nextUrl.origin}/api/export/${exportId}`;

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectDB } from '../../../../lib/db-utils';
+import TempExport from '../../../../models/TempExport';
 
 export async function GET(
   request: NextRequest,
@@ -7,9 +9,11 @@ export async function GET(
   try {
     const { exportId } = params;
     
-    // Get the export data from cache
-    global.exportCache = global.exportCache || new Map();
-    const exportEntry = global.exportCache.get(exportId);
+    // Connect to database
+    await connectDB();
+    
+    // Get the export data from database
+    const exportEntry = await TempExport.findOne({ exportId });
     
     if (!exportEntry) {
       return NextResponse.json(
@@ -18,10 +22,10 @@ export async function GET(
       );
     }
     
-    // Check if export is older than 1 hour
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    if (exportEntry.createdAt < oneHourAgo) {
-      global.exportCache.delete(exportId);
+    // Check if export is expired
+    if (exportEntry.expiresAt < new Date()) {
+      // Clean up expired export
+      await TempExport.deleteOne({ exportId });
       return NextResponse.json(
         { error: 'Enlace de exportación expirado' },
         { status: 410 }
