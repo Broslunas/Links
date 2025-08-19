@@ -20,8 +20,8 @@ export const useResponsiveQRSize = ({
   baseSize,
   showCustomizer,
   maxWidth,
-  minSize = 128,
-  maxSize = 512
+  minSize = 192,
+  maxSize = 192
 }: ResponsiveQRSizeOptions): ResponsiveQRSizeResult => {
   const [dimensions, setDimensions] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 1024,

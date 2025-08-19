@@ -28,14 +28,7 @@ const presetColors = [
   { name: 'Oscuro', fg: '#FFFFFF', bg: '#111827' },
 ];
 
-const sizeOptions = [
-  { value: 128, label: 'XS', description: 'Muy pequeño' },
-  { value: 192, label: 'S', description: 'Pequeño' },
-  { value: 256, label: 'M', description: 'Mediano' },
-  { value: 320, label: 'L', description: 'Grande' },
-  { value: 384, label: 'XL', description: 'Muy grande' },
-  { value: 512, label: 'XXL', description: 'Extra grande' },
-];
+
 
 const levelOptions = [
   { label: 'Bajo (L)', value: 'L' as const, description: '~7% corrección' },
@@ -195,7 +188,7 @@ export function QRCustomizer({
 export const defaultQROptions: QRCustomizationOptions = {
   fgColor: '#000000',
   bgColor: '#FFFFFF',
-  size: 256,
+  size: 192,
   level: 'M',
   style: 'squares',
 };

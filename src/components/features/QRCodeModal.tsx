@@ -25,8 +25,8 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
   const { qrSize, containerSize, isMobile, isTablet, isDesktop } = useResponsiveQRSize({
     baseSize: qrOptions.size,
     showCustomizer,
-    minSize: 128,
-    maxSize: 512
+    minSize: 192,
+    maxSize: 192
   });
 
   // Load user preferences when component mounts or preferences are loaded
