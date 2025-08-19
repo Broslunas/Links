@@ -107,12 +107,14 @@ export interface AnalyticsData {
 
 export interface LinkStats {
   totalClicks: number;
+  uniqueClicks?: number;
   clicksByDay: Array<{ date: string; clicks: number }>;
   clicksByCountry: Array<{ country: string; clicks: number }>;
   clicksByDevice: Array<{ device: string; clicks: number }>;
   clicksByBrowser: Array<{ browser: string; clicks: number }>;
   clicksByOS: Array<{ os: string; clicks: number }>;
   clicksByReferrer: Array<{ referrer: string; clicks: number }>;
+  peakHours?: Array<{ hour: number; clicks: number }>;
 }
 
 export interface TempLink {

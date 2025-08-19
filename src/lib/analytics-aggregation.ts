@@ -157,14 +157,49 @@ export async function aggregateLinkStats(
         }
     ]);
 
+    // Aggregate unique clicks (by IP)
+    const uniqueClicksResult = await AnalyticsEvent.aggregate([
+        { $match: matchCondition },
+        {
+            $group: {
+                _id: '$ip'
+            }
+        },
+        { $count: 'uniqueClicks' }
+    ]);
+    const uniqueClicks = uniqueClicksResult[0]?.uniqueClicks || 0;
+
+    // Aggregate clicks by hour (peak hours)
+    const peakHours = await AnalyticsEvent.aggregate([
+        { $match: matchCondition },
+        {
+            $group: {
+                _id: {
+                    $hour: '$timestamp'
+                },
+                clicks: { $sum: 1 }
+            }
+        },
+        { $sort: { _id: 1 } },
+        {
+            $project: {
+                _id: 0,
+                hour: '$_id',
+                clicks: 1
+            }
+        }
+    ]);
+
     return {
         totalClicks,
+        uniqueClicks,
         clicksByDay,
         clicksByCountry,
         clicksByDevice,
         clicksByBrowser,
         clicksByOS,
         clicksByReferrer,
+        peakHours,
     };
 }
 

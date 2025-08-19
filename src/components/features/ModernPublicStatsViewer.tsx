@@ -14,13 +14,11 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-import {
-  Line,
-  Bar,
-  Doughnut,
-} from 'react-chartjs-2';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { LoadingSpinner } from '../ui';
+import { Button } from '../ui/Button';
+import { CountryDataModal, ReferrerDataModal } from '../ui/DataModal';
 import { LinkStats, ApiResponse } from '../../types';
 
 // Register Chart.js components
@@ -60,9 +58,17 @@ const MODERN_COLORS = {
   danger: '#ef4444',
   info: '#06b6d4',
   palette: [
-    '#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444',
-    '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#14b8a6'
-  ]
+    '#6366f1',
+    '#8b5cf6',
+    '#10b981',
+    '#f59e0b',
+    '#ef4444',
+    '#06b6d4',
+    '#84cc16',
+    '#f97316',
+    '#ec4899',
+    '#14b8a6',
+  ],
 };
 
 const DATE_RANGES = [
@@ -81,7 +87,11 @@ export function ModernPublicStatsViewer({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRange, setSelectedRange] = useState(DATE_RANGES[1]);
-  const [customDateRange, setCustomDateRange] = useState<DateRange | null>(null);
+  const [customDateRange, setCustomDateRange] = useState<DateRange | null>(
+    null
+  );
+  const [showCountryModal, setShowCountryModal] = useState(false);
+  const [showReferrerModal, setShowReferrerModal] = useState(false);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -106,12 +116,15 @@ export function ModernPublicStatsViewer({
       }
 
       const response = await fetch(url);
-      const data: ApiResponse<{ stats: Partial<LinkStats>; link: any }> = await response.json();
+      const data: ApiResponse<{ stats: Partial<LinkStats>; link: any }> =
+        await response.json();
 
       if (data.success && data.data) {
         setStats(data.data.stats);
       } else {
-        setError(data.error?.message || 'Error al cargar estadísticas públicas');
+        setError(
+          data.error?.message || 'Error al cargar estadísticas públicas'
+        );
       }
     } catch (err) {
       console.error('Error fetching public stats:', err);
@@ -125,7 +138,7 @@ export function ModernPublicStatsViewer({
     fetchStats();
   }, [linkId, selectedRange, customDateRange]);
 
-  const handleDateRangeChange = (range: typeof DATE_RANGES[0]) => {
+  const handleDateRangeChange = (range: (typeof DATE_RANGES)[0]) => {
     setSelectedRange(range);
     setCustomDateRange(null);
   };
@@ -135,7 +148,9 @@ export function ModernPublicStatsViewer({
     if (!stats?.clicksByDay) return { labels: [], datasets: [] };
 
     return {
-      labels: stats.clicksByDay.map(item => format(new Date(item.date), 'MMM dd')),
+      labels: stats.clicksByDay.map(item =>
+        format(new Date(item.date), 'MMM dd')
+      ),
       datasets: [
         {
           label: 'Clicks',
@@ -154,7 +169,11 @@ export function ModernPublicStatsViewer({
     };
   };
 
-  const getDoughnutChartData = (data: any[], labelKey: string, valueKey: string) => {
+  const getDoughnutChartData = (
+    data: any[],
+    labelKey: string,
+    valueKey: string
+  ) => {
     if (!data || data.length === 0) return { labels: [], datasets: [] };
 
     return {
@@ -171,7 +190,12 @@ export function ModernPublicStatsViewer({
     };
   };
 
-  const getBarChartData = (data: any[], labelKey: string, valueKey: string, color: string) => {
+  const getBarChartData = (
+    data: any[],
+    labelKey: string,
+    valueKey: string,
+    color: string
+  ) => {
     if (!data || data.length === 0) return { labels: [], datasets: [] };
 
     return {
@@ -268,7 +292,9 @@ export function ModernPublicStatsViewer({
 
   if (loading) {
     return (
-      <div className={`bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 ${className}`}>
+      <div
+        className={`bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 ${className}`}
+      >
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <LoadingSpinner size="lg" />
@@ -283,14 +309,28 @@ export function ModernPublicStatsViewer({
 
   if (error) {
     return (
-      <div className={`bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-xl border border-red-200 dark:border-red-800 p-8 ${className}`}>
+      <div
+        className={`bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-xl border border-red-200 dark:border-red-800 p-8 ${className}`}
+      >
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-8 h-8 text-red-600 dark:text-red-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">Error</h3>
+          <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+            Error
+          </h3>
           <p className="text-red-600 dark:text-red-300 mb-4">{error}</p>
           <button
             onClick={fetchStats}
@@ -305,14 +345,28 @@ export function ModernPublicStatsViewer({
 
   if (!stats) {
     return (
-      <div className={`bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 ${className}`}>
+      <div
+        className={`bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 ${className}`}
+      >
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <svg
+              className="w-8 h-8 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
             </svg>
           </div>
-          <p className="text-slate-600 dark:text-slate-400 font-medium">No hay datos disponibles</p>
+          <p className="text-slate-600 dark:text-slate-400 font-medium">
+            No hay datos disponibles
+          </p>
         </div>
       </div>
     );
@@ -376,8 +430,18 @@ export function ModernPublicStatsViewer({
               </p>
             </div>
             <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+                />
               </svg>
             </div>
           </div>
@@ -394,8 +458,18 @@ export function ModernPublicStatsViewer({
               </p>
             </div>
             <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
           </div>
@@ -412,8 +486,18 @@ export function ModernPublicStatsViewer({
               </p>
             </div>
             <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+                />
               </svg>
             </div>
           </div>
@@ -430,8 +514,18 @@ export function ModernPublicStatsViewer({
               </p>
             </div>
             <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-5 0-9-4-9-9s4-9 9-9" />
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-5 0-9-4-9-9s4-9 9-9"
+                />
               </svg>
             </div>
           </div>
@@ -452,6 +546,27 @@ export function ModernPublicStatsViewer({
             </div>
           </div>
 
+          {/* Peak Hours Activity */}
+          {stats.peakHours && stats.peakHours.length > 0 && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+                <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                Actividad por Horas
+              </h3>
+              <div className="h-80">
+                <Bar
+                  data={getBarChartData(
+                    stats.peakHours,
+                    'hour',
+                    'clicks',
+                    MODERN_COLORS.info
+                  )}
+                  options={chartOptions}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Device Distribution */}
           {stats.clicksByDevice && stats.clicksByDevice.length > 0 && (
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
@@ -460,9 +575,13 @@ export function ModernPublicStatsViewer({
                 Distribución por Dispositivo
               </h3>
               <div className="h-80">
-                <Doughnut 
-                  data={getDoughnutChartData(stats.clicksByDevice, 'device', 'clicks')} 
-                  options={doughnutOptions} 
+                <Doughnut
+                  data={getDoughnutChartData(
+                    stats.clicksByDevice,
+                    'device',
+                    'clicks'
+                  )}
+                  options={doughnutOptions}
                 />
               </div>
             </div>
@@ -471,14 +590,62 @@ export function ModernPublicStatsViewer({
           {/* Top Countries */}
           {stats.clicksByCountry && stats.clicksByCountry.length > 0 && (
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                Países con Más Clicks
-              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Países con Más Clicks
+                </h3>
+                {stats.clicksByCountry.length > 10 && (
+                  <Button
+                    onClick={() => setShowCountryModal(true)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Mostrar más
+                  </Button>
+                )}
+              </div>
               <div className="h-80">
-                <Bar 
-                  data={getBarChartData(stats.clicksByCountry, 'country', 'clicks', MODERN_COLORS.success)} 
-                  options={chartOptions} 
+                <Bar
+                  data={getBarChartData(
+                    stats.clicksByCountry,
+                    'country',
+                    'clicks',
+                    MODERN_COLORS.success
+                  )}
+                  options={chartOptions}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Top Referrers */}
+          {stats.clicksByReferrer && stats.clicksByReferrer.length > 0 && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  Principales Referentes
+                </h3>
+                {stats.clicksByReferrer.length > 10 && (
+                  <Button
+                    onClick={() => setShowReferrerModal(true)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Mostrar más
+                  </Button>
+                )}
+              </div>
+              <div className="h-80">
+                <Bar
+                  data={getBarChartData(
+                    stats.clicksByReferrer,
+                    'referrer',
+                    'clicks',
+                    MODERN_COLORS.danger
+                  )}
+                  options={chartOptions}
                 />
               </div>
             </div>
@@ -492,9 +659,14 @@ export function ModernPublicStatsViewer({
                 Navegadores Más Usados
               </h3>
               <div className="h-80">
-                <Bar 
-                  data={getBarChartData(stats.clicksByBrowser, 'browser', 'clicks', MODERN_COLORS.warning)} 
-                  options={chartOptions} 
+                <Bar
+                  data={getBarChartData(
+                    stats.clicksByBrowser,
+                    'browser',
+                    'clicks',
+                    MODERN_COLORS.warning
+                  )}
+                  options={chartOptions}
                 />
               </div>
             </div>
@@ -510,13 +682,39 @@ export function ModernPublicStatsViewer({
             Sistemas Operativos
           </h3>
           <div className="h-80">
-            <Bar 
-              data={getBarChartData(stats.clicksByOS, 'os', 'clicks', MODERN_COLORS.info)} 
-              options={chartOptions} 
+            <Bar
+              data={getBarChartData(
+                stats.clicksByOS,
+                'os',
+                'clicks',
+                MODERN_COLORS.info
+              )}
+              options={chartOptions}
             />
           </div>
         </div>
       )}
+
+      {/* Country Modal */}
+      <CountryDataModal
+        isOpen={showCountryModal}
+        onClose={() => setShowCountryModal(false)}
+        countries={
+          stats.clicksByCountry?.map(item => ({
+            country: item.country,
+            totalClicks: item.clicks,
+            links: [], // Public stats don't show individual links
+          })) || []
+        }
+      />
+
+      {/* Referrer Modal */}
+      <ReferrerDataModal
+        isOpen={showReferrerModal}
+        onClose={() => setShowReferrerModal(false)}
+        referrers={stats.clicksByReferrer || []}
+        totalClicks={stats.totalClicks || 0}
+      />
     </div>
   );
 }
