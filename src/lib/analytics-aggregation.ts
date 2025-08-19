@@ -138,6 +138,25 @@ export async function aggregateLinkStats(
         }
     ]);
 
+    // Aggregate clicks by referrer
+    const clicksByReferrer = await AnalyticsEvent.aggregate([
+        { $match: matchCondition },
+        {
+            $group: {
+                _id: '$referrer',
+                clicks: { $sum: 1 }
+            }
+        },
+        { $sort: { clicks: -1 } },
+        {
+            $project: {
+                _id: 0,
+                referrer: '$_id',
+                clicks: 1
+            }
+        }
+    ]);
+
     return {
         totalClicks,
         clicksByDay,
@@ -145,6 +164,7 @@ export async function aggregateLinkStats(
         clicksByDevice,
         clicksByBrowser,
         clicksByOS,
+        clicksByReferrer,
     };
 }
 

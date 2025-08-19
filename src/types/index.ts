@@ -112,6 +112,7 @@ export interface LinkStats {
   clicksByDevice: Array<{ device: string; clicks: number }>;
   clicksByBrowser: Array<{ browser: string; clicks: number }>;
   clicksByOS: Array<{ os: string; clicks: number }>;
+  clicksByReferrer: Array<{ referrer: string; clicks: number }>;
 }
 
 export interface TempLink {
