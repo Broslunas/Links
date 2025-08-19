@@ -409,7 +409,9 @@ export default function SettingsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.open('/help', '_blank')}
+                onClick={() =>
+                  window.open('https://broslunas.com/contacto', '_blank')
+                }
                 className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-600 dark:text-red-200 dark:hover:bg-red-800"
               >
                 Contactar Soporte
