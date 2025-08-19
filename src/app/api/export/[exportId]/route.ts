@@ -8,20 +8,20 @@ export async function GET(
 ) {
   try {
     const { exportId } = params;
-    
+
     // Connect to database
     await connectDB();
-    
+
     // Get the export data from database
     const exportEntry = await TempExport.findOne({ exportId });
-    
+
     if (!exportEntry) {
       return NextResponse.json(
         { error: 'Enlace de exportación no encontrado o expirado' },
         { status: 404 }
       );
     }
-    
+
     // Check if export is expired
     if (exportEntry.expiresAt < new Date()) {
       // Clean up expired export
@@ -31,9 +31,9 @@ export async function GET(
         { status: 410 }
       );
     }
-    
-    const fileName = `brl-links-export-${new Date().toISOString().split('T')[0]}.json`;
-    
+
+    const fileName = `broslunas-link-export-${new Date().toISOString().split('T')[0]}.json`;
+
     // Return the file as a download
     return new NextResponse(JSON.stringify(exportEntry.data, null, 2), {
       status: 200,
@@ -41,11 +41,10 @@ export async function GET(
         'Content-Type': 'application/json',
         'Content-Disposition': `attachment; filename="${fileName}"`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
     });
-    
   } catch (error) {
     console.error('Error serving export:', error);
     return NextResponse.json(

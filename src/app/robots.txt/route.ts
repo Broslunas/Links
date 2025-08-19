@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
 
 export function GET() {
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://brl-links.vercel.app'
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://broslunas.link';
 
   const robotsTxt = `User-agent: *
 Allow: /
@@ -25,12 +25,12 @@ Sitemap: ${baseUrl}/sitemap.xml
 
 # Crawl delay (optional)
 Crawl-delay: 1
-`
+`;
 
   return new NextResponse(robotsTxt, {
     headers: {
       'Content-Type': 'text/plain',
       'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
     },
-  })
+  });
 }

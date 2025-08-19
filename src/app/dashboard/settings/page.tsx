@@ -94,7 +94,7 @@ export default function SettingsPage() {
       }
 
       const { downloadUrl, exportId, summary } = await exportResponse.json();
-      const fileName = `brl-links-export-${new Date().toISOString().split('T')[0]}.json`;
+      const fileName = `broslunas-link-export-${new Date().toISOString().split('T')[0]}.json`;
 
       // Send data to webhook with public download link
       const webhookData = {
@@ -394,24 +394,27 @@ export default function SettingsPage() {
               Eliminar Cuenta
             </h3>
             <p className="text-sm text-red-700 dark:text-red-200 mb-4">
-              Una vez que elimines tu cuenta, no hay vuelta atrás. Por favor,
-              ten cuidado.
+              Para solicitar la eliminación de tu cuenta, por favor contacta con
+              nuestro equipo de soporte.
             </p>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleDeleteAccount}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <LoadingSpinner size="sm" className="mr-2" />
-                  Eliminando...
-                </>
-              ) : (
-                'Eliminar Cuenta'
-              )}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={true}
+                className="opacity-50 cursor-not-allowed"
+              >
+                Eliminar Cuenta (Deshabilitado)
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open('/help', '_blank')}
+                className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-600 dark:text-red-200 dark:hover:bg-red-800"
+              >
+                Contactar Soporte
+              </Button>
+            </div>
           </div>
         </div>
 

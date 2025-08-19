@@ -78,7 +78,7 @@ export const helpCategories: HelpCategory[] = [
 export const faqData: FAQItem[] = [
   // Primeros Pasos
   {
-    id: 'what-is-brl-links',
+    id: 'what-is-broslunas-link',
     question: '¿Qué es Broslunas Links?',
     answer:
       'Broslunas Links es un acortador de URLs avanzado que te permite crear enlaces cortos personalizados, rastrear estadísticas detalladas y gestionar todos tus enlaces desde un dashboard intuitivo.',
