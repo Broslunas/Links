@@ -6,4 +6,11 @@ declare global {
         conn: typeof mongoose | null;
         promise: Promise<typeof mongoose> | null;
     } | undefined;
+    
+    // eslint-disable-next-line no-var
+    var exportCache: Map<string, {
+        data: any;
+        createdAt: Date;
+        email: string;
+    }> | undefined;
 }

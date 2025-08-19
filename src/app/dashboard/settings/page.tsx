@@ -76,6 +76,59 @@ export default function SettingsPage() {
     }
   };
 
+  const handleExportData = async () => {
+    setLoading(true);
+
+    try {
+      // Create export via API (the API will fetch real data from database)
+      const exportResponse = await fetch('/api/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}), // Empty body since API fetches data from session
+      });
+
+      if (!exportResponse.ok) {
+        throw new Error('Error al crear el enlace de exportación');
+      }
+
+      const { downloadUrl, exportId, summary } = await exportResponse.json();
+      const fileName = `brl-links-export-${new Date().toISOString().split('T')[0]}.json`;
+
+      // Send data to webhook with public download link
+      const webhookData = {
+        email: settings.email,
+        downloadLink: downloadUrl,
+        fileName: fileName,
+        exportDate: new Date().toISOString(),
+        exportId: exportId,
+        summary: summary // Include summary with totals
+      };
+
+      await fetch(
+        'https://hook.eu2.make.com/zvfuyr381bgdpgq1nltnof7vlmjridcb',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookData),
+        }
+      );
+
+      success(
+        `Enlace de exportación se ha enviado a ${settings.email}. ${summary.totalLinks} enlaces y ${summary.totalAnalyticsEvents} eventos exportados. El enlace estará disponible por 1 hora`,
+        'Exportación'
+      );
+    } catch (err) {
+      console.error('Error exporting data:', err);
+      error('Error al exportar los datos', 'Error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (
       !confirm(
@@ -313,9 +366,18 @@ export default function SettingsPage() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={handleExportData}
+                disabled={loading}
                 className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-200 dark:hover:bg-blue-800"
               >
-                Exportar Datos
+                {loading ? (
+                  <>
+                    <LoadingSpinner size="sm" className="mr-2" />
+                    Exportando...
+                  </>
+                ) : (
+                  'Exportar Datos'
+                )}
               </Button>
             </div>
 
