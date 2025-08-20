@@ -105,7 +105,12 @@ export default function SignInForm() {
         >
           Política de Privacidad
         </a>
-        .
+        y a la newsletter.
+      </div>
+
+      <div className="mt-2 text-xs text-center text-gray-500 dark:text-gray-500">
+        Puedes cancelar la suscripción en cualquier momento desde tu
+        configuración.
       </div>
     </div>
   );

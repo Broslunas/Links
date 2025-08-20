@@ -88,7 +88,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!existingUser) {
-          // Create user in our custom model
+          // Create user in our custom model with default preferences
+          userData.defaultPublicStats = false; // Default to private stats
+          userData.emailNotifications = true; // Subscribe to newsletter by default
           existingUser = await User.create(userData);
         } else {
           // Update existing user info
