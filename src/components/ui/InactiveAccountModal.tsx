@@ -81,9 +81,7 @@ const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({
               </Button>
 
               <Button
-                onClick={() =>
-                  handleNavigation('https://broslunas.link/contacto')
-                }
+                onClick={() => handleNavigation('/contacto')}
                 variant="outline"
                 className="w-full flex items-center justify-center gap-2"
                 size="lg"

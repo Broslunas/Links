@@ -3,15 +3,25 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Términos de Servicio',
-  description: 'Términos y condiciones de uso de Broslunas Links. Conoce las normas, derechos y responsabilidades al usar nuestro acortador de URLs.',
-  keywords: ['términos de servicio', 'condiciones de uso', 'normas', 'legal', 'acortador urls', 'responsabilidades'],
+  description:
+    'Términos y condiciones de uso de Broslunas Links. Conoce las normas, derechos y responsabilidades al usar nuestro acortador de URLs.',
+  keywords: [
+    'términos de servicio',
+    'condiciones de uso',
+    'normas',
+    'legal',
+    'acortador urls',
+    'responsabilidades',
+  ],
   openGraph: {
     title: 'Términos de Servicio - Broslunas Links',
-    description: 'Términos y condiciones de uso del servicio. Información legal sobre derechos y responsabilidades.',
+    description:
+      'Términos y condiciones de uso del servicio. Información legal sobre derechos y responsabilidades.',
   },
   twitter: {
     title: 'Términos de Servicio - Broslunas Links',
-    description: 'Términos y condiciones de uso del servicio. Información legal sobre derechos y responsabilidades.',
+    description:
+      'Términos y condiciones de uso del servicio. Información legal sobre derechos y responsabilidades.',
   },
   robots: {
     index: true,
@@ -32,7 +42,7 @@ const TermsAndServices: React.FC = () => (
       <p className="mb-2">
         Broslunas Link (
         <a
-          href="https://broslunas.link"
+          href="/"
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-500 hover:text-blue-600 font-medium underline underline-offset-2 transition-colors duration-200"
