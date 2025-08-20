@@ -9,7 +9,9 @@ interface InactiveAccountModalProps {
   isOpen: boolean;
 }
 
-const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({ isOpen }) => {
+const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({
+  isOpen,
+}) => {
   const router = useRouter();
 
   if (!isOpen) return null;
@@ -22,7 +24,7 @@ const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({ isOpen }) =
     <>
       {/* Backdrop - no se puede cerrar */}
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" />
-      
+
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-md w-full mx-auto border border-gray-200 dark:border-gray-700">
@@ -45,9 +47,11 @@ const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({ isOpen }) =
           <div className="p-6">
             <div className="mb-6">
               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                Tu cuenta ha sido desactivada por un administrador. Para obtener más información o solicitar la reactivación de tu cuenta, puedes:
+                Tu cuenta ha sido desactivada por un administrador. Para obtener
+                más información o solicitar la reactivación de tu cuenta,
+                puedes:
               </p>
-              
+
               <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-2">
                 <li>Revisar la configuración de tu cuenta</li>
                 <li>Contactar con el soporte técnico</li>
@@ -65,7 +69,7 @@ const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({ isOpen }) =
                 <Settings className="h-4 w-4" />
                 Ir a Configuración
               </Button>
-              
+
               <Button
                 onClick={() => handleNavigation('/')}
                 variant="outline"
@@ -75,9 +79,11 @@ const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({ isOpen }) =
                 <Home className="h-4 w-4" />
                 Página Principal
               </Button>
-              
+
               <Button
-                onClick={() => handleNavigation('/help')}
+                onClick={() =>
+                  handleNavigation('https://broslunas.link/contacto')
+                }
                 variant="outline"
                 className="w-full flex items-center justify-center gap-2"
                 size="lg"
@@ -91,7 +97,8 @@ const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({ isOpen }) =
           {/* Footer */}
           <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
             <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-              Si crees que esto es un error, por favor contacta con el administrador.
+              Si crees que esto es un error, por favor contacta con el
+              administrador.
             </p>
           </div>
         </div>
