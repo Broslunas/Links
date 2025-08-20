@@ -202,7 +202,7 @@ export const faqData: FAQItem[] = [
 // Guías paso a paso
 export const guides: Guide[] = [
   {
-    id: 'first-link',
+    id: 'crear-primer-enlace',
     slug: 'crear-primer-enlace',
     title: 'Crear tu primer enlace',
     description:
@@ -245,7 +245,7 @@ export const guides: Guide[] = [
     ],
   },
   {
-    id: 'analytics-guide',
+    id: 'entender-estadisticas',
     slug: 'entender-estadisticas',
     title: 'Entender tus estadísticas',
     description:
@@ -287,7 +287,7 @@ export const guides: Guide[] = [
     ],
   },
   {
-    id: 'bulk-links',
+    id: 'crear-enlaces-masivos',
     slug: 'crear-enlaces-masivos',
     title: 'Crear enlaces en lote',
     description:
@@ -330,7 +330,7 @@ export const guides: Guide[] = [
     ],
   },
   {
-    id: 'custom-domains',
+    id: 'dominios-personalizados',
     slug: 'dominios-personalizados',
     title: 'Configurar dominios personalizados',
     description: 'Usa tu propio dominio para crear enlaces cortos con tu marca',
