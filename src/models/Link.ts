@@ -6,6 +6,7 @@ export interface ILink extends Document {
   slug: string;
   title?: string;
   description?: string;
+  customDomain?: string;
   isPublicStats: boolean;
   isActive: boolean;
   clickCount: number;
@@ -55,6 +56,19 @@ const LinkSchema = new Schema<ILink>(
       type: String,
       trim: true,
       maxlength: 500,
+    },
+    customDomain: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: function (domain: string) {
+          if (!domain) return true; // Optional field
+          const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9])*$/;
+          return domainRegex.test(domain);
+        },
+        message: 'Invalid custom domain format',
+      },
     },
     isPublicStats: {
       type: Boolean,

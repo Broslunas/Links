@@ -78,6 +78,7 @@ export interface CreateLinkData {
   title?: string;
   description?: string;
   isPublicStats?: boolean;
+  customDomain?: string;
 }
 
 export interface CreateLinkResponse extends Link {
