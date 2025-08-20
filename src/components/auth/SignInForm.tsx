@@ -9,7 +9,7 @@ export default function SignInForm() {
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
 
   const handleSignIn = async (provider: 'github' | 'google' | 'discord') => {
     setIsLoading(provider);

@@ -11,7 +11,7 @@ export default function LinkAnalyticsPage() {
   const { data: session, status } = useSession();
   const params = useParams();
   const router = useRouter();
-  const linkId = params.id as string;
+  const linkId = params?.id as string;
 
   const [link, setLink] = useState<Link | null>(null);
   const [loading, setLoading] = useState(true);

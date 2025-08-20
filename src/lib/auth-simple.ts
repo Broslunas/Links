@@ -149,6 +149,7 @@ export const authOptions: NextAuthOptions = {
             token.name = dbUser.name;
             token.image = dbUser.image;
             token.provider = dbUser.provider;
+            token.role = dbUser.role || 'user'; // Include role with default
           }
         } catch (error) {
           console.error('Error in JWT callback:', error);
@@ -169,6 +170,7 @@ export const authOptions: NextAuthOptions = {
           if (dbUser) {
             token.name = dbUser.name;
             token.image = dbUser.image;
+            token.role = dbUser.role || 'user'; // Include role with default
           }
         } catch (error) {
           console.error('Error refreshing user data in JWT callback:', error);
@@ -188,6 +190,7 @@ export const authOptions: NextAuthOptions = {
           | 'github'
           | 'google'
           | 'discord';
+        session.user.role = token.role as string || 'user'; // Include role
       }
       return session;
     },

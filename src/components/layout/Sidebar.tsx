@@ -1,15 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { Button } from '../ui/Button';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface UserRole {
+  role: 'user' | 'admin';
 }
 
 const navigation = [
@@ -141,8 +145,57 @@ const navigation = [
   },
 ];
 
+const adminNavigation = {
+  name: 'Administración',
+  href: '/dashboard/admin',
+  icon: (
+    <svg
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+      />
+    </svg>
+  ),
+};
+
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const [userRole, setUserRole] = useState<'user' | 'admin'>('user');
+
+  // Verificar el rol del usuario
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (!session?.user) return;
+      
+      try {
+        // Primero intentar obtener el rol de la sesión
+        if (session.user.role) {
+          setUserRole(session.user.role as 'user' | 'admin');
+          return;
+        }
+        
+        // Fallback: obtener rol del API
+        const response = await fetch('/api/user/role');
+        if (response.ok) {
+          const data = await response.json();
+          setUserRole(data.role || 'user');
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+        setUserRole('user'); // Default to user role on error
+      }
+    };
+
+    checkUserRole();
+  }, [session]);
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/dashboard/' });
@@ -187,7 +240,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   {navigation.map(item => {
                     const isActive =
                       pathname === item.href ||
-                      pathname.startsWith(item.href + '/');
+                      (pathname?.startsWith(item.href + '/') || false);
                     return (
                       <li key={item.name} role="listitem">
                         <Link
@@ -207,6 +260,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       </li>
                     );
                   })}
+                  {userRole === 'admin' && (
+                    <li key={adminNavigation.name} role="listitem">
+                      <Link
+                        href={adminNavigation.href}
+                        className={cn(
+                          'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                          (pathname === adminNavigation.href || (pathname?.startsWith(adminNavigation.href + '/') || false))
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                        )}
+                        aria-current={(pathname === adminNavigation.href || (pathname?.startsWith(adminNavigation.href + '/') || false)) ? 'page' : undefined}
+                        aria-label={`Ir a ${adminNavigation.name}`}
+                      >
+                        <span aria-hidden="true">{adminNavigation.icon}</span>
+                        <span>{adminNavigation.name}</span>
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               </li>
 
@@ -303,7 +374,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   {navigation.map(item => {
                     const isActive =
                       pathname === item.href ||
-                      pathname.startsWith(item.href + '/');
+                      (pathname?.startsWith(item.href + '/') || false);
                     return (
                       <li key={item.name} role="listitem">
                         <Link
@@ -324,6 +395,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       </li>
                     );
                   })}
+                  {userRole === 'admin' && (
+                    <li key={adminNavigation.name} role="listitem">
+                      <Link
+                        href={adminNavigation.href}
+                        onClick={onClose}
+                        className={cn(
+                          'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                          (pathname === adminNavigation.href || (pathname?.startsWith(adminNavigation.href + '/') || false))
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                        )}
+                        aria-current={(pathname === adminNavigation.href || (pathname?.startsWith(adminNavigation.href + '/') || false)) ? 'page' : undefined}
+                        aria-label={`Ir a ${adminNavigation.name}`}
+                      >
+                        <span aria-hidden="true">{adminNavigation.icon}</span>
+                        <span>{adminNavigation.name}</span>
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               </li>
 

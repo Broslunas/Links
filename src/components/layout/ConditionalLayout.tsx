@@ -34,12 +34,12 @@ const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
     ];
 
     // Determine if current route is a dashboard route
-    const isDashboardRoute = pathname.startsWith('/dashboard');
+    const isDashboardRoute = pathname?.startsWith('/dashboard') || false;
 
     // Determine if current route is a redirect route (slug-based)
     const isRedirectRoute = () => {
-        // Skip root path
-        if (pathname === '/') {
+        // Skip root path or null pathname
+        if (!pathname || pathname === '/') {
             return false;
         }
 

@@ -149,12 +149,14 @@ declare module 'next-auth' {
       email?: string | null;
       image?: string | null;
       provider?: 'github' | 'google' | 'discord';
+      role?: 'user' | 'admin';
     };
   }
 
   interface User {
     id: string;
     provider?: 'github' | 'google' | 'discord';
+    role?: 'user' | 'admin';
   }
 }
 
@@ -162,6 +164,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id?: string;
     provider?: 'github' | 'google' | 'discord';
+    role?: 'user' | 'admin';
   }
 }
 

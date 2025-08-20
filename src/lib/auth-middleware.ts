@@ -6,6 +6,7 @@ import { validateApiToken, updateTokenLastUsed } from './api-token';
 import { createErrorResponse } from './api-response';
 import { AppError, ErrorCode } from './api-errors';
 import Link from '../models/Link';
+import User from '../models/User';
 
 export interface AuthContext {
   userId: string;
@@ -14,6 +15,7 @@ export interface AuthContext {
     email?: string | null;
     name?: string | null;
     provider?: 'github' | 'google' | 'discord';
+    role?: 'user' | 'admin';
   };
   authMethod: 'session' | 'api_token';
 }
@@ -45,7 +47,8 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthCon
         id: user._id.toString(),
         email: user.email,
         name: user.name,
-        provider: user.provider
+        provider: user.provider,
+        role: user.role || 'user'
       },
       authMethod: 'api_token'
     };
@@ -63,13 +66,24 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthCon
     );
   }
 
+  // Obtener el usuario completo de la base de datos para incluir el rol
+  const dbUser = await User.findById(userValidation.userId).lean();
+  if (!dbUser) {
+    throw new AppError(
+      ErrorCode.UNAUTHORIZED,
+      'User not found',
+      401
+    );
+  }
+
   return {
     userId: userValidation.userId.toString(),
     user: {
       id: session!.user.id,
       email: session!.user.email,
       name: session!.user.name,
-      provider: session!.user.provider || 'github'
+      provider: session!.user.provider || 'github',
+      role: dbUser.role || 'user'
     },
     authMethod: 'session'
   };
@@ -208,6 +222,73 @@ export async function verifyLinkOwnershipBySlug(authUserId: string, slug: string
       500
     );
   }
+}
+
+/**
+ * Verificar si el usuario autenticado es administrador
+ */
+export async function verifyAdminRole(authUserId: string): Promise<void> {
+  try {
+    const user = await User.findById(authUserId);
+    
+    if (!user) {
+      throw new AppError(
+        ErrorCode.NOT_FOUND,
+        'User not found',
+        404
+      );
+    }
+
+    if (user.role !== 'admin') {
+      throw new AppError(
+        ErrorCode.FORBIDDEN,
+        'Access denied: Administrator privileges required',
+        403
+      );
+    }
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError(
+      ErrorCode.DATABASE_ERROR,
+      'Error verifying admin role',
+      500
+    );
+  }
+}
+
+/**
+ * Wrapper para endpoints que requieren rol de administrador
+ */
+export function withAdminAuth<T extends any[]>(
+  handler: (request: NextRequest, auth: AuthContext, ...args: T) => Promise<Response>
+) {
+  return async (request: NextRequest, ...args: T): Promise<Response> => {
+    try {
+      const auth = await authenticateRequest(request);
+      await verifyAdminRole(auth.userId);
+      
+      // Agregar información de rol al contexto de autenticación
+      auth.user.role = 'admin';
+      
+      return await handler(request, auth, ...args);
+    } catch (error) {
+      if (error instanceof AppError) {
+        return createErrorResponse(error);
+      }
+
+      console.error('[Admin Auth Middleware Error]:', error);
+      return createErrorResponse(
+        new AppError(
+          ErrorCode.INTERNAL_ERROR,
+          'Admin authentication failed',
+          500
+        )
+      );
+    }
+  };
 }
 
 /**

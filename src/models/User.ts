@@ -6,6 +6,7 @@ export interface IUser extends Document {
     image?: string;
     provider: 'github' | 'google' | 'discord';
     providerId: string;
+    role: 'user' | 'admin';
     // Discord-specific fields
     discordUsername?: string;
     discordDiscriminator?: string;
@@ -108,6 +109,11 @@ const UserSchema = new Schema<IUser>({
     emailNotifications: {
         type: Boolean,
         default: true,
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user',
     },
 }, {
     timestamps: true,

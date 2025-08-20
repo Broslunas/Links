@@ -9,7 +9,7 @@ export default function CallbackPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
 
   useEffect(() => {
     if (status === 'loading') return; // Still loading

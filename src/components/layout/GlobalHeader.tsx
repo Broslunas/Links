@@ -21,7 +21,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({ currentPath }) => {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
 
-  const activePath = normalizePathname(currentPath || pathname);
+  const activePath = normalizePathname(currentPath || pathname || '/');
 
   const isActive = (href: string) => {
     return isActiveNavItem({ label: '', href }, activePath);
