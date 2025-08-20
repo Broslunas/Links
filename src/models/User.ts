@@ -29,6 +29,9 @@ export interface IUser extends Document {
     apiToken?: string;
     apiTokenCreatedAt?: Date;
     apiTokenLastUsedAt?: Date;
+    // User preferences
+    defaultPublicStats?: boolean;
+    emailNotifications?: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -96,6 +99,15 @@ const UserSchema = new Schema<IUser>({
     },
     apiTokenLastUsedAt: {
         type: Date,
+    },
+    // User preferences
+    defaultPublicStats: {
+        type: Boolean,
+        default: false,
+    },
+    emailNotifications: {
+        type: Boolean,
+        default: true,
     },
 }, {
     timestamps: true,

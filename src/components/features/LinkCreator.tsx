@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Input } from '../ui';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { ApiResponse, CreateLinkData } from '../../types';
@@ -30,6 +30,7 @@ interface FormErrors {
 }
 
 export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
+  const [userPreferences, setUserPreferences] = useState<{ defaultPublicStats: boolean } | null>(null);
   const [formData, setFormData] = useState<FormData>({
     originalUrl: '',
     slug: '',
@@ -43,6 +44,33 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
   const [isGeneratingSlug, setIsGeneratingSlug] = useState(false);
   const [createdLink, setCreatedLink] = useState<any>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Cargar preferencias del usuario al montar el componente
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      try {
+        const response = await fetch('/api/user/preferences');
+        if (response.ok) {
+          const result = await response.json();
+          const preferences = result.data || result;
+          setUserPreferences(preferences);
+          // Actualizar el formulario con las preferencias por defecto
+          setFormData(prev => ({
+            ...prev,
+            isPublicStats: preferences.defaultPublicStats || false
+          }));
+        } else {
+          setUserPreferences({ defaultPublicStats: false });
+        }
+      } catch (error) {
+        console.error('Error loading user preferences:', error);
+        // Si hay error, usar valores por defecto
+        setUserPreferences({ defaultPublicStats: false });
+      }
+    };
+
+    loadUserPreferences();
+  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -166,7 +194,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
           slug: '',
           title: '',
           description: '',
-          isPublicStats: false,
+          isPublicStats: userPreferences?.defaultPublicStats || false,
         });
         setShowAdvanced(false);
         onLinkCreated?.(linkData);
@@ -248,7 +276,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
           slug: '',
           title: '',
           description: '',
-          isPublicStats: false
+          isPublicStats: userPreferences?.defaultPublicStats || false
         });
         setErrors({});
         setShowAdvanced(false);

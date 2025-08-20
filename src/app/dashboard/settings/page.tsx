@@ -27,6 +27,10 @@ export default function SettingsPage() {
     defaultPublicStats: false,
     emailNotifications: true,
   });
+  const [originalPreferences, setOriginalPreferences] = useState({
+    defaultPublicStats: false,
+    emailNotifications: true,
+  });
 
   // Handle authentication state
   useEffect(() => {
@@ -39,29 +43,67 @@ export default function SettingsPage() {
   // Load user settings
   useEffect(() => {
     if (session?.user) {
-      setSettings({
+      setSettings(prev => ({
+        ...prev,
         name: session.user.name || '',
         email: session.user.email || '',
-        defaultPublicStats: false, // This would come from user preferences
-        emailNotifications: true, // This would come from user preferences
-      });
+      }));
     }
+  }, [session]);
+
+  // Load user preferences from database
+  useEffect(() => {
+    const loadPreferences = async () => {
+      if (session?.user) {
+        try {
+          const response = await fetch('/api/user/preferences');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+               const preferences = {
+                 defaultPublicStats: data.data.defaultPublicStats,
+                 emailNotifications: data.data.emailNotifications,
+               };
+               setSettings(prev => ({
+                 ...prev,
+                 ...preferences,
+               }));
+               setOriginalPreferences(preferences);
+             }
+          }
+        } catch (error) {
+          console.error('Error loading preferences:', error);
+        }
+      }
+    };
+
+    loadPreferences();
   }, [session]);
 
   const handleSaveSettings = async () => {
     setSaving(true);
 
     try {
-      // Update user profile if name changed
+      // Prepare data to update
+      const updateData: any = {};
+      
+      // Check if name changed
       if (settings.name !== session?.user?.name) {
+        updateData.name = settings.name;
+      }
+      
+      // Always include preferences (they might have changed)
+      updateData.defaultPublicStats = settings.defaultPublicStats;
+      updateData.emailNotifications = settings.emailNotifications;
+
+      // Only make API call if there are changes
+      if (Object.keys(updateData).length > 0) {
         const response = await fetch('/api/user/profile', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            name: settings.name,
-          }),
+          body: JSON.stringify(updateData),
         });
 
         if (!response.ok) {
@@ -69,15 +111,23 @@ export default function SettingsPage() {
           throw new Error(errorData.error?.message || 'Error al actualizar el perfil');
         }
 
-        // Update session with new name
-        await update({
-          ...session,
-          user: {
-            ...session?.user,
-            name: settings.name,
-          },
-        });
+        // Update session with new name if it changed
+        if (updateData.name) {
+          await update({
+            ...session,
+            user: {
+              ...session?.user,
+              name: settings.name,
+            },
+          });
+        }
       }
+
+      // Update original preferences to reset change indicators
+      setOriginalPreferences({
+        defaultPublicStats: settings.defaultPublicStats,
+        emailNotifications: settings.emailNotifications,
+      });
 
       success('Configuración guardada correctamente', 'Ajustes');
     } catch (err) {
@@ -221,7 +271,11 @@ export default function SettingsPage() {
             {/* Save Button - More Visible Position */}
             <Button
               onClick={handleSaveSettings}
-              disabled={saving || settings.name === session?.user?.name}
+              disabled={saving || (
+                settings.name === session?.user?.name &&
+                settings.defaultPublicStats === originalPreferences.defaultPublicStats &&
+                settings.emailNotifications === originalPreferences.emailNotifications
+              )}
               className="min-w-[120px]"
               size="sm"
             >
@@ -344,13 +398,18 @@ export default function SettingsPage() {
 
             {/* Default Public Stats */}
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <h3 className="text-sm font-medium text-card-foreground">
                   Estadísticas Públicas por Defecto
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   Los nuevos enlaces tendrán estadísticas públicas habilitadas
                 </p>
+                {settings.defaultPublicStats !== originalPreferences.defaultPublicStats && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    ⚠️ Cambios sin guardar
+                  </p>
+                )}
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -370,13 +429,18 @@ export default function SettingsPage() {
 
             {/* Email Notifications */}
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <h3 className="text-sm font-medium text-card-foreground">
                   Notificaciones por Email
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   Recibe notificaciones sobre la actividad de tus enlaces
                 </p>
+                {settings.emailNotifications !== originalPreferences.emailNotifications && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    ⚠️ Cambios sin guardar
+                  </p>
+                )}
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input

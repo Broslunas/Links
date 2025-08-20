@@ -27,16 +27,50 @@ export async function PUT(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { name } = body;
+    const { name, defaultPublicStats, emailNotifications } = body;
 
-    // Validate name
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    // Validate name if provided
+    if (name !== undefined) {
+      if (!name || typeof name !== 'string' || name.trim().length === 0) {
+        return NextResponse.json<ApiResponse>(
+          {
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Name is required and must be a non-empty string',
+            },
+            timestamp: new Date().toISOString(),
+          },
+          { status: 400 }
+        );
+      }
+
+      const trimmedName = name.trim();
+      
+      // Validate name length
+      if (trimmedName.length > 100) {
+        return NextResponse.json<ApiResponse>(
+          {
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Name must be 100 characters or less',
+            },
+            timestamp: new Date().toISOString(),
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate preferences if provided
+    if (defaultPublicStats !== undefined && typeof defaultPublicStats !== 'boolean') {
       return NextResponse.json<ApiResponse>(
         {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Name is required and must be a non-empty string',
+            message: 'defaultPublicStats must be a boolean value',
           },
           timestamp: new Date().toISOString(),
         },
@@ -44,16 +78,13 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const trimmedName = name.trim();
-    
-    // Validate name length
-    if (trimmedName.length > 100) {
+    if (emailNotifications !== undefined && typeof emailNotifications !== 'boolean') {
       return NextResponse.json<ApiResponse>(
         {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Name must be 100 characters or less',
+            message: 'emailNotifications must be a boolean value',
           },
           timestamp: new Date().toISOString(),
         },
@@ -77,8 +108,17 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update user name
-    user.name = trimmedName;
+    // Update user fields
+    if (name !== undefined) {
+      user.name = name.trim();
+    }
+    if (defaultPublicStats !== undefined) {
+      user.defaultPublicStats = defaultPublicStats;
+    }
+    if (emailNotifications !== undefined) {
+      user.emailNotifications = emailNotifications;
+    }
+
     await user.save();
 
     return NextResponse.json<ApiResponse>(
@@ -86,6 +126,8 @@ export async function PUT(request: NextRequest) {
         success: true,
         data: {
           name: user.name,
+          defaultPublicStats: user.defaultPublicStats,
+          emailNotifications: user.emailNotifications,
           message: 'Profile updated successfully',
         },
         timestamp: new Date().toISOString(),
