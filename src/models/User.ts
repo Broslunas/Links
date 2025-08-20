@@ -7,6 +7,7 @@ export interface IUser extends Document {
     provider: 'github' | 'google' | 'discord';
     providerId: string;
     role: 'user' | 'admin';
+    isActive?: boolean;
     // Discord-specific fields
     discordUsername?: string;
     discordDiscriminator?: string;
@@ -114,6 +115,10 @@ const UserSchema = new Schema<IUser>({
         type: String,
         enum: ['user', 'admin'],
         default: 'user',
+    },
+    isActive: {
+        type: Boolean,
+        default: true,
     },
 }, {
     timestamps: true,

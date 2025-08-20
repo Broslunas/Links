@@ -5,6 +5,7 @@ import SessionProvider from '../components/providers/SessionProvider';
 import { ThemeProvider } from '../components/providers/ThemeProvider';
 import { ErrorBoundary } from '../components/ui/ErrorBoundary';
 import CookieConsentModal from '../components/ui/CookieConsentModal';
+import InactiveAccountProvider from '../components/providers/InactiveAccountProvider';
 import { ConditionalLayout } from '../components/layout/ConditionalLayout';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -92,8 +93,10 @@ export default function RootLayout({
         <ErrorBoundary>
           <ThemeProvider>
             <SessionProvider>
-              <ConditionalLayout>{children}</ConditionalLayout>
-              <CookieConsentModal />
+              <InactiveAccountProvider>
+                <ConditionalLayout>{children}</ConditionalLayout>
+                <CookieConsentModal />
+              </InactiveAccountProvider>
             </SessionProvider>
           </ThemeProvider>
         </ErrorBoundary>
