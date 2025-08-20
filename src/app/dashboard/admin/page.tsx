@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Database
 } from 'lucide-react';
+import UserManagement from '@/components/dashboard/UserManagement';
 
 interface AdminStats {
   totalUsers: number;
@@ -26,6 +27,7 @@ interface RecentActivity {
   type: 'user_registered' | 'link_created' | 'link_clicked';
   description: string;
   timestamp: string;
+  user?: string;
 }
 
 export default function AdminPage() {
@@ -35,6 +37,7 @@ export default function AdminPage() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [showUserManagement, setShowUserManagement] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -83,37 +86,50 @@ export default function AdminPage() {
 
   const loadAdminData = async () => {
     try {
-      // Cargar estadísticas (por ahora datos de ejemplo)
-      setStats({
-        totalUsers: 1247,
-        totalLinks: 8934,
-        totalClicks: 156789,
-        activeUsers: 89
-      });
-
-      // Cargar actividad reciente (datos de ejemplo)
-      setRecentActivity([
-        {
-          id: '1',
-          type: 'user_registered',
-          description: 'Nuevo usuario registrado: juan@example.com',
-          timestamp: '2024-01-15T10:30:00Z'
-        },
-        {
-          id: '2',
-          type: 'link_created',
-          description: 'Enlace creado: bit.ly/example123',
-          timestamp: '2024-01-15T09:15:00Z'
-        },
-        {
-          id: '3',
-          type: 'link_clicked',
-          description: '1,234 clics en enlaces hoy',
-          timestamp: '2024-01-15T08:00:00Z'
+      // Cargar estadísticas reales desde la API
+      const response = await fetch('/api/admin/stats');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setStats({
+            totalUsers: data.data.totalUsers,
+            totalLinks: data.data.totalLinks,
+            totalClicks: data.data.totalClicks,
+            activeUsers: data.data.activeUsers
+          });
+          setRecentActivity(data.data.recentActivity);
+        } else {
+          console.error('Error en la respuesta de la API:', data.error);
+          // Fallback a datos de ejemplo en caso de error
+          setStats({
+            totalUsers: 0,
+            totalLinks: 0,
+            totalClicks: 0,
+            activeUsers: 0
+          });
+          setRecentActivity([]);
         }
-      ]);
+      } else {
+        console.error('Error al obtener estadísticas:', response.statusText);
+        // Fallback a datos de ejemplo en caso de error
+        setStats({
+          totalUsers: 0,
+          totalLinks: 0,
+          totalClicks: 0,
+          activeUsers: 0
+        });
+        setRecentActivity([]);
+      }
     } catch (error) {
       console.error('Error loading admin data:', error);
+      // Fallback a datos de ejemplo en caso de error
+      setStats({
+        totalUsers: 0,
+        totalLinks: 0,
+        totalClicks: 0,
+        activeUsers: 0
+      });
+      setRecentActivity([]);
     } finally {
       setLoading(false);
     }
@@ -246,7 +262,10 @@ export default function AdminPage() {
             </h3>
           </div>
           <div className="p-6 space-y-4">
-            <button className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <button 
+              onClick={() => setShowUserManagement(true)}
+              className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
               <Users className="h-5 w-5 text-blue-500" />
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">Gestión de Usuarios</p>
@@ -310,6 +329,17 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {/* User Management Modal */}
+      {showUserManagement && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-7xl max-h-[90vh] overflow-auto">
+            <UserManagement 
+              onClose={() => setShowUserManagement(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

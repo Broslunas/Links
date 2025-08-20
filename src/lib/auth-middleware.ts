@@ -6,7 +6,7 @@ import { validateApiToken, updateTokenLastUsed } from './api-token';
 import { createErrorResponse } from './api-response';
 import { AppError, ErrorCode } from './api-errors';
 import Link from '../models/Link';
-import User from '../models/User';
+import User, { IUser } from '../models/User';
 
 export interface AuthContext {
   userId: string;
@@ -67,7 +67,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthCon
   }
 
   // Obtener el usuario completo de la base de datos para incluir el rol
-  const dbUser = await User.findById(userValidation.userId).lean();
+  const dbUser = await User.findById(userValidation.userId).lean() as IUser | null;
   if (!dbUser) {
     throw new AppError(
       ErrorCode.UNAUTHORIZED,

@@ -190,7 +190,7 @@ export const authOptions: NextAuthOptions = {
           | 'github'
           | 'google'
           | 'discord';
-        session.user.role = token.role as string || 'user'; // Include role
+        session.user.role = (token.role as 'user' | 'admin') || 'user'; // Include role
       }
       return session;
     },
