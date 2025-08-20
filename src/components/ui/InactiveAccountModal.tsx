@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from './button';
+import { Button } from './Button';
 import { AlertTriangle, Settings, Home, Mail } from 'lucide-react';
 
 interface InactiveAccountModalProps {

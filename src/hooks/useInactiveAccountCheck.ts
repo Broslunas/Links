@@ -69,10 +69,11 @@ export const useInactiveAccountCheck = (): UseInactiveAccountCheckReturn => {
   }, [session, status]);
 
   // Determinar si se debe mostrar el modal
-  const shouldShowModal = isAccountInactive && 
+  const shouldShowModal = !!(isAccountInactive && 
                          !isLoading && 
                          status === 'authenticated' && 
-                         !isRouteAllowed(pathname);
+                         pathname && 
+                         !isRouteAllowed(pathname));
 
   return {
     isAccountInactive,
