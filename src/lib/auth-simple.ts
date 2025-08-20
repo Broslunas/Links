@@ -115,8 +115,8 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user, account }) {
-      // Persist user info in JWT token
+    async jwt({ token, user, account, trigger }) {
+      // On initial sign in, persist user info in JWT token
       if (user && account) {
         try {
           await connectDB();
@@ -149,6 +149,21 @@ export const authOptions: NextAuthOptions = {
           token.provider = account.provider as 'github' | 'google' | 'discord';
         }
       }
+      
+      // On session update or every request, refresh user data from database
+      if (trigger === 'update' || (!user && token.email)) {
+        try {
+          await connectDB();
+          const dbUser = await User.findOne({ email: token.email });
+          if (dbUser) {
+            token.name = dbUser.name;
+            token.image = dbUser.image;
+          }
+        } catch (error) {
+          console.error('Error refreshing user data in JWT callback:', error);
+        }
+      }
+      
       return token;
     },
     async session({ session, token }) {

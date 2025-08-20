@@ -52,12 +52,24 @@ export default function SettingsPage() {
     setSaving(true);
 
     try {
-      // Here you would typically save to your API
-      // For now, we'll just simulate a save operation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Update session if name changed
+      // Update user profile if name changed
       if (settings.name !== session?.user?.name) {
+        const response = await fetch('/api/user/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: settings.name,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || 'Error al actualizar el perfil');
+        }
+
+        // Update session with new name
         await update({
           ...session,
           user: {
@@ -70,7 +82,7 @@ export default function SettingsPage() {
       success('Configuración guardada correctamente', 'Ajustes');
     } catch (err) {
       console.error('Error saving settings:', err);
-      error('Error al guardar la configuración', 'Error');
+      error(err instanceof Error ? err.message : 'Error al guardar la configuración', 'Error');
     } finally {
       setSaving(false);
     }
@@ -202,9 +214,27 @@ export default function SettingsPage() {
 
         {/* Profile Settings */}
         <div className="bg-card rounded-lg border border-border p-6">
-          <h2 className="text-xl font-semibold text-card-foreground mb-4">
-            Información del Perfil
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-card-foreground">
+              Información del Perfil
+            </h2>
+            {/* Save Button - More Visible Position */}
+            <Button
+              onClick={handleSaveSettings}
+              disabled={saving || settings.name === session?.user?.name}
+              className="min-w-[120px]"
+              size="sm"
+            >
+              {saving ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Guardando...
+                </>
+              ) : (
+                'Guardar Cambios'
+              )}
+            </Button>
+          </div>
 
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -213,7 +243,7 @@ export default function SettingsPage() {
                   htmlFor="name"
                   className="block text-sm font-medium text-card-foreground mb-2"
                 >
-                  Nombre
+                  Nombre de Usuario
                 </label>
                 <Input
                   id="name"
@@ -222,8 +252,14 @@ export default function SettingsPage() {
                   onChange={e =>
                     setSettings({ ...settings, name: e.target.value })
                   }
-                  placeholder="Tu nombre"
+                  placeholder="Tu nombre de usuario"
+                  maxLength={100}
                 />
+                {settings.name !== session?.user?.name && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    ⚠️ Cambios sin guardar
+                  </p>
+                )}
               </div>
 
               <div>
@@ -435,11 +471,11 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Save Button */}
+        {/* Additional Save Button at Bottom */}
         <div className="flex justify-end">
           <Button
             onClick={handleSaveSettings}
-            disabled={saving}
+            disabled={saving || settings.name === session?.user?.name}
             className="min-w-[120px]"
           >
             {saving ? (
