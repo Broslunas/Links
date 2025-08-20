@@ -20,7 +20,6 @@ interface FormData {
   title: string;
   description: string;
   isPublicStats: boolean;
-  customDomain: string;
 }
 
 interface FormErrors {
@@ -28,19 +27,16 @@ interface FormErrors {
   slug?: string;
   title?: string;
   description?: string;
-  customDomain?: string;
 }
 
 export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
   const [userPreferences, setUserPreferences] = useState<{ defaultPublicStats: boolean } | null>(null);
-  const [domains, setDomains] = useState<Array<{ _id: string; domain: string; isVerified: boolean; isActive: boolean }>>([]);
   const [formData, setFormData] = useState<FormData>({
     originalUrl: '',
     slug: '',
     title: '',
     description: '',
     isPublicStats: false,
-    customDomain: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -49,7 +45,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
   const [createdLink, setCreatedLink] = useState<any>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Cargar preferencias del usuario y dominios al montar el componente
+  // Cargar preferencias del usuario al montar el componente
   useEffect(() => {
     const loadUserPreferences = async () => {
       try {
@@ -73,23 +69,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
       }
     };
 
-    const loadDomains = async () => {
-      try {
-        const response = await fetch('/api/domains');
-        if (response.ok) {
-          const result = await response.json();
-          const domainsData = result.data || [];
-          // Solo mostrar dominios verificados y activos
-          const activeDomains = domainsData.filter((domain: any) => domain.isVerified && domain.isActive);
-          setDomains(activeDomains);
-        }
-      } catch (error) {
-        console.error('Error loading domains:', error);
-      }
-    };
-
     loadUserPreferences();
-    loadDomains();
   }, []);
 
   const validateForm = (): boolean => {
@@ -156,7 +136,6 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
         title: formData.title.trim() || undefined,
         description: formData.description.trim() || undefined,
         isPublicStats: formData.isPublicStats,
-        customDomain: formData.customDomain.trim() || undefined,
       };
 
       const response = await fetch('/api/links', {
@@ -216,7 +195,6 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
           title: '',
           description: '',
           isPublicStats: userPreferences?.defaultPublicStats || false,
-          customDomain: '',
         });
         setShowAdvanced(false);
         onLinkCreated?.(linkData);
@@ -298,8 +276,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
           slug: '',
           title: '',
           description: '',
-          isPublicStats: userPreferences?.defaultPublicStats || false,
-          customDomain: ''
+          isPublicStats: userPreferences?.defaultPublicStats || false
         });
         setErrors({});
         setShowAdvanced(false);
@@ -504,31 +481,6 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                 rows={3}
               />
             </div>
-
-            {domains.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-card-foreground mb-2">
-                  Dominio personalizado (opcional)
-                </label>
-                <select
-                  value={formData.customDomain}
-                  onChange={e => handleInputChange('customDomain', e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-card-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                >
-                  <option value="">Usar dominio por defecto</option>
-                  {domains.map(domain => (
-                    <option key={domain._id} value={domain.domain}>
-                      {domain.domain}
-                    </option>
-                  ))}
-                </select>
-                {formData.customDomain && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Tu enlace será: {formData.customDomain}/{formData.slug || 'tu-slug'}
-                  </p>
-                )}
-              </div>
-            )}
 
             <div className="flex items-center gap-3">
               <input

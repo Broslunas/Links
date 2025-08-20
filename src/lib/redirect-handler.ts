@@ -3,51 +3,6 @@ import { extractAnalyticsData, hashIP } from './analytics';
 import Link from '../models/Link';
 import TempLink from '../models/TempLink';
 import AnalyticsEvent from '../models/AnalyticsEvent';
-import Domain from '../models/Domain';
-
-/**
- * Extract custom domain from request headers
- */
-export function extractCustomDomain(request: Request): string | undefined {
-    const host = request.headers.get('host');
-    if (!host) return undefined;
-
-    // Remove port if present
-    const domain = host.split(':')[0].toLowerCase();
-    
-    // Skip localhost and default domains
-    const defaultDomains = [
-        'localhost',
-        '127.0.0.1',
-        'broslunas.link',
-        'www.broslunas.link',
-        process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, ''),
-    ].filter(Boolean);
-    
-    if (defaultDomains.includes(domain)) {
-        return undefined;
-    }
-    
-    return domain;
-}
-
-/**
- * Verify if a custom domain is valid and verified
- */
-export async function isValidCustomDomain(domain: string): Promise<boolean> {
-    try {
-        await connectDB();
-        const domainRecord = await Domain.findOne({
-            domain: domain.toLowerCase(),
-            isVerified: true,
-            isActive: true
-        });
-        return !!domainRecord;
-    } catch (error) {
-        console.error('Error checking custom domain:', error);
-        return false;
-    }
-}
 
 export interface RedirectResult {
     success: boolean;
@@ -57,52 +12,20 @@ export interface RedirectResult {
 
 /**
  * Handle URL redirection with analytics tracking
- * @param slug - The slug to redirect
- * @param request - The incoming request
- * @param customDomain - Optional custom domain to filter links by
  */
 export async function handleRedirect(
     slug: string,
-    request: Request,
-    customDomain?: string
+    request: Request
 ): Promise<RedirectResult> {
     try {
         await connectDB();
 
-        // Extract custom domain from request if not provided
-        if (!customDomain) {
-            customDomain = extractCustomDomain(request);
-        }
-
-        // Verify custom domain if present
-        if (customDomain && !(await isValidCustomDomain(customDomain))) {
-            return {
-                success: false,
-                error: 'Invalid or unverified custom domain'
-            };
-        }
-
-        // Build query for regular links
-        const linkQuery: any = {
-            slug: slug.toLowerCase(),
-            isActive: true
-        };
-
-        // If custom domain is provided, filter by it
-        if (customDomain) {
-            linkQuery.customDomain = customDomain.toLowerCase();
-        } else {
-            // If no custom domain, only find links without custom domain
-            linkQuery.$or = [
-                { customDomain: { $exists: false } },
-                { customDomain: null },
-                { customDomain: '' }
-            ];
-        }
-
         // Find the link by slug (check both regular links and temporary links)
         const [link, tempLink] = await Promise.all([
-            Link.findOne(linkQuery),
+            Link.findOne({
+                slug: slug.toLowerCase(),
+                isActive: true
+            }),
             TempLink.findOne({
                 slug: slug.toLowerCase(),
                 expiresAt: { $gt: new Date() } // Only non-expired temp links
