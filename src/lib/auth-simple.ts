@@ -4,6 +4,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import DiscordProvider from 'next-auth/providers/discord';
 import { connectDB } from './db-utils';
 import User from '../models/User';
+import { sendSubscriptionWebhook } from './newsletter-webhook';
 
 export const authOptions: NextAuthOptions = {
   // Use JWT strategy instead of database adapter to avoid connection issues
@@ -92,6 +93,14 @@ export const authOptions: NextAuthOptions = {
           userData.defaultPublicStats = false; // Default to private stats
           userData.emailNotifications = true; // Subscribe to newsletter by default
           existingUser = await User.create(userData);
+          
+          // Send newsletter subscription webhook for new users
+          try {
+            await sendSubscriptionWebhook(userData.name || 'Usuario', userData.email);
+          } catch (error) {
+            console.error('Error sending newsletter webhook for new user:', error);
+            // Don't fail the authentication if webhook fails
+          }
         } else {
           // Update existing user info
           existingUser.name = user.name || existingUser.name;

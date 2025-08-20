@@ -7,6 +7,7 @@ import { ThemeToggle } from '../../../components/ui/ThemeToggle';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/ui';
 import { ApiTokenManager } from '../../../components/dashboard/ApiTokenManager';
+import { sendSubscriptionWebhook, sendUnsubscriptionWebhook } from '../../../lib/newsletter-webhook';
 
 interface UserSettings {
   name: string;
@@ -120,6 +121,25 @@ export default function SettingsPage() {
               name: settings.name,
             },
           });
+        }
+      }
+
+      // Send newsletter webhook if email notifications preference changed
+      if (settings.emailNotifications !== originalPreferences.emailNotifications) {
+        try {
+          const userName = settings.name || session?.user?.name || 'Usuario';
+          const userEmail = settings.email || session?.user?.email || '';
+          
+          if (userEmail) {
+            if (settings.emailNotifications) {
+              await sendSubscriptionWebhook(userName, userEmail);
+            } else {
+              await sendUnsubscriptionWebhook(userName, userEmail);
+            }
+          }
+        } catch (error) {
+          console.error('Error sending newsletter webhook:', error);
+          // Don't fail the save operation if webhook fails
         }
       }
 
