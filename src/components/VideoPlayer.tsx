@@ -25,37 +25,108 @@ export default function VideoPlayer({
 }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const playButtonRef = useRef<HTMLDivElement>(null);
+  const placeholderButtonRef = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+
+  // Animate video when it loads
+  useEffect(() => {
+    if (isLoaded && videoRef.current && playButtonRef.current) {
+      // Animate video fade in
+      gsap.fromTo(videoRef.current, 
+        {
+          opacity: 0,
+          scale: 1.1
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 0.8,
+          ease: "power2.out"
+        }
+      );
+
+      // Animate play button entrance
+      gsap.fromTo(playButtonRef.current,
+        {
+          scale: 0,
+          opacity: 0,
+          rotation: -360
+        },
+        {
+          scale: 1,
+          opacity: 1,
+          rotation: 0,
+          duration: 0.6,
+          ease: "back.out(1.7)",
+          delay: 0.3
+        }
+      );
+    }
+  }, [isLoaded]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Animate container on scroll
-    gsap.fromTo(container, 
-      {
-        opacity: 0,
-        y: 100,
-        scale: 0.9
-      },
-      {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 1,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: container,
-          start: "top 80%",
-          end: "bottom 20%",
-          toggleActions: "play none none reverse"
+    // Set initial state
+    gsap.set(container, {
+      opacity: 0,
+      y: 100,
+      scale: 0.9,
+      rotationX: -15
+    });
+
+    // Animate container on scroll with enhanced effects
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: container,
+        start: "top 85%",
+        end: "bottom 15%",
+        toggleActions: "play none none reverse",
+        onEnter: () => {
+          // Trigger video loading when animation starts
+          if (!showVideo) {
+            setShowVideo(true);
+          }
         }
       }
-    );
+    });
 
-    // Lazy load video when in viewport
+    tl.to(container, {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      rotationX: 0,
+      duration: 1.2,
+      ease: "back.out(1.7)"
+    });
+
+    // Add floating animation on hover
+    const handleMouseEnter = () => {
+      gsap.to(container, {
+        y: -10,
+        scale: 1.02,
+        duration: 0.4,
+        ease: "power2.out"
+      });
+    };
+
+    const handleMouseLeave = () => {
+      gsap.to(container, {
+        y: 0,
+        scale: 1,
+        duration: 0.4,
+        ease: "power2.out"
+      });
+    };
+
+    container.addEventListener('mouseenter', handleMouseEnter);
+    container.addEventListener('mouseleave', handleMouseLeave);
+
+    // Lazy load video when in viewport (fallback)
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -70,6 +141,8 @@ export default function VideoPlayer({
     observer.observe(container);
 
     return () => {
+      container.removeEventListener('mouseenter', handleMouseEnter);
+      container.removeEventListener('mouseleave', handleMouseLeave);
       observer.disconnect();
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     };
@@ -80,26 +153,39 @@ export default function VideoPlayer({
       videoRef.current.play();
       setIsPlaying(true);
       
-      // Animate play button out
-      gsap.to('.play-button', {
-        scale: 0,
-        opacity: 0,
-        duration: 0.3,
-        ease: "power2.in"
-      });
+      // Animate play button out with enhanced effects
+      if (playButtonRef.current) {
+        gsap.to(playButtonRef.current, {
+          scale: 0,
+          opacity: 0,
+          rotation: 180,
+          duration: 0.4,
+          ease: "back.in(1.7)"
+        });
+      }
     }
   };
 
   const handlePause = () => {
     setIsPlaying(false);
     
-    // Animate play button back in
-    gsap.to('.play-button', {
-      scale: 1,
-      opacity: 1,
-      duration: 0.3,
-      ease: "power2.out"
-    });
+    // Animate play button back in with enhanced effects
+    if (playButtonRef.current) {
+      gsap.fromTo(playButtonRef.current, 
+        {
+          scale: 0,
+          opacity: 0,
+          rotation: -180
+        },
+        {
+          scale: 1,
+          opacity: 1,
+          rotation: 0,
+          duration: 0.5,
+          ease: "elastic.out(1, 0.5)"
+        }
+      );
+    }
   };
 
   return (
@@ -128,7 +214,7 @@ export default function VideoPlayer({
       ) : (
         <div className="aspect-video bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center play-button transition-all duration-300 hover:scale-110">
+            <div ref={placeholderButtonRef} className="w-16 h-16 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110">
               <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
               </svg>
@@ -143,7 +229,7 @@ export default function VideoPlayer({
       {/* Play Button Overlay */}
       {showVideo && src && !isPlaying && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300">
-          <div className="play-button w-20 h-20 bg-white/90 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 hover:bg-white">
+          <div ref={playButtonRef} className="w-20 h-20 bg-white/90 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 hover:bg-white">
             <svg className="w-10 h-10 text-gray-800 ml-1" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z"/>
             </svg>
