@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../lib/auth';
 import { GlobalStats } from './api/stats/global/route';
 import { ApiResponse } from '@/types';
-import LandingClient from './landing-client';
+import GSAPLanding from './gsap-landing';
 
 // Function to fetch global stats
 async function getGlobalStats(): Promise<GlobalStats> {
@@ -39,5 +39,5 @@ export default async function Home() {
   const session = await getServerSession(authOptions);
   const globalStats = await getGlobalStats();
 
-  return <LandingClient session={session} globalStats={globalStats} />;
+  return <GSAPLanding session={session} globalStats={globalStats} />;
 }
