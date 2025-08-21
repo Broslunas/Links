@@ -64,6 +64,7 @@ export default async function SlugPage({ params }: SlugPageProps) {
       Link.findOne({
         slug: slug.toLowerCase(),
         isActive: true,
+        isDisabledByAdmin: { $ne: true } // Exclude links disabled by admin
       }),
       TempLink.findOne({
         slug: slug.toLowerCase(),

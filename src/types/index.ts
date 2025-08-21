@@ -39,6 +39,7 @@ export interface Link {
   description?: string;
   isPublicStats: boolean;
   isActive: boolean;
+  isDisabledByAdmin?: boolean;
   createdAt: Date;
   updatedAt: Date;
   clickCount: number;

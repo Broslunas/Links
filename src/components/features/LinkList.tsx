@@ -536,7 +536,12 @@ export function LinkList({
                           {link.title || 'Untitled Link'}
                         </h3>
 
-                        {!link.isActive && (
+                        {link.isDisabledByAdmin && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                            Deshabilitado por Admin
+                          </span>
+                        )}
+                        {!link.isActive && !link.isDisabledByAdmin && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
                             Inactivo
                           </span>
@@ -673,6 +678,7 @@ export function LinkList({
                       variant="outline"
                       size="sm"
                       className="flex items-center gap-1"
+                      disabled={link.isDisabledByAdmin}
                     >
                       <svg
                         className="h-4 w-4"
@@ -722,6 +728,7 @@ export function LinkList({
                       variant="outline"
                       size="sm"
                       className="flex items-center gap-1"
+                      disabled={link.isDisabledByAdmin}
                     >
                       <svg
                         className="h-4 w-4"
@@ -743,6 +750,7 @@ export function LinkList({
                       onClick={() => onDeleteLink(link)}
                       variant="outline"
                       size="sm"
+                      disabled={link.isDisabledByAdmin}
                       className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
                     >
                       <svg
@@ -780,12 +788,14 @@ export function LinkList({
                   </h3>
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                      link.isActive
+                      link.isDisabledByAdmin
+                        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                        : link.isActive
                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                         : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                     }`}
                   >
-                    {link.isActive ? 'Activo' : 'Inactivo'}
+                    {link.isDisabledByAdmin ? 'Deshabilitado por Admin' : link.isActive ? 'Activo' : 'Inactivo'}
                   </span>
                 </div>
 
@@ -869,6 +879,7 @@ export function LinkList({
                     variant="outline"
                     size="sm"
                     className="flex items-center gap-1"
+                    disabled={link.isDisabledByAdmin}
                   >
                     <svg
                       className="h-4 w-4"
@@ -916,6 +927,7 @@ export function LinkList({
                     variant="outline"
                     size="sm"
                     className="flex items-center gap-1"
+                    disabled={link.isDisabledByAdmin}
                   >
                     <svg
                       className="h-4 w-4"
@@ -937,6 +949,7 @@ export function LinkList({
                     variant="outline"
                     size="sm"
                     className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
+                    disabled={link.isDisabledByAdmin}
                   >
                     <svg
                       className="h-4 w-4"
