@@ -208,6 +208,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Get the user before update to check if it's being disabled
+    const userBeforeUpdate = await User.findById(userId).select('_id email name isActive');
+    if (!userBeforeUpdate) {
+      return NextResponse.json(
+        { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
+        { status: 404 }
+      );
+    }
+
     // Update user
     const updateData: any = {};
     if (role !== undefined) updateData.role = role;
@@ -224,6 +233,29 @@ export async function PUT(request: NextRequest) {
         { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
         { status: 404 }
       );
+    }
+
+    // Send webhook notification if user status is being changed
+    if (isActive !== undefined && isActive !== userBeforeUpdate.isActive) {
+      const action = isActive ? 'active' : 'inactive';
+      try {
+        await fetch('https://hook.eu2.make.com/oiwghj44buyslgsi7ykp5v2wo3yfvgye', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userName: updatedUser.name,
+            userEmail: updatedUser.email,
+            adminName: adminUser.name,
+            adminEmail: adminUser.email,
+            action: action
+          })
+        });
+      } catch (webhookError) {
+        console.error('Error sending webhook notification:', webhookError);
+        // Don't fail the user update if webhook fails
+      }
     }
 
     const response: ApiResponse<AdminUser> = {
