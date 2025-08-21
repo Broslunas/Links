@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import UserManagement from '@/components/dashboard/UserManagement';
 import LinkManagement from '@/components/dashboard/LinkManagement';
+import ReportsAnalytics from '@/components/dashboard/ReportsAnalytics';
 
 interface AdminStats {
   totalUsers: number;
@@ -40,6 +41,7 @@ export default function AdminPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showLinkManagement, setShowLinkManagement] = useState(false);
+  const [showReportsAnalytics, setShowReportsAnalytics] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -286,7 +288,10 @@ export default function AdminPage() {
               </div>
             </button>
             
-            <button className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <button 
+              onClick={() => setShowReportsAnalytics(true)}
+              className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
               <BarChart3 className="h-5 w-5 text-purple-500" />
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">Reportes y Analíticas</p>
@@ -352,6 +357,17 @@ export default function AdminPage() {
           <div className="w-full max-w-7xl max-h-[90vh] overflow-auto">
             <LinkManagement 
               onClose={() => setShowLinkManagement(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Reports Analytics Modal */}
+      {showReportsAnalytics && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-7xl max-h-[90vh] overflow-auto">
+            <ReportsAnalytics 
+              onClose={() => setShowReportsAnalytics(false)}
             />
           </div>
         </div>
