@@ -24,7 +24,8 @@ export async function handleRedirect(
         const [link, tempLink] = await Promise.all([
             Link.findOne({
                 slug: slug.toLowerCase(),
-                isActive: true
+                isActive: true,
+                isDisabledByAdmin: { $ne: true } // Exclude links disabled by admin
             }),
             TempLink.findOne({
                 slug: slug.toLowerCase(),
@@ -39,7 +40,7 @@ export async function handleRedirect(
         if (!targetLink) {
             return {
                 success: false,
-                error: 'Link not found, inactive, or expired'
+                error: 'Link not found, inactive, expired, or disabled'
             };
         }
 

@@ -6,6 +6,11 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Force server mode, disable static export
+  output: 'standalone',
+  experimental: {
+    outputFileTracingRoot: undefined,
+  },
 };
 
 module.exports = nextConfig;

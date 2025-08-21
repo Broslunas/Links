@@ -8,6 +8,7 @@ export interface ILink extends Document {
   description?: string;
   isPublicStats: boolean;
   isActive: boolean;
+  isDisabledByAdmin: boolean;
   clickCount: number;
   createdAt: Date;
   updatedAt: Date;
@@ -63,6 +64,10 @@ const LinkSchema = new Schema<ILink>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    isDisabledByAdmin: {
+      type: Boolean,
+      default: false,
     },
     clickCount: {
       type: Number,

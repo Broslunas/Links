@@ -14,6 +14,7 @@ import {
   Database
 } from 'lucide-react';
 import UserManagement from '@/components/dashboard/UserManagement';
+import LinkManagement from '@/components/dashboard/LinkManagement';
 
 interface AdminStats {
   totalUsers: number;
@@ -38,6 +39,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [showUserManagement, setShowUserManagement] = useState(false);
+  const [showLinkManagement, setShowLinkManagement] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -273,7 +275,10 @@ export default function AdminPage() {
               </div>
             </button>
             
-            <button className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <button 
+              onClick={() => setShowLinkManagement(true)}
+              className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
               <Link className="h-5 w-5 text-green-500" />
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">Gestión de Enlaces</p>
@@ -336,6 +341,17 @@ export default function AdminPage() {
           <div className="w-full max-w-7xl max-h-[90vh] overflow-auto">
             <UserManagement 
               onClose={() => setShowUserManagement(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Link Management Modal */}
+      {showLinkManagement && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-7xl max-h-[90vh] overflow-auto">
+            <LinkManagement 
+              onClose={() => setShowLinkManagement(false)}
             />
           </div>
         </div>
