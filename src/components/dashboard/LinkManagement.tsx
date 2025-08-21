@@ -30,6 +30,7 @@ interface AdminLink {
   isPublicStats: boolean;
   isActive: boolean;
   isDisabledByAdmin: boolean;
+  disabledReason?: string;
   clickCount: number;
   createdAt: string;
   updatedAt: string;
@@ -60,6 +61,9 @@ export default function LinkManagement({ onClose }: LinkManagementProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [linkToDelete, setLinkToDelete] = useState<AdminLink | null>(null);
+  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [linkToDisable, setLinkToDisable] = useState<AdminLink | null>(null);
+  const [disableReason, setDisableReason] = useState('');
 
   useEffect(() => {
     fetchLinks();
@@ -93,7 +97,7 @@ export default function LinkManagement({ onClose }: LinkManagementProps) {
     }
   };
 
-  const handleUpdateLink = async (linkId: string, updates: { title?: string; description?: string; isActive?: boolean; isPublicStats?: boolean; isDisabledByAdmin?: boolean }) => {
+  const handleUpdateLink = async (linkId: string, updates: { title?: string; description?: string; isActive?: boolean; isPublicStats?: boolean; isDisabledByAdmin?: boolean; disabledReason?: string }) => {
     try {
       const response = await fetch('/api/admin/links', {
         method: 'PUT',
@@ -121,6 +125,39 @@ export default function LinkManagement({ onClose }: LinkManagementProps) {
       }
     } catch (error) {
       console.error('Error updating link:', error);
+    }
+  };
+
+  const handleDisableLink = async (linkId: string, reason: string) => {
+    try {
+      const response = await fetch('/api/admin/links', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          linkId,
+          isDisabledByAdmin: true,
+          disabledReason: reason
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Update local state
+          setLinks(links.map(link => 
+            link._id === linkId 
+              ? { ...link, isDisabledByAdmin: true, disabledReason: reason } as AdminLink
+              : link
+          ));
+          setShowDisableModal(false);
+          setLinkToDisable(null);
+          setDisableReason('');
+        }
+      }
+    } catch (error) {
+      console.error('Error disabling link:', error);
     }
   };
 
@@ -481,17 +518,41 @@ export default function LinkManagement({ onClose }: LinkManagementProps) {
                   </span>
                 </label>
 
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={editingLink.isDisabledByAdmin}
-                    onChange={(e) => setEditingLink({ ...editingLink, isDisabledByAdmin: e.target.checked })}
-                    className="rounded border-gray-300 text-orange-600 shadow-sm focus:border-orange-300 focus:ring focus:ring-orange-200 focus:ring-opacity-50"
-                  />
-                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                    Deshabilitado por administrador
-                  </span>
-                </label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      Estado de administración
+                    </span>
+                    {editingLink.isDisabledByAdmin ? (
+                      <button
+                        onClick={() => handleUpdateLink(editingLink._id, {
+                          isDisabledByAdmin: false,
+                          disabledReason: ''
+                        })}
+                        className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-full dark:bg-green-900 dark:text-green-200"
+                      >
+                        Habilitar enlace
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setLinkToDisable(editingLink);
+                          setShowDisableModal(true);
+                        }}
+                        className="px-3 py-1 text-xs font-medium text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-full dark:bg-orange-900 dark:text-orange-200"
+                      >
+                        Deshabilitar enlace
+                      </button>
+                    )}
+                  </div>
+                  {editingLink.isDisabledByAdmin && editingLink.disabledReason && (
+                    <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
+                      <p className="text-xs text-orange-800 dark:text-orange-200">
+                        <strong>Motivo:</strong> {editingLink.disabledReason}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -511,7 +572,8 @@ export default function LinkManagement({ onClose }: LinkManagementProps) {
                   description: editingLink.description,
                   isActive: editingLink.isActive,
                   isPublicStats: editingLink.isPublicStats,
-                  isDisabledByAdmin: editingLink.isDisabledByAdmin
+                  isDisabledByAdmin: editingLink.isDisabledByAdmin,
+                  disabledReason: editingLink.disabledReason
                 })}
                 className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg"
               >
@@ -550,6 +612,59 @@ export default function LinkManagement({ onClose }: LinkManagementProps) {
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg"
               >
                 Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Disable Link Modal */}
+      {showDisableModal && linkToDisable && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Deshabilitar Enlace
+            </h3>
+            
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              ¿Estás seguro de que quieres deshabilitar el enlace <strong>/{linkToDisable.slug}</strong>?
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Motivo de la deshabilitación *
+              </label>
+              <textarea
+                value={disableReason}
+                onChange={(e) => setDisableReason(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="Explica por qué se está deshabilitando este enlace..."
+                required
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDisableModal(false);
+                  setLinkToDisable(null);
+                  setDisableReason('');
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (disableReason.trim()) {
+                    handleDisableLink(linkToDisable._id, disableReason.trim());
+                  }
+                }}
+                disabled={!disableReason.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-lg"
+              >
+                Deshabilitar
               </button>
             </div>
           </div>

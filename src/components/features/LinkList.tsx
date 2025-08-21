@@ -537,9 +537,22 @@ export function LinkList({
                         </h3>
 
                         {link.isDisabledByAdmin && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
-                            Deshabilitado por Admin
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                              Deshabilitado por Admin
+                            </span>
+                            {link.disabledReason && (
+                              <div className="text-xs text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/10 px-2 py-1 rounded border border-orange-200 dark:border-orange-800">
+                                <strong>Motivo:</strong> {link.disabledReason}
+                              </div>
+                            )}
+                            <a
+                              href="/contacto"
+                              className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded transition-colors"
+                            >
+                              Contactar Soporte
+                            </a>
+                          </div>
                         )}
                         {!link.isActive && !link.isDisabledByAdmin && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
@@ -782,21 +795,38 @@ export function LinkList({
                 className="bg-card rounded-lg border border-border p-4 hover:shadow-md transition-all duration-200 hover:border-primary/20 flex flex-col h-full"
               >
                 {/* Header with title and status */}
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="font-semibold text-foreground text-sm line-clamp-2 flex-1 mr-2">
-                    {link.title}
-                  </h3>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                      link.isDisabledByAdmin
-                        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                        : link.isActive
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                    }`}
-                  >
-                    {link.isDisabledByAdmin ? 'Deshabilitado por Admin' : link.isActive ? 'Activo' : 'Inactivo'}
-                  </span>
+                <div className="mb-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-foreground text-sm line-clamp-2 flex-1 mr-2">
+                      {link.title}
+                    </h3>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                        link.isDisabledByAdmin
+                          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                          : link.isActive
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                      }`}
+                    >
+                      {link.isDisabledByAdmin ? 'Deshabilitado por Admin' : link.isActive ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </div>
+                  {link.isDisabledByAdmin && (
+                    <div className="space-y-2">
+                      {link.disabledReason && (
+                        <div className="text-xs text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/10 px-2 py-1 rounded border border-orange-200 dark:border-orange-800">
+                          <strong>Motivo:</strong> {link.disabledReason}
+                        </div>
+                      )}
+                      <a
+                        href="/contacto"
+                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded transition-colors"
+                      >
+                        Contactar Soporte
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 {/* URLs */}

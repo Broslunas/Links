@@ -115,7 +115,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { linkId, title, description, isActive, isPublicStats, isDisabledByAdmin } = body;
+    const { linkId, title, description, isActive, isPublicStats, isDisabledByAdmin, disabledReason } = body;
 
     if (!linkId) {
       return NextResponse.json(
@@ -133,7 +133,21 @@ export async function PUT(request: NextRequest) {
     if (description !== undefined) updateData.description = description;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (isPublicStats !== undefined) updateData.isPublicStats = isPublicStats;
-    if (isDisabledByAdmin !== undefined) updateData.isDisabledByAdmin = isDisabledByAdmin;
+    if (isDisabledByAdmin !== undefined) {
+      updateData.isDisabledByAdmin = isDisabledByAdmin;
+      // Si se está deshabilitando, requerir motivo
+      if (isDisabledByAdmin && !disabledReason) {
+        return NextResponse.json(
+          { success: false, error: 'Se requiere un motivo para deshabilitar el enlace' },
+          { status: 400 }
+        );
+      }
+      // Si se está habilitando, limpiar el motivo
+      if (!isDisabledByAdmin) {
+        updateData.disabledReason = null;
+      }
+    }
+    if (disabledReason !== undefined) updateData.disabledReason = disabledReason;
 
     // Actualizar enlace
     const updatedLink = await Link.findByIdAndUpdate(

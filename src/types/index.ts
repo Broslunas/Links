@@ -40,9 +40,10 @@ export interface Link {
   isPublicStats: boolean;
   isActive: boolean;
   isDisabledByAdmin?: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  disabledReason?: string;
   clickCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AnalyticsEvent {
