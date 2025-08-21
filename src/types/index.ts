@@ -167,6 +167,7 @@ declare module 'next-auth/jwt' {
     id?: string;
     provider?: 'github' | 'google' | 'discord';
     role?: 'user' | 'admin';
+    twoFactorEnabled?: boolean;
   }
 }
 

@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { QRCustomizationOptions, defaultQROptions } from '../components/features/QRCustomizer';
+import {
+  QRCustomizationOptions,
+  defaultQROptions,
+} from '../components/features/QRCustomizer';
 
 const QR_PREFERENCES_KEY = 'brl-qr-preferences';
 
 export function useQRPreferences() {
-  const [preferences, setPreferences] = useState<QRCustomizationOptions>(defaultQROptions);
+  const [preferences, setPreferences] =
+    useState<QRCustomizationOptions>(defaultQROptions);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load preferences from localStorage on mount
@@ -48,7 +52,10 @@ export function useQRPreferences() {
   const resetPreferences = () => {
     try {
       setPreferences(defaultQROptions);
-      localStorage.setItem(QR_PREFERENCES_KEY, JSON.stringify(defaultQROptions));
+      localStorage.setItem(
+        QR_PREFERENCES_KEY,
+        JSON.stringify(defaultQROptions)
+      );
     } catch (error) {
       console.warn('Error resetting QR preferences:', error);
     }
@@ -105,8 +112,16 @@ export function getContrastColor(backgroundColor: string): string {
 // Helper function to generate random color
 export function generateRandomColor(): string {
   const colors = [
-    '#1E40AF', '#059669', '#7C3AED', '#DC2626', '#EA580C',
-    '#DB2777', '#0891B2', '#65A30D', '#C2410C', '#BE185D'
+    '#1E40AF',
+    '#059669',
+    '#7C3AED',
+    '#DC2626',
+    '#EA580C',
+    '#DB2777',
+    '#0891B2',
+    '#65A30D',
+    '#C2410C',
+    '#BE185D',
   ];
   return colors[Math.floor(Math.random() * colors.length)];
 }

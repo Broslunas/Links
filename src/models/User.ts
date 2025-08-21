@@ -31,6 +31,10 @@ export interface IUser extends Document {
     apiToken?: string;
     apiTokenCreatedAt?: Date;
     apiTokenLastUsedAt?: Date;
+    // Two-Factor Authentication
+    twoFactorEnabled?: boolean;
+    twoFactorSecret?: string;
+    backupCodes?: string[];
     // User preferences
     defaultPublicStats?: boolean;
     emailNotifications?: boolean;
@@ -101,6 +105,19 @@ const UserSchema = new Schema<IUser>({
     },
     apiTokenLastUsedAt: {
         type: Date,
+    },
+    // Two-Factor Authentication
+    twoFactorEnabled: {
+        type: Boolean,
+        default: false,
+    },
+    twoFactorSecret: {
+        type: String,
+        trim: true,
+    },
+    backupCodes: {
+        type: [String],
+        default: [],
     },
     // User preferences
     defaultPublicStats: {

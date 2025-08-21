@@ -1,44 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import connectDB from '@/lib/mongodb';
-import User, { IUser } from '@/models/User';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Solo aplicar middleware a rutas de admin
-  if (pathname.startsWith('/dashboard/admin')) {
-    try {
-      // Verificar si el usuario está autenticado
-      const token = await getToken({ 
-        req: request, 
-        secret: process.env.NEXTAUTH_SECRET 
-      });
-
-      if (!token || !token.email) {
-        return NextResponse.redirect(new URL('/auth/signin', request.url));
-      }
-
-      // Conectar a la base de datos y verificar el rol
-      await connectDB();
-      const user = await User.findOne({ email: token.email }).lean() as IUser | null;
-
-      if (!user || user.role !== 'admin') {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
-      }
-
-      return NextResponse.next();
-    } catch (error) {
-      console.error('Admin middleware error:', error);
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
+  // Skip middleware for auth pages, API routes, and static files
+  if (
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/auth/signin') ||
+    pathname.startsWith('/auth/signout') ||
+    pathname.startsWith('/auth/callback') ||
+    pathname.startsWith('/auth/verify-2fa') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml'
+  ) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  try {
+    // Get the token from the request
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    // If no token, redirect to sign in
+    if (!token) {
+      const signInUrl = new URL('/auth/signin', request.url);
+      signInUrl.searchParams.set('callbackUrl', request.url);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    // Check if user has 2FA enabled
+    if (token.twoFactorEnabled) {
+      // Check if 2FA is already verified in this session
+      const twoFactorVerified = request.cookies.get('2fa-verified')?.value;
+
+      if (!twoFactorVerified) {
+        const verifyUrl = new URL('/auth/verify-2fa', request.url);
+        verifyUrl.searchParams.set('callbackUrl', request.url);
+        return NextResponse.redirect(verifyUrl);
+      }
+    }
+
+    return NextResponse.next();
+  } catch (error) {
+    console.error('❌ Error en middleware:', error);
+    return NextResponse.next();
+  }
 }
 
 export const config = {
-  matcher: [
-    '/dashboard/admin/:path*'
-  ]
+  matcher: ['/', '/dashboard/:path*'],
 };
