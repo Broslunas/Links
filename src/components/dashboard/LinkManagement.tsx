@@ -527,7 +527,7 @@ export default function LinkManagement({ onClose }: LinkManagementProps) {
                       <button
                         onClick={() => handleUpdateLink(editingLink._id, {
                           isDisabledByAdmin: false,
-                          disabledReason: ''
+                          disabledReason: undefined
                         })}
                         className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-full dark:bg-green-900 dark:text-green-200"
                       >
@@ -573,7 +573,7 @@ export default function LinkManagement({ onClose }: LinkManagementProps) {
                   isActive: editingLink.isActive,
                   isPublicStats: editingLink.isPublicStats,
                   isDisabledByAdmin: editingLink.isDisabledByAdmin,
-                  disabledReason: editingLink.disabledReason
+                  disabledReason: editingLink.isDisabledByAdmin && editingLink.disabledReason ? editingLink.disabledReason : undefined
                 })}
                 className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg"
               >

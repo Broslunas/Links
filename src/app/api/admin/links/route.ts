@@ -124,6 +124,16 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Obtener el enlace actual para comparar cambios
+    const currentLink = await Link.findById(linkId).populate('userId', 'email name');
+    
+    if (!currentLink) {
+      return NextResponse.json(
+        { success: false, error: 'Enlace no encontrado' },
+        { status: 404 }
+      );
+    }
+
     // Construir objeto de actualización
     const updateData: any = {
       updatedAt: new Date()
@@ -161,6 +171,48 @@ export async function PUT(request: NextRequest) {
         { success: false, error: 'Enlace no encontrado' },
         { status: 404 }
       );
+    }
+
+    // Verificar si hubo cambio en el estado de habilitación/deshabilitación
+    const statusChanged = (
+      (isActive !== undefined && currentLink.isActive !== isActive) ||
+      (isDisabledByAdmin !== undefined && currentLink.isDisabledByAdmin !== isDisabledByAdmin)
+    );
+
+    if (statusChanged) {
+      // Determinar el estado final del enlace
+      const finalIsActive = isActive !== undefined ? isActive : currentLink.isActive;
+      const finalIsDisabledByAdmin = isDisabledByAdmin !== undefined ? isDisabledByAdmin : currentLink.isDisabledByAdmin;
+      
+      // El enlace está "activo" si isActive es true Y no está deshabilitado por admin
+      const linkIsEnabled = finalIsActive && !finalIsDisabledByAdmin;
+      
+      // Enviar webhook de notificación
+      try {
+        const webhookPayload = {
+          linkId: updatedLink._id,
+          linkSlug: updatedLink.slug,
+          linkUrl: updatedLink.originalUrl,
+          linkTitle: updatedLink.title || null,
+          userName: updatedLink.userId.name || null,
+          userEmail: updatedLink.userId.email,
+          adminName: user.name || null,
+          adminEmail: user.email,
+          action: linkIsEnabled ? 'enabled' : 'disabled',
+          reason: finalIsDisabledByAdmin ? (disabledReason || updatedLink.disabledReason) : null
+        };
+
+        await fetch('https://hook.eu2.make.com/toj5qmxuzm2xq4a2gseqs5wp9tbebwek', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(webhookPayload)
+        });
+      } catch (webhookError) {
+        console.error('Error sending webhook notification:', webhookError);
+        // No fallar la actualización del enlace si el webhook falla
+      }
     }
 
     return NextResponse.json({
