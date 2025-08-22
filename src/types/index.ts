@@ -41,6 +41,7 @@ export interface Link {
   isActive: boolean;
   isDisabledByAdmin?: boolean;
   disabledReason?: string;
+  isFavorite: boolean;
   clickCount: number;
   createdAt: string;
   updatedAt: string;

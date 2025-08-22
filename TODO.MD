@@ -3,7 +3,7 @@
 ### 1. Features de Productividad 📁 Organización de Links
 
 - Carpetas y Etiquetas : Sistema de categorización con carpetas anidadas y etiquetas de colores
-- Favoritos : Marcar links importantes con estrella
+- [-]Favoritos : Marcar links importantes con estrella
 - Búsqueda Avanzada : Filtros por fecha, clicks, etiquetas, carpetas
 - Vista de Lista/Grid : Diferentes formas de visualizar los links 🔗 Gestión Masiva
 - Importación CSV/Excel : Subir múltiples URLs de una vez

@@ -46,6 +46,7 @@ export const GET = withAuth(async (
     description: link.description,
     isPublicStats: link.isPublicStats,
     isActive: link.isActive,
+    isFavorite: link.isFavorite,
     createdAt: link.createdAt,
     updatedAt: link.updatedAt,
     clickCount: link.clickCount,
@@ -91,6 +92,7 @@ export const PUT = withAuth(async (
     'isPublicStats',
     'isActive',
     'originalUrl',
+    'isFavorite',
   ];
   updatableFields.forEach(field => {
     // Permite actualizar el campo aunque el valor sea vacío, null, false, etc.
@@ -110,6 +112,7 @@ export const PUT = withAuth(async (
     description: link.description,
     isPublicStats: link.isPublicStats,
     isActive: link.isActive,
+    isFavorite: link.isFavorite,
     createdAt: link.createdAt,
     updatedAt: link.updatedAt,
     clickCount: link.clickCount,

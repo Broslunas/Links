@@ -10,6 +10,7 @@ export interface ILink extends Document {
   isActive: boolean;
   isDisabledByAdmin: boolean;
   disabledReason?: string;
+  isFavorite: boolean;
   clickCount: number;
   createdAt: Date;
   updatedAt: Date;
@@ -74,6 +75,10 @@ const LinkSchema = new Schema<ILink>(
       type: String,
       trim: true,
       maxlength: 500,
+    },
+    isFavorite: {
+      type: Boolean,
+      default: false,
     },
     clickCount: {
       type: Number,

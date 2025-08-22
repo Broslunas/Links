@@ -7,6 +7,7 @@ import { Link, ApiResponse } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { QRCodeModal } from './QRCodeModal';
+import { Star } from 'lucide-react';
 
 type FilterStatus = 'all' | 'active' | 'inactive';
 type FilterStats = 'all' | 'public' | 'private';
@@ -44,6 +45,7 @@ export function LinkList({
   const [dateFilter, setDateFilter] = useState<
     'all' | 'today' | 'week' | 'month'
   >('all');
+  const [filterFavorites, setFilterFavorites] = useState<'all' | 'favorites' | 'non-favorites'>('all');
 
   const addTagToLink = async (linkId: string, tag: string) => {
     try {
@@ -57,6 +59,30 @@ export function LinkList({
       fetchLinks();
     } catch (error) {
       console.error('Error adding tag:', error);
+    }
+  };
+
+  const toggleFavorite = async (linkSlug: string) => {
+    try {
+      const response = await fetch(`/api/links/${linkSlug}/favorite`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        // Update the local state immediately for better UX
+        setLinks(prevLinks => 
+          prevLinks.map(link => 
+            link.slug === linkSlug 
+              ? { ...link, isFavorite: !link.isFavorite }
+              : link
+          )
+        );
+      } else {
+        console.error('Error toggling favorite');
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
     }
   };
 
@@ -196,7 +222,13 @@ export function LinkList({
         }
       })();
 
-      return matchesSearch && matchesStatus && matchesStats && matchesDate;
+      // Favorites filter
+      const matchesFavorites =
+        filterFavorites === 'all' ||
+        (filterFavorites === 'favorites' && link.isFavorite) ||
+        (filterFavorites === 'non-favorites' && !link.isFavorite);
+
+      return matchesSearch && matchesStatus && matchesStats && matchesDate && matchesFavorites;
     });
 
     // Sort links
@@ -225,6 +257,7 @@ export function LinkList({
     sortOption,
     filterByTag,
     dateFilter,
+    filterFavorites,
   ]);
 
   if (loading) {
@@ -436,6 +469,22 @@ export function LinkList({
               </select>
             </div>
 
+            {/* Favorites Filter */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Favoritos:
+              </label>
+              <select
+                value={filterFavorites}
+                onChange={e => setFilterFavorites(e.target.value as 'all' | 'favorites' | 'non-favorites')}
+                className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              >
+                <option value="all">Todos</option>
+                <option value="favorites">Solo favoritos</option>
+                <option value="non-favorites">Sin favoritos</option>
+              </select>
+            </div>
+
             {/* Sort Options */}
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-muted-foreground">
@@ -532,6 +581,19 @@ export function LinkList({
                   <div className="flex items-start gap-3 flex-1 min-w-0">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
+                        <Button
+                          onClick={() => toggleFavorite(link.slug)}
+                          variant="ghost"
+                          size="sm"
+                          className={`p-1 h-auto ${link.isFavorite 
+                            ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
+                            : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                          }`}
+                        >
+                          <Star 
+                            className={`h-4 w-4 ${link.isFavorite ? 'fill-current' : ''}`}
+                          />
+                        </Button>
                         <h3 className="font-medium text-card-foreground truncate">
                           {link.title || 'Untitled Link'}
                         </h3>
@@ -797,9 +859,24 @@ export function LinkList({
                 {/* Header with title and status */}
                 <div className="mb-3">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-foreground text-sm line-clamp-2 flex-1 mr-2">
-                      {link.title}
-                    </h3>
+                    <div className="flex items-start gap-2 flex-1 mr-2">
+                      <Button
+                        onClick={() => toggleFavorite(link.slug)}
+                        variant="ghost"
+                        size="sm"
+                        className={`p-1 h-auto mt-0.5 ${link.isFavorite 
+                          ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
+                          : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                        }`}
+                      >
+                        <Star 
+                          className={`h-4 w-4 ${link.isFavorite ? 'fill-current' : ''}`}
+                        />
+                      </Button>
+                      <h3 className="font-semibold text-foreground text-sm line-clamp-2 flex-1">
+                        {link.title}
+                      </h3>
+                    </div>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                         link.isDisabledByAdmin

@@ -78,6 +78,7 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
         description: newLink.description,
         isPublicStats: newLink.isPublicStats,
         isActive: newLink.isActive,
+        isFavorite: newLink.isFavorite,
         clickCount: newLink.clickCount,
         createdAt: newLink.createdAt,
         updatedAt: newLink.updatedAt,
