@@ -17,7 +17,14 @@ const ALLOWED_ROUTES = [
   '/help',
   '/auth/signin',
   '/auth/signout',
-  '/account-inactive'
+  '/account-inactive',
+  '/features',
+  '/status',
+  '/contacto',
+  '/terms-and-services',
+  '/privacy-policy',
+  '/cookies',
+  '/gdpr',
 ];
 
 // Función para verificar si una ruta está permitida
@@ -47,7 +54,7 @@ export const useInactiveAccountCheck = (): UseInactiveAccountCheckReturn => {
       try {
         // Hacer una petición para obtener el estado actual del usuario
         const response = await fetch('/api/user/status');
-        
+
         if (response.ok) {
           const data = await response.json();
           const userIsActive = data.isActive ?? true; // Por defecto true si no está definido
@@ -69,15 +76,17 @@ export const useInactiveAccountCheck = (): UseInactiveAccountCheckReturn => {
   }, [session, status]);
 
   // Determinar si se debe mostrar el modal
-  const shouldShowModal = !!(isAccountInactive && 
-                         !isLoading && 
-                         status === 'authenticated' && 
-                         pathname && 
-                         !isRouteAllowed(pathname));
+  const shouldShowModal = !!(
+    isAccountInactive &&
+    !isLoading &&
+    status === 'authenticated' &&
+    pathname &&
+    !isRouteAllowed(pathname)
+  );
 
   return {
     isAccountInactive,
     shouldShowModal,
-    isLoading
+    isLoading,
   };
 };
