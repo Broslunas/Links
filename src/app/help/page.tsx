@@ -18,14 +18,27 @@ import {
   getGuidesByCategory,
 } from '@/components/help-center';
 import { cn } from '@/lib/utils';
-import { Search, HelpCircle, BookOpen, ArrowLeft, MessageCircle, Home } from 'lucide-react';
+import {
+  Search,
+  HelpCircle,
+  BookOpen,
+  ArrowLeft,
+  MessageCircle,
+  Home,
+} from 'lucide-react';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
 // Animated Category Card Component
-const AnimatedCategoryCard = ({ category, itemCount }: { category: any; itemCount: number }) => {
+const AnimatedCategoryCard = ({
+  category,
+  itemCount,
+}: {
+  category: any;
+  itemCount: number;
+}) => {
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,23 +47,24 @@ const AnimatedCategoryCard = ({ category, itemCount }: { category: any; itemCoun
     const card = cardRef.current;
 
     // Entrance animation
-    gsap.fromTo(card, 
-      { 
-        opacity: 0, 
+    gsap.fromTo(
+      card,
+      {
+        opacity: 0,
         y: 50,
-        scale: 0.9
+        scale: 0.9,
       },
       {
         opacity: 1,
         y: 0,
         scale: 1,
         duration: 0.8,
-        ease: "power3.out",
+        ease: 'power3.out',
         scrollTrigger: {
           trigger: card,
-          start: "top 80%",
-          toggleActions: "play none none reverse"
-        }
+          start: 'top 80%',
+          toggleActions: 'play none none reverse',
+        },
       }
     );
 
@@ -60,7 +74,7 @@ const AnimatedCategoryCard = ({ category, itemCount }: { category: any; itemCoun
         y: -10,
         scale: 1.05,
         duration: 0.3,
-        ease: "power2.out"
+        ease: 'power2.out',
       });
     };
 
@@ -69,7 +83,7 @@ const AnimatedCategoryCard = ({ category, itemCount }: { category: any; itemCoun
         y: 0,
         scale: 1,
         duration: 0.3,
-        ease: "power2.out"
+        ease: 'power2.out',
       });
     };
 
@@ -87,14 +101,14 @@ const AnimatedCategoryCard = ({ category, itemCount }: { category: any; itemCoun
       <div className="relative overflow-hidden rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 p-8 h-full transition-all duration-300 hover:bg-white/20 hover:border-white/30">
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
+
         {/* Icon */}
         <div className="relative z-10 mb-6">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
             <category.icon className="w-8 h-8 text-white" />
           </div>
         </div>
-        
+
         {/* Content */}
         <div className="relative z-10">
           <h3 className="text-xl font-bold text-white mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-purple-400 transition-all duration-300">
@@ -108,8 +122,18 @@ const AnimatedCategoryCard = ({ category, itemCount }: { category: any; itemCoun
               {itemCount} recursos disponibles
             </span>
             <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors duration-300">
-              <svg className="w-4 h-4 text-white transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg
+                className="w-4 h-4 text-white transform group-hover:translate-x-1 transition-transform duration-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </div>
           </div>
@@ -133,22 +157,22 @@ const DynamicBackground = () => {
     for (let i = 0; i < 6; i++) {
       const orb = document.createElement('div');
       orb.className = 'absolute rounded-full opacity-20 blur-xl';
-      
+
       const size = Math.random() * 300 + 100;
       const colors = [
         'bg-blue-500',
-        'bg-purple-500', 
+        'bg-purple-500',
         'bg-pink-500',
         'bg-indigo-500',
-        'bg-cyan-500'
+        'bg-cyan-500',
       ];
-      
+
       orb.classList.add(colors[Math.floor(Math.random() * colors.length)]);
       orb.style.width = `${size}px`;
       orb.style.height = `${size}px`;
       orb.style.left = `${Math.random() * 100}%`;
       orb.style.top = `${Math.random() * 100}%`;
-      
+
       container.appendChild(orb);
       orbs.push(orb);
 
@@ -159,7 +183,7 @@ const DynamicBackground = () => {
         duration: Math.random() * 20 + 10,
         repeat: -1,
         yoyo: true,
-        ease: "sine.inOut"
+        ease: 'sine.inOut',
       });
     }
 
@@ -169,7 +193,10 @@ const DynamicBackground = () => {
   }, []);
 
   return (
-    <div ref={backgroundRef} className="fixed inset-0 overflow-hidden pointer-events-none">
+    <div
+      ref={backgroundRef}
+      className="fixed inset-0 overflow-hidden pointer-events-none"
+    >
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900" />
     </div>
   );
@@ -219,38 +246,42 @@ export default function HelpPage() {
     // Hero section animation
     if (heroRef.current) {
       const tl = gsap.timeline();
-      
-      tl.fromTo(heroRef.current.querySelector('h1'),
+
+      tl.fromTo(
+        heroRef.current.querySelector('h1'),
         { opacity: 0, y: 50 },
-        { opacity: 1, y: 0, duration: 1, ease: "power3.out" }
+        { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }
       )
-      .fromTo(heroRef.current.querySelector('p'),
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-        "-=0.5"
-      )
-      .fromTo(heroRef.current.querySelector('.search-container'),
-        { opacity: 0, y: 30, scale: 0.9 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "power3.out" },
-        "-=0.3"
-      );
+        .fromTo(
+          heroRef.current.querySelector('p'),
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' },
+          '-=0.5'
+        )
+        .fromTo(
+          heroRef.current.querySelector('.search-container'),
+          { opacity: 0, y: 30, scale: 0.9 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out' },
+          '-=0.3'
+        );
     }
 
     // Categories stagger animation
     if (categoriesRef.current) {
-      gsap.fromTo(categoriesRef.current.querySelectorAll('.category-item'),
+      gsap.fromTo(
+        categoriesRef.current.querySelectorAll('.category-item'),
         { opacity: 0, y: 50 },
         {
           opacity: 1,
           y: 0,
           duration: 0.6,
           stagger: 0.1,
-          ease: "power3.out",
+          ease: 'power3.out',
           scrollTrigger: {
             trigger: categoriesRef.current,
-            start: "top 80%",
-            toggleActions: "play none none reverse"
-          }
+            start: 'top 80%',
+            toggleActions: 'play none none reverse',
+          },
         }
       );
     }
@@ -259,7 +290,7 @@ export default function HelpPage() {
   return (
     <div className="min-h-screen relative overflow-hidden">
       <DynamicBackground />
-      
+
       <div className="relative z-10">
         <div className="container mx-auto px-4 py-16">
           {/* Header */}
@@ -279,7 +310,10 @@ export default function HelpPage() {
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl blur-xl" />
                 <div className="relative bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-2">
-                  <SearchBox onSearch={handleSearch} className="!bg-transparent !border-none" />
+                  <SearchBox
+                    onSearch={handleSearch}
+                    className="!bg-transparent !border-none"
+                  />
                 </div>
               </div>
             </div>
@@ -296,15 +330,20 @@ export default function HelpPage() {
                   Encuentra exactamente lo que necesitas
                 </p>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {helpCategories.map((category, index) => {
                   const categoryFAQs = getFAQByCategory(category.id);
                   const categoryGuides = getGuidesByCategory(category.id);
-                  const totalItems = categoryFAQs.length + categoryGuides.length;
+                  const totalItems =
+                    categoryFAQs.length + categoryGuides.length;
 
                   return (
-                    <div key={category.id} className="category-item" onClick={() => handleCategorySelect(category.id)}>
+                    <div
+                      key={category.id}
+                      className="category-item"
+                      onClick={() => handleCategorySelect(category.id)}
+                    >
                       <AnimatedCategoryCard
                         category={category}
                         itemCount={totalItems}
@@ -336,7 +375,11 @@ export default function HelpPage() {
                     <>
                       <span className="text-gray-500">/</span>
                       <span className="text-white bg-gradient-to-r from-blue-500/20 to-purple-500/20 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20">
-                        {helpCategories.find(cat => cat.id === selectedCategory)?.title}
+                        {
+                          helpCategories.find(
+                            cat => cat.id === selectedCategory
+                          )?.title
+                        }
                       </span>
                     </>
                   )}
@@ -364,7 +407,10 @@ export default function HelpPage() {
                           : 'text-gray-400 hover:text-white hover:bg-white/5'
                       )}
                     >
-                      Todo ({filteredContent.faqs.length + filteredContent.guides.length})
+                      Todo (
+                      {filteredContent.faqs.length +
+                        filteredContent.guides.length}
+                      )
                     </button>
                     <button
                       onClick={() => setActiveTab('faq')}
@@ -437,7 +483,8 @@ export default function HelpPage() {
                         No se encontraron resultados
                       </h3>
                       <p className="text-gray-400 mb-8 text-lg max-w-md mx-auto">
-                        Intenta con otros términos de búsqueda o explora las categorías.
+                        Intenta con otros términos de búsqueda o explora las
+                        categorías.
                       </p>
                       <Button
                         onClick={() => {
@@ -468,10 +515,11 @@ export default function HelpPage() {
                   ¿No encuentras lo que buscas?
                 </h3>
                 <p className="text-gray-300 mb-8 text-lg leading-relaxed max-w-2xl mx-auto">
-                  Nuestro equipo de soporte está aquí para ayudarte con cualquier pregunta o problema que tengas.
+                  Nuestro equipo de soporte está aquí para ayudarte con
+                  cualquier pregunta o problema que tengas.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="https://broslunas.com/contacto">
+                  <Link href="/contacto">
                     <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
                       <MessageCircle className="w-5 h-5 mr-2" />
                       Contactar Soporte

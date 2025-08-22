@@ -289,7 +289,7 @@ export default function AccountPage() {
                 </Link>
               </div>
               <div className="space-y-4">
-                <Link href="https://broslunas.com/contacto">
+                <Link href="/contacto">
                   <Button className="w-full justify-start" variant="outline">
                     <svg
                       className="w-4 h-4 mr-2"

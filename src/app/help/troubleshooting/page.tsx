@@ -465,7 +465,7 @@ export default function TroubleshootingPage() {
                 de soporte está aquí para ayudarte.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="https://broslunas.com/contacto">
+                <Link href="/contacto">
                   <Button className="bg-white text-blue-600 hover:bg-gray-100">
                     <svg
                       className="w-4 h-4 mr-2"

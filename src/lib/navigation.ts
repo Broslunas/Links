@@ -47,7 +47,7 @@ export const footerNavigation: FooterNavigation = {
         },
         {
           label: 'Contacto',
-          href: 'https://broslunas.com/contacto',
+          href: '/contacto',
         },
         {
           label: 'Estado del Servicio',

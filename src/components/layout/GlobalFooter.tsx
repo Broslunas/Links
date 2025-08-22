@@ -28,7 +28,7 @@ const footerSections: NavigationSection[] = [
       { label: 'Ayuda', href: '/help' },
       {
         label: 'Contacto',
-        href: 'https://broslunas.com/contacto',
+        href: '/contacto',
         external: true,
       },
       { label: 'Estado del Servicio', href: '/status', external: true },
