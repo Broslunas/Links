@@ -43,6 +43,8 @@ export default function DashboardPage() {
 
       if (data.success && data.data) {
         const links = data.data;
+        console.log('Links data from API in dashboard:', links);
+        console.log('First link:', links[0]);
         const totalLinks = links.length;
         const totalClicks = links.reduce(
           (sum, link) => sum + link.clickCount,
@@ -92,6 +94,13 @@ export default function DashboardPage() {
 
   const confirmDelete = async () => {
     if (!deletingLink) return;
+
+    // Verificar que el slug existe
+    if (!deletingLink.slug) {
+      error('Error: El enlace no tiene un slug válido', 'Error');
+      setDeletingLink(null);
+      return;
+    }
 
     setDeleteLoading(true);
 
