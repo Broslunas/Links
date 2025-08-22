@@ -8,7 +8,6 @@ import { Button } from '../ui/Button';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Sidebar } from './Sidebar';
-import { Menu, LogOut } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -115,52 +114,60 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top navigation */}
-        <header className="sticky top-0 z-30 bg-gradient-to-r from-background/95 via-background/98 to-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 border-b border-border/50 shadow-lg shadow-primary/5">
-          <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 relative">
+        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+          <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center space-x-4">
               {/* Mobile menu button */}
               <Button
                 ref={mobileMenuButtonRef}
                 variant="ghost"
                 size="icon"
-                className="lg:hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-105 rounded-xl"
+                className="lg:hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 onClick={handleSidebarOpen}
                 aria-label="Abrir barra lateral de navegación"
                 aria-expanded={sidebarOpen}
                 aria-controls="mobile-sidebar"
               >
-                <Menu className="h-6 w-6 transition-all duration-300" />
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
               </Button>
 
-              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent lg:hidden transition-all duration-300 hover:scale-105">
+              <h1 className="text-xl font-semibold text-foreground lg:hidden">
                 Broslunas Links
               </h1>
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className="p-2 rounded-xl hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-105">
-                <ThemeToggle />
-              </div>
+              <ThemeToggle />
 
               {/* User menu */}
-              <div className="flex items-center space-x-3 bg-gradient-to-r from-card/50 to-card/30 backdrop-blur-sm rounded-2xl p-3 border border-border/30 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-center space-x-3">
                 {session?.user?.image && (
-                  <div className="relative">
-                    <Image
-                      src={session.user.image}
-                      alt={session.user.name || 'User'}
-                      width={32}
-                      height={32}
-                      className="h-8 w-8 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all duration-300"
-                    />
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
-                  </div>
+                  <Image
+                    src={session.user.image}
+                    alt={session.user.name || 'User'}
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 rounded-full"
+                  />
                 )}
                 <div className="hidden sm:block">
-                  <p className="text-sm font-semibold text-foreground hover:text-primary transition-colors duration-300">
+                  <p className="text-sm font-medium text-foreground">
                     {session?.user?.name}
                   </p>
-                  <p className="text-xs text-muted-foreground/80 font-medium">
+                  <p className="text-xs text-muted-foreground">
                     {session?.user?.email}
                   </p>
                 </div>
@@ -170,11 +177,24 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   variant="ghost"
                   size="sm"
                   onClick={handleSignOut}
-                  className="text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-xl transition-all duration-300 hover:scale-110 group"
+                  className="text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                   aria-label="Cerrar sesión y salir del dashboard"
                   title="Cerrar Sesión"
                 >
-                  <LogOut className="h-5 w-5 transition-all duration-300 group-hover:rotate-12" />
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
                 </Button>
               </div>
             </div>

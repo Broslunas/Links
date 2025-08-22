@@ -544,7 +544,7 @@ export default function TroubleshootingPage() {
             </div>
             <div className="mt-6 text-center">
               <Link
-                href="https://broslunas.link/status"
+                href="https://status.brl.link"
                 className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
               >
                 Ver página de estado completa →

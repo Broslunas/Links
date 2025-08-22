@@ -9,8 +9,7 @@ interface NewsletterWebhookData {
   email: string;
 }
 
-const WEBHOOK_URL =
-  'https://hook.eu2.make.com/389gtp6bvdbnw877wgaihka8kr3ykssk';
+const WEBHOOK_URL = 'https://hook.eu2.make.com/389gtp6bvdbnw877wgaihka8kr3ykssk';
 
 /**
  * Sends newsletter subscription/unsubscription data to webhook
@@ -43,6 +42,9 @@ export async function sendNewsletterWebhook(
       return false;
     }
 
+    console.log(
+      `Newsletter webhook sent successfully: ${data.action} for ${data.email}`
+    );
     return true;
   } catch (error) {
     console.error('Error sending newsletter webhook:', error);

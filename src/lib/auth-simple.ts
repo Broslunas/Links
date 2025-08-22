@@ -35,13 +35,6 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   callbacks: {
-    async redirect({ url, baseUrl }) {
-      // Allow relative callback URLs
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
-      // Allow callback URLs on the same origin
-      if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
-    },
     async signIn({ user, account, profile }) {
       try {
         if (!account || !user.email) {
@@ -126,12 +119,6 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
-        // Check if user has 2FA enabled and redirect accordingly
-        if (existingUser.twoFactorEnabled) {
-          // The middleware will handle the 2FA verification redirect
-          return true;
-        }
-        
         return true;
       } catch (error) {
         console.error('❌ Error during sign in:', error);
@@ -163,7 +150,6 @@ export const authOptions: NextAuthOptions = {
             token.image = dbUser.image;
             token.provider = dbUser.provider;
             token.role = dbUser.role || 'user'; // Include role with default
-            token.twoFactorEnabled = dbUser.twoFactorEnabled || false; // Include 2FA status
           }
         } catch (error) {
           console.error('Error in JWT callback:', error);

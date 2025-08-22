@@ -7,7 +7,6 @@ import { ThemeToggle } from '../../../components/ui/ThemeToggle';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/ui';
 import { ApiTokenManager } from '../../../components/dashboard/ApiTokenManager';
-import TwoFactorSetup from '../../../components/dashboard/TwoFactorSetup';
 import { sendSubscriptionWebhook, sendUnsubscriptionWebhook } from '../../../lib/newsletter-webhook';
 
 interface UserSettings {
@@ -15,11 +14,6 @@ interface UserSettings {
   email: string;
   defaultPublicStats: boolean;
   emailNotifications: boolean;
-}
-
-interface TwoFactorStatus {
-  enabled: boolean;
-  hasSecret: boolean;
 }
 
 export default function SettingsPage() {
@@ -38,10 +32,6 @@ export default function SettingsPage() {
     defaultPublicStats: false,
     emailNotifications: true,
   });
-  const [twoFactorStatus, setTwoFactorStatus] = useState<TwoFactorStatus>({ enabled: false, hasSecret: false });
-  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
-  const [disabling2FA, setDisabling2FA] = useState(false);
-  const [disable2FAToken, setDisable2FAToken] = useState('');
 
   // Handle authentication state
   useEffect(() => {
@@ -51,42 +41,25 @@ export default function SettingsPage() {
     }
   }, [status]);
 
-  // Load user settings and 2FA status
+  // Load user settings
   useEffect(() => {
-    const loadSettings = async () => {
-      if (!session?.user?.email) return;
+    if (session?.user) {
+      setSettings(prev => ({
+        ...prev,
+        name: session.user.name || '',
+        email: session.user.email || '',
+      }));
+    }
+  }, [session]);
 
-      setLoading(true);
-      try {
-        // Load user profile
-        const profileResponse = await fetch('/api/user/profile');
-        if (profileResponse.ok) {
-          const profileData = await profileResponse.json();
-          const userData = profileData.data;
-
-          setSettings({
-            name: userData.name || session.user.name || '',
-            email: userData.email || session.user.email || '',
-            defaultPublicStats: userData.defaultPublicStats || false,
-            emailNotifications: userData.emailNotifications !== undefined ? userData.emailNotifications : true,
-          });
-
-          setOriginalPreferences({
-            defaultPublicStats: userData.defaultPublicStats || false,
-            emailNotifications: userData.emailNotifications !== undefined ? userData.emailNotifications : true,
-          });
-        } else {
-          // Fallback to session data if API fails
-          setSettings(prev => ({
-            ...prev,
-            name: session.user.name || '',
-            email: session.user.email || '',
-          }));
-
-          // Load preferences separately
-          const preferencesResponse = await fetch('/api/user/preferences');
-          if (preferencesResponse.ok) {
-            const data = await preferencesResponse.json();
+  // Load user preferences from database
+  useEffect(() => {
+    const loadPreferences = async () => {
+      if (session?.user) {
+        try {
+          const response = await fetch('/api/user/preferences');
+          if (response.ok) {
+            const data = await response.json();
             if (data.success) {
                const preferences = {
                  defaultPublicStats: data.data.defaultPublicStats,
@@ -99,24 +72,14 @@ export default function SettingsPage() {
                setOriginalPreferences(preferences);
              }
           }
+        } catch (error) {
+          console.error('Error loading preferences:', error);
         }
-
-        // Load 2FA status
-        const twoFactorResponse = await fetch('/api/user/two-factor/setup');
-        if (twoFactorResponse.ok) {
-          const twoFactorData = await twoFactorResponse.json();
-          setTwoFactorStatus(twoFactorData.data);
-        }
-      } catch (err) {
-        console.error('Error loading user settings:', err);
-        error('Error al cargar la configuración', 'Error');
-      } finally {
-        setLoading(false);
       }
     };
 
-    loadSettings();
-  }, [session, error]);
+    loadPreferences();
+  }, [session]);
 
   const handleSaveSettings = async () => {
     setSaving(true);
@@ -246,46 +209,6 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDisable2FA = async () => {
-    if (!disable2FAToken.trim()) {
-      error('Por favor ingresa tu código 2FA para deshabilitar');
-      return;
-    }
-
-    setDisabling2FA(true);
-    try {
-      const response = await fetch('/api/user/two-factor/backup-codes', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token: disable2FAToken.trim(),
-        }),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error?.message || 'Error al deshabilitar 2FA');
-      }
-
-      setTwoFactorStatus({ enabled: false, hasSecret: false });
-      setDisable2FAToken('');
-      success('2FA deshabilitado correctamente');
-    } catch (err) {
-      console.error('Error disabling 2FA:', err);
-      error(err instanceof Error ? err.message : 'Error al deshabilitar 2FA');
-    } finally {
-      setDisabling2FA(false);
-    }
-  };
-
-  const handleTwoFactorSetupComplete = () => {
-    setShowTwoFactorSetup(false);
-    setTwoFactorStatus({ enabled: true, hasSecret: true });
   };
 
   const handleDeleteAccount = async () => {
@@ -559,85 +482,6 @@ export default function SettingsPage() {
 
         {/* API Token Management */}
         <ApiTokenManager />
-
-        {/* Two-Factor Authentication */}
-        <div className="bg-card rounded-lg border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-card-foreground">
-              Autenticación de Dos Factores (2FA)
-            </h2>
-            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-              twoFactorStatus.enabled 
-                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-            }`}>
-              {twoFactorStatus.enabled ? 'Habilitado' : 'Deshabilitado'}
-            </div>
-          </div>
-
-          {!showTwoFactorSetup ? (
-            <div className="space-y-4">
-              <p className="text-muted-foreground">
-                {twoFactorStatus.enabled 
-                  ? 'Tu cuenta está protegida con autenticación de dos factores.'
-                  : 'Añade una capa extra de seguridad a tu cuenta con autenticación de dos factores.'}
-              </p>
-
-              {!twoFactorStatus.enabled ? (
-                <Button
-                  onClick={() => setShowTwoFactorSetup(true)}
-                  className="w-full sm:w-auto"
-                >
-                  Configurar 2FA
-                </Button>
-              ) : (
-                <div className="space-y-4">
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                    <p className="text-green-800 dark:text-green-200 text-sm">
-                      ✓ Tu cuenta está protegida con 2FA
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-card-foreground">
-                      Deshabilitar 2FA
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      Para deshabilitar 2FA, ingresa tu código de autenticación:
-                    </p>
-                    <div className="flex gap-3">
-                      <Input
-                        type="text"
-                        placeholder="Código 2FA"
-                        value={disable2FAToken}
-                        onChange={(e) => setDisable2FAToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        maxLength={6}
-                        className="max-w-[150px] text-center"
-                      />
-                      <Button
-                        variant="destructive"
-                        onClick={handleDisable2FA}
-                        disabled={disabling2FA || disable2FAToken.length !== 6}
-                        size="sm"
-                      >
-                        {disabling2FA ? (
-                          <>
-                            <LoadingSpinner size="sm" className="mr-2" />
-                            Deshabilitando...
-                          </>
-                        ) : (
-                          'Deshabilitar 2FA'
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <TwoFactorSetup onSetupComplete={handleTwoFactorSetupComplete} />
-          )}
-        </div>
 
         {/* Data & Privacy */}
         <div className="bg-card rounded-lg border border-border p-6">
