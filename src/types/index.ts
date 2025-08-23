@@ -171,6 +171,27 @@ declare module 'next-auth/jwt' {
   }
 }
 
+// Maintenance types
+export interface MaintenanceState {
+  isActive: boolean;
+  message?: string;
+  estimatedDuration?: number;
+  activatedBy?: string;
+  activatedAt?: string;
+}
+
+export interface MaintenanceToggleRequest {
+  isActive: boolean;
+  message?: string;
+  estimatedDuration?: number;
+}
+
+export interface MaintenanceApiResponse {
+  success: boolean;
+  data: MaintenanceState;
+  error?: string;
+}
+
 // Re-export navigation types
 export * from './navigation';
 

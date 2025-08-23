@@ -7,7 +7,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   // Force server mode, disable static export
-  output: 'standalone',
+  // output: 'standalone', // Commented out to test middleware
   experimental: {
     outputFileTracingRoot: undefined,
   },

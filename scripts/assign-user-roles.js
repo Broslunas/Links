@@ -26,28 +26,33 @@ async function assignUserRoles() {
       return;
     }
     
-    // Asignar rol 'admin' a pablo@broslunas.com
-    const adminResult = await usersCollection.updateOne(
-      { 
-        email: 'pablo@broslunas.com',
-        $or: [
-          { role: { $exists: false } },
-          { role: null }
-        ]
-      },
-      { $set: { role: 'admin' } }
-    );
+    // Asignar rol 'admin' a pablo@broslunas.com y pablo.luna.perez.008@gmail.com
+    const adminEmails = ['pablo@broslunas.com', 'pablo.luna.perez.008@gmail.com'];
     
-    if (adminResult.matchedCount > 0) {
-      console.log('✅ Rol admin asignado a pablo@broslunas.com');
-    } else {
-      console.log('ℹ️  pablo@broslunas.com ya tiene rol asignado o no existe');
+    for (const adminEmail of adminEmails) {
+      const adminResult = await usersCollection.updateOne(
+        { 
+          email: adminEmail,
+          $or: [
+            { role: { $exists: false } },
+            { role: null },
+            { role: 'user' } // Also update existing users with 'user' role
+          ]
+        },
+        { $set: { role: 'admin' } }
+      );
+      
+      if (adminResult.matchedCount > 0) {
+        console.log(`✅ Rol admin asignado a ${adminEmail}`);
+      } else {
+        console.log(`ℹ️  ${adminEmail} ya tiene rol admin asignado o no existe`);
+      }
     }
     
     // Asignar rol 'user' a todos los demás usuarios sin rol
     const userResult = await usersCollection.updateMany(
       {
-        email: { $ne: 'pablo@broslunas.com' },
+        email: { $nin: adminEmails },
         $or: [
           { role: { $exists: false } },
           { role: null }

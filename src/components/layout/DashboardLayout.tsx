@@ -8,6 +8,8 @@ import { Button } from '../ui/Button';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Sidebar } from './Sidebar';
+import MaintenanceBanner from './MaintenanceBanner';
+import { useMaintenanceSimple } from '@/hooks/useMaintenanceSimple';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -17,8 +19,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Check maintenance status
+  const { maintenanceState, loading: maintenanceLoading } = useMaintenanceSimple();
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/dashboard/' });
@@ -65,12 +71,34 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     };
   }, [sidebarOpen]);
 
+  // Get user role from session
+  React.useEffect(() => {
+    if (session?.user?.role) {
+      setUserRole(session.user.role);
+    } else {
+      setUserRole(null);
+    }
+  }, [session]);
+
   // Redirect to login if not authenticated
   React.useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
     }
   }, [status, router]);
+
+  // Handle maintenance mode
+  React.useEffect(() => {
+    if (!maintenanceLoading && maintenanceState.isActive && session?.user) {
+      // Check if user is admin
+      const isAdmin = userRole === 'admin';
+
+      if (!isAdmin) {
+        console.log('Redirecting non-admin user to maintenance page');
+        router.push('/maintenance');
+      }
+    }
+  }, [maintenanceState, maintenanceLoading, session, userRole, router]);
 
   if (status === 'loading') {
     return (
@@ -200,6 +228,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </div>
           </div>
         </header>
+
+        {/* Maintenance Banner */}
+        <MaintenanceBanner userRole={userRole || undefined} />
 
         {/* Page content */}
         <main id="main-content" className="flex-1">

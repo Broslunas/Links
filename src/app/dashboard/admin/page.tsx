@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { 
-  Users, 
-  Link, 
-  BarChart3, 
-  Settings, 
-  Shield, 
+import {
+  Users,
+  Link,
+  BarChart3,
+  Settings,
+  Shield,
   Activity,
   TrendingUp,
   Database
@@ -16,6 +16,8 @@ import {
 import UserManagement from '@/components/dashboard/UserManagement';
 import LinkManagement from '@/components/dashboard/LinkManagement';
 import ReportsAnalytics from '@/components/dashboard/ReportsAnalytics';
+import MaintenanceControl from '@/components/dashboard/MaintenanceControl';
+import SimpleMaintenanceControl from '@/components/dashboard/SimpleMaintenanceControl';
 
 interface AdminStats {
   totalUsers: number;
@@ -43,9 +45,10 @@ export default function AdminPage() {
   const [showLinkManagement, setShowLinkManagement] = useState(false);
   const [showReportsAnalytics, setShowReportsAnalytics] = useState(false);
 
+
   useEffect(() => {
     if (status === 'loading') return;
-    
+
     if (!session) {
       router.push('/auth/signin?callbackUrl=/dashboard/admin');
       return;
@@ -76,7 +79,7 @@ export default function AdminPage() {
             return;
           }
         }
-        
+
         // Si llegamos aquí, el usuario es admin
         await loadAdminData();
       } catch (error) {
@@ -256,6 +259,11 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* Maintenance Control Panel */}
+      <div className="mb-6">
+        <SimpleMaintenanceControl />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Admin Tools */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
@@ -266,7 +274,7 @@ export default function AdminPage() {
             </h3>
           </div>
           <div className="p-6 space-y-4">
-            <button 
+            <button
               onClick={() => setShowUserManagement(true)}
               className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
@@ -276,8 +284,8 @@ export default function AdminPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">Ver, editar y gestionar cuentas de usuario</p>
               </div>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setShowLinkManagement(true)}
               className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
@@ -287,8 +295,8 @@ export default function AdminPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">Supervisar y moderar enlaces del sistema</p>
               </div>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setShowReportsAnalytics(true)}
               className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
@@ -298,9 +306,11 @@ export default function AdminPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">Generar reportes detallados del sistema</p>
               </div>
             </button>
-            
+
+
+
             <button className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              <Database className="h-5 w-5 text-orange-500" />
+              <Database className="h-5 w-5 text-red-500" />
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">Configuración del Sistema</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Ajustar configuraciones globales</p>
@@ -344,7 +354,7 @@ export default function AdminPage() {
       {showUserManagement && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-7xl max-h-[90vh] overflow-auto">
-            <UserManagement 
+            <UserManagement
               onClose={() => setShowUserManagement(false)}
             />
           </div>
@@ -355,7 +365,7 @@ export default function AdminPage() {
       {showLinkManagement && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-7xl max-h-[90vh] overflow-auto">
-            <LinkManagement 
+            <LinkManagement
               onClose={() => setShowLinkManagement(false)}
             />
           </div>
@@ -366,12 +376,16 @@ export default function AdminPage() {
       {showReportsAnalytics && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-7xl max-h-[90vh] overflow-auto">
-            <ReportsAnalytics 
+            <ReportsAnalytics
               onClose={() => setShowReportsAnalytics(false)}
             />
           </div>
         </div>
       )}
+
+
+
+
     </div>
   );
 }
