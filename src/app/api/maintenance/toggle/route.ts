@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-simple';
 import { connectDB } from '@/lib/db-utils';
 import MaintenanceState from '@/models/MaintenanceState';
+import { sendMaintenanceWebhook } from '@/utils/maintenanceWebhook';
 
 export async function POST(request: NextRequest) {
     try {
@@ -32,12 +33,21 @@ export async function POST(request: NextRequest) {
         // Connect to database
         await connectDB();
 
+        // Get current state before updating (for webhook comparison)
+        const currentState = await MaintenanceState.getSingleton();
+        const previousState = { isActive: currentState.isActive };
+
         // Update maintenance state in database
         const newState = await MaintenanceState.updateSingleton({
             isActive: body.isActive,
             message: body.message || null,
             estimatedDuration: body.estimatedDuration || null,
             activatedBy: session.user.email
+        });
+
+        // Send webhook notification (async, don't wait for it)
+        sendMaintenanceWebhook(newState, previousState).catch(error => {
+            console.error('Webhook notification failed, but maintenance toggle succeeded:', error);
         });
 
         return NextResponse.json({

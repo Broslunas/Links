@@ -143,33 +143,7 @@ export interface CreateTempLinkData {
 export interface CreateTempLinkResponse extends TempLink {
   shortUrl: string;
 }
-// NextAuth.js type extensions
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      provider?: 'github' | 'google' | 'discord';
-      role?: 'user' | 'admin';
-    };
-  }
-
-  interface User {
-    id: string;
-    provider?: 'github' | 'google' | 'discord';
-    role?: 'user' | 'admin';
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    id?: string;
-    provider?: 'github' | 'google' | 'discord';
-    role?: 'user' | 'admin';
-  }
-}
+// NextAuth.js type extensions are defined in types/next-auth.d.ts
 
 // Maintenance types
 export interface MaintenanceState {

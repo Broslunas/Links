@@ -10,6 +10,7 @@ interface MaintenanceControlProps {
 
 export default function MaintenanceControl({ onClose }: MaintenanceControlProps) {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [testingWebhook, setTestingWebhook] = useState(false);
     const [formData, setFormData] = useState({
         message: '',
         estimatedDuration: ''
@@ -112,6 +113,37 @@ export default function MaintenanceControl({ onClose }: MaintenanceControlProps)
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setShowConfirmDialog(true);
+    };
+
+    const handleTestWebhook = async () => {
+        setTestingWebhook(true);
+        try {
+            const response = await fetch('/api/maintenance/test-webhook', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    isActive: true,
+                    message: formData.message || 'Prueba de webhook de mantenimiento',
+                    estimatedDuration: formData.estimatedDuration ? parseInt(formData.estimatedDuration) : 30,
+                    action: 'activated'
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('✅ Webhook enviado correctamente. Revisa tu sistema Make.com para verificar que se recibió.');
+            } else {
+                alert(`❌ Error al enviar webhook: ${data.error}`);
+            }
+        } catch (error) {
+            console.error('Error testing webhook:', error);
+            alert('❌ Error al probar el webhook. Revisa la consola para más detalles.');
+        } finally {
+            setTestingWebhook(false);
+        }
     };
 
     console.log('MaintenanceControl state:', { loading, error: error?.message, isActive: maintenanceState.isActive });
@@ -218,35 +250,56 @@ export default function MaintenanceControl({ onClose }: MaintenanceControlProps)
                             />
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={toggling}
-                            className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${maintenanceState.isActive
-                                ? 'bg-green-600 hover:bg-green-700 text-white'
-                                : 'bg-orange-600 hover:bg-orange-700 text-white'
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                            {toggling ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    Actualizando...
-                                </>
-                            ) : (
-                                <>
-                                    {maintenanceState.isActive ? (
-                                        <>
-                                            <CheckCircle className="h-4 w-4" />
-                                            Desactivar Modo Mantenimiento
-                                        </>
-                                    ) : (
-                                        <>
-                                            <AlertTriangle className="h-4 w-4" />
-                                            Activar Modo Mantenimiento
-                                        </>
-                                    )}
-                                </>
-                            )}
-                        </button>
+                        <div className="space-y-3">
+                            <button
+                                type="submit"
+                                disabled={toggling}
+                                className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${maintenanceState.isActive
+                                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                                    : 'bg-orange-600 hover:bg-orange-700 text-white'
+                                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                                {toggling ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        Actualizando...
+                                    </>
+                                ) : (
+                                    <>
+                                        {maintenanceState.isActive ? (
+                                            <>
+                                                <CheckCircle className="h-4 w-4" />
+                                                Desactivar Modo Mantenimiento
+                                            </>
+                                        ) : (
+                                            <>
+                                                <AlertTriangle className="h-4 w-4" />
+                                                Activar Modo Mantenimiento
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleTestWebhook}
+                                disabled={testingWebhook}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {testingWebhook ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        Probando webhook...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Settings className="h-4 w-4" />
+                                        Probar Webhook
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </form>
 
                     {/* Warning */}
