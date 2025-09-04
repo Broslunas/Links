@@ -8,8 +8,6 @@ import { Button } from '../ui/Button';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Sidebar } from './Sidebar';
-import MaintenanceBanner from './MaintenanceBanner';
-import { useMaintenanceSimple } from '@/hooks/useMaintenanceSimple';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -23,8 +21,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  // Check maintenance status
-  const { maintenanceState, loading: maintenanceLoading } = useMaintenanceSimple();
+  // User session handling
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/dashboard/' });

@@ -183,18 +183,7 @@ export class MaintenanceErrorLogger {
     }
 }
 
-/**
- * Convenience function to get logger instance
- */
-export const maintenanceLogger = MaintenanceErrorLogger.getInstance();
 
-/**
- * Error boundary helper for maintenance components
- * Note: This should be implemented in a .tsx file for proper JSX support
- */
-export function logComponentError(componentName: string, operation: string, error: Error, context?: Record<string, any>) {
-    maintenanceLogger.logError(componentName, operation, error, context);
-}
 
 /**
  * Hook for error logging in React components
