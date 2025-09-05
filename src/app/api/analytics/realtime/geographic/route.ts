@@ -1,0 +1,120 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-simple';
+import connectDB from '@/lib/mongodb';
+import AnalyticsEvent from '@/models/AnalyticsEvent';
+import Link from '@/models/Link';
+
+export async function GET(request: NextRequest) {
+    try {
+        const session = await getServerSession(authOptions);
+
+        if (!session?.user?.id) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'UNAUTHORIZED',
+                        message: 'Debes iniciar sesión para acceder a esta información',
+                    },
+                },
+                { status: 401 }
+            );
+        }
+
+        await connectDB();
+
+        // Get user's links
+        const userLinks = await Link.find({ userId: session.user.id }).select('_id');
+        const linkIds = userLinks.map(link => link._id);
+
+        if (linkIds.length === 0) {
+            return NextResponse.json({
+                success: true,
+                data: {
+                    countries: [],
+                    total: 0,
+                },
+            });
+        }
+
+        // Get events from last 24 hours
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+        // Aggregate clicks by country
+        const countryStats = await AnalyticsEvent.aggregate([
+            {
+                $match: {
+                    linkId: { $in: linkIds },
+                    timestamp: { $gte: twentyFourHoursAgo },
+                },
+            },
+            {
+                $group: {
+                    _id: '$country',
+                    clicks: { $sum: 1 },
+                },
+            },
+            {
+                $sort: { clicks: -1 },
+            },
+            {
+                $limit: 10, // Top 10 countries
+            },
+        ]);
+
+        // Calculate total clicks
+        const totalClicks = countryStats.reduce((sum, country) => sum + country.clicks, 0);
+
+        // Country code mapping (simplified)
+        const countryCodeMap: { [key: string]: string } = {
+            'Spain': 'ES',
+            'United States': 'US',
+            'Mexico': 'MX',
+            'Argentina': 'AR',
+            'Colombia': 'CO',
+            'Peru': 'PE',
+            'Chile': 'CL',
+            'Venezuela': 'VE',
+            'Ecuador': 'EC',
+            'Bolivia': 'BO',
+            'Paraguay': 'PY',
+            'Uruguay': 'UY',
+            'Brazil': 'BR',
+            'France': 'FR',
+            'Germany': 'DE',
+            'Italy': 'IT',
+            'United Kingdom': 'GB',
+            'Canada': 'CA',
+        };
+
+        // Format country data
+        const countries = countryStats.map(country => ({
+            country: country._id,
+            countryCode: countryCodeMap[country._id] || 'XX',
+            clicks: country.clicks,
+            percentage: totalClicks > 0 ? Math.round((country.clicks / totalClicks) * 100) : 0,
+        }));
+
+        return NextResponse.json({
+            success: true,
+            data: {
+                countries,
+                total: totalClicks,
+            },
+        });
+
+    } catch (error) {
+        console.error('Error fetching geographic data:', error);
+        return NextResponse.json(
+            {
+                success: false,
+                error: {
+                    code: 'INTERNAL_ERROR',
+                    message: 'Error interno del servidor',
+                },
+            },
+            { status: 500 }
+        );
+    }
+}
