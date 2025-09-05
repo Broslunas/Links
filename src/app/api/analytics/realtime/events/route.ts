@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
         let formattedEvents = events.map(event => {
             const linkInfo = linkMap.get(event.linkId.toString());
             return {
-                id: event._id.toString(),
+                id: event._id ? event._id.toString() : '',
                 linkId: event.linkId.toString(),
                 linkTitle: linkInfo?.title || '',
                 linkSlug: linkInfo?.slug || '',
