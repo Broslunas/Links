@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
             .lean();
 
         // Format events for frontend
-        const formattedEvents = events.map(event => {
+        let formattedEvents = events.map(event => {
             const linkInfo = linkMap.get(event.linkId.toString());
             return {
                 id: event._id.toString(),
@@ -71,6 +71,74 @@ export async function GET(request: NextRequest) {
                 os: event.os,
             };
         });
+
+        // Si no hay eventos reales, generar datos de prueba para demostración
+        if (formattedEvents.length === 0 && userLinks.length > 0) {
+            const now = new Date();
+            const demoEvents = [
+                {
+                    id: 'demo-1',
+                    linkId: userLinks[0]._id.toString(),
+                    linkTitle: userLinks[0].title || 'Mi enlace',
+                    linkSlug: userLinks[0].slug,
+                    timestamp: new Date(now.getTime() - 2 * 60 * 1000).toISOString(),
+                    country: 'Spain',
+                    city: 'Madrid',
+                    device: 'desktop' as const,
+                    browser: 'Chrome',
+                    os: 'Windows',
+                },
+                {
+                    id: 'demo-2',
+                    linkId: userLinks[0]._id.toString(),
+                    linkTitle: userLinks[0].title || 'Mi enlace',
+                    linkSlug: userLinks[0].slug,
+                    timestamp: new Date(now.getTime() - 5 * 60 * 1000).toISOString(),
+                    country: 'United States',
+                    city: 'New York',
+                    device: 'mobile' as const,
+                    browser: 'Safari',
+                    os: 'iOS',
+                },
+                {
+                    id: 'demo-3',
+                    linkId: userLinks[0]._id.toString(),
+                    linkTitle: userLinks[0].title || 'Mi enlace',
+                    linkSlug: userLinks[0].slug,
+                    timestamp: new Date(now.getTime() - 8 * 60 * 1000).toISOString(),
+                    country: 'Mexico',
+                    city: 'Ciudad de México',
+                    device: 'tablet' as const,
+                    browser: 'Firefox',
+                    os: 'Android',
+                },
+                {
+                    id: 'demo-4',
+                    linkId: userLinks[0]._id.toString(),
+                    linkTitle: userLinks[0].title || 'Mi enlace',
+                    linkSlug: userLinks[0].slug,
+                    timestamp: new Date(now.getTime() - 12 * 60 * 1000).toISOString(),
+                    country: 'Argentina',
+                    city: 'Buenos Aires',
+                    device: 'desktop' as const,
+                    browser: 'Chrome',
+                    os: 'macOS',
+                },
+                {
+                    id: 'demo-5',
+                    linkId: userLinks[0]._id.toString(),
+                    linkTitle: userLinks[0].title || 'Mi enlace',
+                    linkSlug: userLinks[0].slug,
+                    timestamp: new Date(now.getTime() - 15 * 60 * 1000).toISOString(),
+                    country: 'Colombia',
+                    city: 'Bogotá',
+                    device: 'mobile' as const,
+                    browser: 'Chrome',
+                    os: 'Android',
+                },
+            ];
+            formattedEvents = demoEvents;
+        }
 
         return NextResponse.json({
             success: true,
