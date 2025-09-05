@@ -84,18 +84,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     }
   }, [status, router]);
 
-  // Handle maintenance mode
-  React.useEffect(() => {
-    if (!maintenanceLoading && maintenanceState.isActive && session?.user) {
-      // Check if user is admin
-      const isAdmin = userRole === 'admin';
-
-      if (!isAdmin) {
-        console.log('Redirecting non-admin user to maintenance page');
-        router.push('/maintenance');
-      }
-    }
-  }, [maintenanceState, maintenanceLoading, session, userRole, router]);
 
   if (status === 'loading') {
     return (
@@ -226,8 +214,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </div>
         </header>
 
-        {/* Maintenance Banner */}
-        <MaintenanceBanner userRole={userRole || undefined} />
 
         {/* Page content */}
         <main id="main-content" className="flex-1">

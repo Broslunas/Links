@@ -16,8 +16,6 @@ import {
 import UserManagement from '@/components/dashboard/UserManagement';
 import LinkManagement from '@/components/dashboard/LinkManagement';
 import ReportsAnalytics from '@/components/dashboard/ReportsAnalytics';
-import MaintenanceControl from '@/components/dashboard/MaintenanceControl';
-import SimpleMaintenanceControl from '@/components/dashboard/SimpleMaintenanceControl';
 
 interface AdminStats {
   totalUsers: number;
@@ -259,10 +257,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Maintenance Control Panel */}
-      <div className="mb-6">
-        <SimpleMaintenanceControl />
-      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Admin Tools */}

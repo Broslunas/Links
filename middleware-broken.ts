@@ -5,10 +5,9 @@ export async function middleware(request: NextRequest) {
 
   console.log('🔍 TEST MIDDLEWARE EXECUTING FOR:', pathname);
 
-  // Simple test - redirect all dashboard requests to maintenance
+  // Simple test - log dashboard requests
   if (pathname.startsWith('/dashboard')) {
-    console.log('🚫 REDIRECTING TO MAINTENANCE');
-    return NextResponse.redirect(new URL('/maintenance', request.url));
+    console.log('🔍 DASHBOARD REQUEST DETECTED');
   }
 
   return NextResponse.next();

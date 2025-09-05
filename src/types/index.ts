@@ -145,29 +145,13 @@ export interface CreateTempLinkResponse extends TempLink {
 }
 // NextAuth.js type extensions are defined in types/next-auth.d.ts
 
-// Maintenance types
-export interface MaintenanceState {
-  isActive: boolean;
-  message?: string;
-  estimatedDuration?: number;
-  activatedBy?: string;
-  activatedAt?: string;
-}
 
-export interface MaintenanceToggleRequest {
-  isActive: boolean;
-  message?: string;
-  estimatedDuration?: number;
-}
-
-export interface MaintenanceApiResponse {
-  success: boolean;
-  data: MaintenanceState;
-  error?: string;
-}
 
 // Re-export navigation types
 export * from './navigation';
 
 // Re-export API v1 types
 export * from './api-v1';
+
+// Re-export dashboard types
+export * from './dashboard';
