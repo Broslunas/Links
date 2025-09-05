@@ -43,6 +43,25 @@ const navigation = [
     ),
   },
   {
+    name: 'Crear Enlace',
+    href: '/dashboard/new',
+    icon: (
+      <svg
+        className="h-5 w-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 4v16m8-8H4"
+        />
+      </svg>
+    ),
+  },
+  {
     name: 'Mis Enlaces',
     href: '/dashboard/links',
     icon: (
@@ -76,6 +95,25 @@ const navigation = [
           strokeLinejoin="round"
           strokeWidth={2}
           d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+        />
+      </svg>
+    ),
+  },
+  {
+    name: 'Tiempo Real',
+    href: '/dashboard/realtime',
+    icon: (
+      <svg
+        className="h-5 w-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M13 10V3L4 14h7v7l9-11h-7z"
         />
       </svg>
     ),
@@ -174,14 +212,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     const checkUserRole = async () => {
       if (!session?.user) return;
-      
+
       try {
         // Primero intentar obtener el rol de la sesión
         if (session.user.role) {
           setUserRole(session.user.role as 'user' | 'admin');
           return;
         }
-        
+
         // Fallback: obtener rol del API
         const response = await fetch('/api/user/role');
         if (response.ok) {
@@ -204,7 +242,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside 
+      <aside
         className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col"
         role="complementary"
         aria-label="Barra lateral de navegación del dashboard"
@@ -212,15 +250,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-card border-r border-border px-6 py-4">
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center">
-            <Link 
-              href="/dashboard" 
+            <Link
+              href="/dashboard"
               className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md"
               aria-label="Broslunas Links - Ir al dashboard"
             >
               <div className="h-8 w-8 rounded-lg flex items-center justify-center">
-                <img 
-                  src="https://cdn.broslunas.com/favicon.png" 
-                  alt="Broslunas Logo" 
+                <img
+                  src="https://cdn.broslunas.com/favicon.png"
+                  alt="Broslunas Logo"
                   width="32"
                   height="32"
                 />
@@ -331,9 +369,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               aria-label="Broslunas Links - Ir al dashboard"
             >
               <div className="h-8 w-8 rounded-lg flex items-center justify-center">
-                <img 
-                  src="https://cdn.broslunas.com/favicon.png" 
-                  alt="Broslunas Logo" 
+                <img
+                  src="https://cdn.broslunas.com/favicon.png"
+                  alt="Broslunas Logo"
                   width="32"
                   height="32"
                 />
@@ -447,8 +485,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </nav>
         </div>
       </aside>
-     </>
-   );
- };
+    </>
+  );
+};
 
 export { Sidebar };

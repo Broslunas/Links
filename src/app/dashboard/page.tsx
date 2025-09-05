@@ -23,7 +23,7 @@ export default function DashboardPage() {
   });
 
   // Debug session in development
-  useEffect(() => {}, [session, status]);
+  useEffect(() => { }, [session, status]);
 
   // Handle authentication state
   useEffect(() => {
@@ -259,6 +259,117 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-card rounded-lg border border-border p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-card-foreground">Acciones Rápidas</h3>
+              <p className="text-sm text-muted-foreground">Crea y gestiona tus enlaces fácilmente</p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <a
+              href="/dashboard/new"
+              className="flex items-center gap-3 p-4 bg-primary/5 hover:bg-primary/10 rounded-lg border border-primary/20 hover:border-primary/30 transition-colors group"
+            >
+              <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                <svg
+                  className="h-5 w-5 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-card-foreground">Crear Enlace</p>
+                <p className="text-xs text-muted-foreground">Nuevo enlace acortado</p>
+              </div>
+            </a>
+
+            <a
+              href="/dashboard/links"
+              className="flex items-center gap-3 p-4 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border hover:border-border/80 transition-colors group"
+            >
+              <div className="p-2 bg-muted rounded-lg group-hover:bg-muted/80 transition-colors">
+                <svg
+                  className="h-5 w-5 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-card-foreground">Mis Enlaces</p>
+                <p className="text-xs text-muted-foreground">Ver todos los enlaces</p>
+              </div>
+            </a>
+
+            <a
+              href="/dashboard/analytics"
+              className="flex items-center gap-3 p-4 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border hover:border-border/80 transition-colors group"
+            >
+              <div className="p-2 bg-muted rounded-lg group-hover:bg-muted/80 transition-colors">
+                <svg
+                  className="h-5 w-5 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-card-foreground">Analíticas</p>
+                <p className="text-xs text-muted-foreground">Ver estadísticas</p>
+              </div>
+            </a>
+
+            <a
+              href="/dashboard/realtime"
+              className="flex items-center gap-3 p-4 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border hover:border-border/80 transition-colors group"
+            >
+              <div className="p-2 bg-muted rounded-lg group-hover:bg-muted/80 transition-colors">
+                <svg
+                  className="h-5 w-5 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-card-foreground">Tiempo Real</p>
+                <p className="text-xs text-muted-foreground">Monitor en vivo</p>
+              </div>
+            </a>
           </div>
         </div>
 

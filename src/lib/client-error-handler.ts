@@ -1,7 +1,7 @@
 // Client-side error handling utilities
 
 import { toast } from 'sonner';
-import { ApiResponse } from '@/types';
+import { ApiResponse } from '../types';
 import { ErrorCode } from './api-errors';
 
 // Error message mapping for client-side display
@@ -340,16 +340,16 @@ export const retryOperation = async <T>(
       return await operation();
     } catch (error) {
       lastError = error;
-      
+
       if (attempt === maxRetries) {
         throw error;
       }
 
       // Don't retry on client errors (4xx)
-      if (error && typeof error === 'object' && 'response' in error && 
-          error.response && typeof error.response === 'object' && 'status' in error.response &&
-          typeof error.response.status === 'number' && 
-          error.response.status >= 400 && error.response.status < 500) {
+      if (error && typeof error === 'object' && 'response' in error &&
+        error.response && typeof error.response === 'object' && 'status' in error.response &&
+        typeof error.response.status === 'number' &&
+        error.response.status >= 400 && error.response.status < 500) {
         throw error;
       }
 
