@@ -5,143 +5,135 @@ import {
   BarChart3,
   TrendingUp,
   Users,
-  Link,
-  Calendar,
-  Download,
-  Filter,
-  X,
+  AlertTriangle,
+  FileText,
   Activity,
-  Clock,
-  Globe,
-  MousePointer
+  Download,
+  Calendar,
+  Filter,
+  RefreshCw,
+  PieChart,
+  LineChart
 } from 'lucide-react';
 
-interface AnalyticsData {
-  totalClicks: number;
-  totalLinks: number;
-  totalUsers: number;
-  clicksToday: number;
-  clicksThisWeek: number;
-  clicksThisMonth: number;
-  topLinks: Array<{
-    id: string;
-    slug: string;
-    title: string;
-    clicks: number;
-    url: string;
-  }>;
-  clicksByDay: Array<{
-    date: string;
-    clicks: number;
-  }>;
-  userActivity: Array<{
-    date: string;
-    newUsers: number;
+interface DashboardStats {
+  overview: {
+    totalUsers: number;
     activeUsers: number;
-  }>;
-  deviceStats: {
-    desktop: number;
-    mobile: number;
-    tablet: number;
+    inactiveUsers: number;
+    adminUsers: number;
+    totalNotes: number;
+    totalWarnings: number;
+    activeWarnings: number;
+    resolvedWarnings: number;
+    criticalWarnings: number;
+    totalAdminActions: number;
   };
-  countryStats: Array<{
-    country: string;
-    clicks: number;
-    percentage: number;
+  warningSeverityDistribution: Record<string, number>;
+  notesCategoryDistribution: Record<string, number>;
+  adminActivity: Array<{
+    adminId: string;
+    actionType: string;
+    count: number;
+    adminName: string;
+    adminEmail: string;
   }>;
+  recentActions: Array<{
+    _id: string;
+    actionType: string;
+    targetType: string;
+    reason: string;
+    createdAt: string;
+    admin: {
+      name: string;
+      email: string;
+    } | null;
+  }>;
+  dailyTrends: Array<{
+    date: string;
+    actions: number;
+    uniqueAdmins: number;
+  }>;
+  dateRange: {
+    from: string | null;
+    to: string | null;
+  };
 }
 
 interface ReportsAnalyticsProps {
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export default function ReportsAnalytics({ onClose }: ReportsAnalyticsProps) {
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
-  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'users' | 'geography'>('overview');
+  const [error, setError] = useState<string | null>(null);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'export'>('overview');
 
   useEffect(() => {
-    loadAnalyticsData();
-  }, [selectedPeriod]);
+    fetchDashboardStats();
+  }, [dateFrom, dateTo]);
 
-  const loadAnalyticsData = async () => {
-    setLoading(true);
+  const fetchDashboardStats = async () => {
     try {
-      const response = await fetch(`/api/admin/analytics?period=${selectedPeriod}`);
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams({
+        type: 'dashboard',
+        ...(dateFrom && { dateFrom }),
+        ...(dateTo && { dateTo })
+      });
+
+      const response = await fetch(`/api/admin/reports?${params}`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setAnalyticsData(data.data);
+          setStats(data.data);
         } else {
-          console.error('Error loading analytics:', data.error);
-          // Datos de ejemplo para desarrollo
-          setAnalyticsData({
-            totalClicks: 15420,
-            totalLinks: 234,
-            totalUsers: 89,
-            clicksToday: 156,
-            clicksThisWeek: 1240,
-            clicksThisMonth: 4680,
-            topLinks: [
-              { id: '1', slug: 'github-profile', title: 'Mi Perfil de GitHub', clicks: 2340, url: 'https://github.com/usuario' },
-              { id: '2', slug: 'portfolio', title: 'Mi Portfolio', clicks: 1890, url: 'https://miportfolio.com' },
-              { id: '3', slug: 'linkedin', title: 'LinkedIn', clicks: 1560, url: 'https://linkedin.com/in/usuario' },
-              { id: '4', slug: 'blog', title: 'Mi Blog Personal', clicks: 1230, url: 'https://miblog.com' },
-              { id: '5', slug: 'youtube', title: 'Canal de YouTube', clicks: 980, url: 'https://youtube.com/c/usuario' }
-            ],
-            clicksByDay: [
-              { date: '2024-01-01', clicks: 120 },
-              { date: '2024-01-02', clicks: 145 },
-              { date: '2024-01-03', clicks: 167 },
-              { date: '2024-01-04', clicks: 134 },
-              { date: '2024-01-05', clicks: 189 },
-              { date: '2024-01-06', clicks: 156 },
-              { date: '2024-01-07', clicks: 178 }
-            ],
-            userActivity: [
-              { date: '2024-01-01', newUsers: 5, activeUsers: 23 },
-              { date: '2024-01-02', newUsers: 8, activeUsers: 31 },
-              { date: '2024-01-03', newUsers: 3, activeUsers: 28 },
-              { date: '2024-01-04', newUsers: 12, activeUsers: 35 },
-              { date: '2024-01-05', newUsers: 7, activeUsers: 29 },
-              { date: '2024-01-06', newUsers: 9, activeUsers: 33 },
-              { date: '2024-01-07', newUsers: 6, activeUsers: 27 }
-            ],
-            deviceStats: {
-              desktop: 45,
-              mobile: 42,
-              tablet: 13
-            },
-            countryStats: [
-              { country: 'España', clicks: 6840, percentage: 44.3 },
-              { country: 'México', clicks: 2310, percentage: 15.0 },
-              { country: 'Argentina', clicks: 1850, percentage: 12.0 },
-              { country: 'Colombia', clicks: 1540, percentage: 10.0 },
-              { country: 'Chile', clicks: 920, percentage: 6.0 },
-              { country: 'Otros', clicks: 1960, percentage: 12.7 }
-            ]
-          });
+          setError(data.error?.message || 'Error loading dashboard stats');
         }
       } else {
-        console.error('Error fetching analytics:', response.statusText);
+        setError('Error connecting to server');
       }
     } catch (error) {
-      console.error('Error loading analytics data:', error);
+      console.error('Error fetching dashboard stats:', error);
+      setError('Unexpected error loading dashboard stats');
     } finally {
       setLoading(false);
     }
   };
 
-  const exportReport = async () => {
+  const handleExport = async (reportType: 'notes' | 'warnings' | 'actions', format: 'csv' | 'json') => {
     try {
-      const response = await fetch(`/api/admin/analytics/export?period=${selectedPeriod}`);
-      if (response.ok) {
+      const params = new URLSearchParams({
+        type: reportType,
+        format,
+        ...(dateFrom && { dateFrom }),
+        ...(dateTo && { dateTo })
+      });
+
+      const response = await fetch(`/api/admin/reports/export?${params}`);
+
+      if (format === 'csv') {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `analytics-report-${selectedPeriod}-${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `${reportType}-report-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const data = await response.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${reportType}-report-${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -152,359 +144,416 @@ export default function ReportsAnalytics({ onClose }: ReportsAnalyticsProps) {
     }
   };
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('es-ES').format(num);
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
+  };
+
+  const getActionTypeLabel = (actionType: string) => {
+    const labels: Record<string, string> = {
+      'add_note': 'Nota añadida',
+      'edit_note': 'Nota editada',
+      'delete_note': 'Nota eliminada',
+      'add_warning': 'Warning añadido',
+      'edit_warning': 'Warning editado',
+      'resolve_warning': 'Warning resuelto',
+      'delete_warning': 'Warning eliminado',
+      'disable_user': 'Usuario deshabilitado',
+      'enable_user': 'Usuario habilitado',
+      'change_role': 'Rol cambiado'
+    };
+    return labels[actionType] || actionType;
   };
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <BarChart3 className="h-6 w-6 text-purple-500" />
-              Reportes y Analíticas
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
-          </div>
-        </div>
-        <div className="p-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Cargando datos de analíticas...</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
+          <span className="ml-2 text-gray-600 dark:text-gray-300">Cargando estadísticas...</span>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-hidden flex flex-col">
-      {/* Header */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-purple-500" />
-            Reportes y Analíticas
-          </h2>
+  if (error) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div className="text-center text-red-600 dark:text-red-400">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4" />
+          <p>{error}</p>
           <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            onClick={fetchDashboardStats}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            <X className="h-5 w-5 text-gray-500" />
+            Reintentar
           </button>
         </div>
+      </div>
+    );
+  }
 
-        {/* Controls */}
+  if (!stats) return null;
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {/* Period Selector */}
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-gray-500" />
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value as any)}
-                className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-              >
-                <option value="7d">Últimos 7 días</option>
-                <option value="30d">Últimos 30 días</option>
-                <option value="90d">Últimos 90 días</option>
-                <option value="1y">Último año</option>
-              </select>
-            </div>
-
-            {/* Tab Navigation */}
-            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  activeTab === 'overview'
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                Resumen
-              </button>
-              <button
-                onClick={() => setActiveTab('links')}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  activeTab === 'links'
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                Enlaces
-              </button>
-              <button
-                onClick={() => setActiveTab('users')}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  activeTab === 'users'
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                Usuarios
-              </button>
-              <button
-                onClick={() => setActiveTab('geography')}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  activeTab === 'geography'
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                Geografía
-              </button>
-            </div>
+          <div className="flex items-center space-x-3">
+            <BarChart3 className="h-6 w-6 text-blue-600" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Reportes y Analíticas
+            </h2>
           </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={fetchDashboardStats}
+              disabled={loading}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
+              title="Actualizar datos"
+            >
+              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
+      {/* Date Range Filter */}
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Rango de fechas:</span>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+              placeholder="Desde"
+            />
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+              placeholder="Hasta"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => {
+                  setDateFrom('');
+                  setDateTo('');
+                }}
+                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="px-6 py-2 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex space-x-4">
           <button
-            onClick={exportReport}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
+            onClick={() => setActiveTab('overview')}
+            className={`px-3 py-2 text-sm font-medium rounded-lg ${activeTab === 'overview'
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
           >
-            <Download className="h-4 w-4" />
+            <PieChart className="w-4 h-4 inline mr-1" />
+            Resumen
+          </button>
+          <button
+            onClick={() => setActiveTab('trends')}
+            className={`px-3 py-2 text-sm font-medium rounded-lg ${activeTab === 'trends'
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+          >
+            <LineChart className="w-4 h-4 inline mr-1" />
+            Tendencias
+          </button>
+          <button
+            onClick={() => setActiveTab('export')}
+            className={`px-3 py-2 text-sm font-medium rounded-lg ${activeTab === 'export'
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+          >
+            <Download className="w-4 h-4 inline mr-1" />
             Exportar
           </button>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto p-6">
+      <div className="p-6">
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            {/* Key Metrics */}
+            {/* Overview Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-lg text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">Total Clics</p>
-                    <p className="text-2xl font-bold">{formatNumber(analyticsData?.totalClicks || 0)}</p>
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                <div className="flex items-center">
+                  <Users className="w-8 h-8 text-blue-600" />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Usuarios</p>
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.overview.totalUsers}</p>
                   </div>
-                  <MousePointer className="h-8 w-8 text-blue-200" />
+                </div>
+                <div className="mt-2 text-xs text-blue-700 dark:text-blue-300">
+                  {stats.overview.activeUsers} activos, {stats.overview.inactiveUsers} inactivos
                 </div>
               </div>
-              
-              <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-100 text-sm">Clics Hoy</p>
-                    <p className="text-2xl font-bold">{formatNumber(analyticsData?.clicksToday || 0)}</p>
+
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
+                <div className="flex items-center">
+                  <AlertTriangle className="w-8 h-8 text-yellow-600" />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">Warnings</p>
+                    <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{stats.overview.activeWarnings}</p>
                   </div>
-                  <Clock className="h-8 w-8 text-green-200" />
+                </div>
+                <div className="mt-2 text-xs text-yellow-700 dark:text-yellow-300">
+                  {stats.overview.criticalWarnings} críticos
                 </div>
               </div>
-              
-              <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-4 rounded-lg text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-100 text-sm">Esta Semana</p>
-                    <p className="text-2xl font-bold">{formatNumber(analyticsData?.clicksThisWeek || 0)}</p>
+
+              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                <div className="flex items-center">
+                  <FileText className="w-8 h-8 text-green-600" />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-green-600 dark:text-green-400">Notas</p>
+                    <p className="text-2xl font-bold text-green-900 dark:text-green-100">{stats.overview.totalNotes}</p>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-purple-200" />
                 </div>
               </div>
-              
-              <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 rounded-lg text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-orange-100 text-sm">Este Mes</p>
-                    <p className="text-2xl font-bold">{formatNumber(analyticsData?.clicksThisMonth || 0)}</p>
+
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                <div className="flex items-center">
+                  <Activity className="w-8 h-8 text-purple-600" />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Acciones Admin</p>
+                    <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.overview.totalAdminActions}</p>
                   </div>
-                  <Calendar className="h-8 w-8 text-orange-200" />
                 </div>
               </div>
             </div>
 
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Clicks Chart */}
-              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Clics por Día</h3>
-                <div className="h-64 flex items-end justify-between gap-2">
-                  {analyticsData?.clicksByDay.map((day, index) => {
-                    const maxClicks = Math.max(...(analyticsData?.clicksByDay.map(d => d.clicks) || [1]));
-                    const height = (day.clicks / maxClicks) * 100;
-                    return (
-                      <div key={index} className="flex flex-col items-center flex-1">
-                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">{day.clicks}</div>
-                        <div 
-                          className="w-full bg-blue-500 rounded-t transition-all duration-300 hover:bg-blue-600"
-                          style={{ height: `${height}%`, minHeight: '4px' }}
-                        ></div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                          {formatDate(day.date)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+            {/* Warning Severity Distribution */}
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                Distribución de Severidad de Warnings
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Object.entries(stats.warningSeverityDistribution).map(([severity, count]) => (
+                  <div key={severity} className="text-center">
+                    <div className={`text-2xl font-bold ${severity === 'critical' ? 'text-red-600' :
+                        severity === 'high' ? 'text-orange-600' :
+                          severity === 'medium' ? 'text-yellow-600' :
+                            'text-blue-600'
+                      }`}>
+                      {count}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                      {severity === 'critical' ? 'Crítico' :
+                        severity === 'high' ? 'Alto' :
+                          severity === 'medium' ? 'Medio' :
+                            'Bajo'}
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {/* Device Stats */}
-              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Dispositivos</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Escritorio</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                        <div 
-                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${analyticsData?.deviceStats.desktop || 0}%` }}
-                        ></div>
+            {/* Recent Admin Actions */}
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                Acciones Administrativas Recientes
+              </h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {stats.recentActions.map((action) => (
+                  <div key={action._id} className="flex items-center justify-between p-2 bg-white dark:bg-gray-600 rounded">
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {getActionTypeLabel(action.actionType)}
                       </div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white w-10 text-right">
-                        {analyticsData?.deviceStats.desktop || 0}%
-                      </span>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {action.reason}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {action.admin?.name || 'Admin'}
+                      </div>
+                      <div className="text-xs text-gray-400 dark:text-gray-500">
+                        {formatDate(action.createdAt)}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Móvil</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                        <div 
-                          className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${analyticsData?.deviceStats.mobile || 0}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white w-10 text-right">
-                        {analyticsData?.deviceStats.mobile || 0}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Tablet</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                        <div 
-                          className="bg-purple-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${analyticsData?.deviceStats.tablet || 0}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white w-10 text-right">
-                        {analyticsData?.deviceStats.tablet || 0}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'links' && (
+        {activeTab === 'trends' && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Enlaces Más Populares</h3>
-            <div className="space-y-3">
-              {analyticsData?.topLinks.map((link, index) => (
-                <div key={link.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-8 h-8 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full font-semibold text-sm">
-                      {index + 1}
+            {/* Daily Activity Trends */}
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                Tendencias de Actividad Diaria (Últimos 30 días)
+              </h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {stats.dailyTrends.map((trend) => (
+                  <div key={trend.date} className="flex items-center justify-between p-2 bg-white dark:bg-gray-600 rounded">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {new Date(trend.date).toLocaleDateString('es-ES')}
                     </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">{link.title}</h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">/{link.slug}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-xs">{link.url}</p>
+                    <div className="flex space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                      <span>{trend.actions} acciones</span>
+                      <span>{trend.uniqueAdmins} admins activos</span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {formatNumber(link.clicks)}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">clics</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'users' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Actividad de Usuarios</h3>
-            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-              <div className="h-64 flex items-end justify-between gap-2">
-                {analyticsData?.userActivity.map((day, index) => {
-                  const maxUsers = Math.max(...(analyticsData?.userActivity.map(d => Math.max(d.newUsers, d.activeUsers)) || [1]));
-                  const newUsersHeight = (day.newUsers / maxUsers) * 100;
-                  const activeUsersHeight = (day.activeUsers / maxUsers) * 100;
-                  return (
-                    <div key={index} className="flex flex-col items-center flex-1">
-                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                        {day.activeUsers}/{day.newUsers}
-                      </div>
-                      <div className="w-full flex gap-1">
-                        <div 
-                          className="flex-1 bg-blue-500 rounded-t transition-all duration-300 hover:bg-blue-600"
-                          style={{ height: `${activeUsersHeight}%`, minHeight: '4px' }}
-                          title={`Usuarios activos: ${day.activeUsers}`}
-                        ></div>
-                        <div 
-                          className="flex-1 bg-green-500 rounded-t transition-all duration-300 hover:bg-green-600"
-                          style={{ height: `${newUsersHeight}%`, minHeight: '4px' }}
-                          title={`Nuevos usuarios: ${day.newUsers}`}
-                        ></div>
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        {formatDate(day.date)}
-                      </div>
-                    </div>
-                  );
-                })}
+                ))}
               </div>
-              <div className="flex items-center justify-center gap-6 mt-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Usuarios Activos</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Nuevos Usuarios</span>
-                </div>
+            </div>
+
+            {/* Admin Activity Summary */}
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                Resumen de Actividad por Admin
+              </h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {stats.adminActivity.map((activity, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-white dark:bg-gray-600 rounded">
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {activity.adminName || activity.adminEmail}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {getActionTypeLabel(activity.actionType)}
+                      </div>
+                    </div>
+                    <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                      {activity.count} acciones
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'geography' && (
+        {activeTab === 'export' && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Clics por País</h3>
-            <div className="space-y-3">
-              {analyticsData?.countryStats.map((country, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <Globe className="h-5 w-5 text-gray-500" />
-                    <span className="font-medium text-gray-900 dark:text-white">{country.country}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-32 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                      <div 
-                        className="bg-purple-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${country.percentage}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-right min-w-[80px]">
-                      <p className="font-semibold text-gray-900 dark:text-white">
-                        {formatNumber(country.clicks)}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {country.percentage}%
-                      </p>
-                    </div>
-                  </div>
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Exportar Reportes
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Descarga reportes detallados en formato CSV o JSON
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Notes Export */}
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div className="text-center mb-4">
+                  <FileText className="w-12 h-12 text-blue-600 mx-auto mb-2" />
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white">Reporte de Notas</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Todas las notas de usuarios con detalles
+                  </p>
                 </div>
-              ))}
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleExport('notes', 'csv')}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Descargar CSV
+                  </button>
+                  <button
+                    onClick={() => handleExport('notes', 'json')}
+                    className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center justify-center"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Descargar JSON
+                  </button>
+                </div>
+              </div>
+
+              {/* Warnings Export */}
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div className="text-center mb-4">
+                  <AlertTriangle className="w-12 h-12 text-yellow-600 mx-auto mb-2" />
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white">Reporte de Warnings</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Todos los warnings con estado y severidad
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleExport('warnings', 'csv')}
+                    className="w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 flex items-center justify-center"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Descargar CSV
+                  </button>
+                  <button
+                    onClick={() => handleExport('warnings', 'json')}
+                    className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center justify-center"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Descargar JSON
+                  </button>
+                </div>
+              </div>
+
+              {/* Admin Actions Export */}
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div className="text-center mb-4">
+                  <Activity className="w-12 h-12 text-purple-600 mx-auto mb-2" />
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white">Reporte de Acciones</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Historial completo de acciones administrativas
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleExport('actions', 'csv')}
+                    className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Descargar CSV
+                  </button>
+                  <button
+                    onClick={() => handleExport('actions', 'json')}
+                    className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center justify-center"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Descargar JSON
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
