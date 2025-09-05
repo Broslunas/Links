@@ -1,15 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card } from '@/components/ui/Card';
 
 interface RealtimeStatsProps {
     onConnectionChange: (connected: boolean) => void;
+    timeRangeMinutes?: number;
+    refreshInterval?: number;
+    refreshKey?: number;
 }
 
 interface Stats {
     activeUsers: number;
-    clicksLastHour: number;
+    clicksInRange: number;
     clicksToday: number;
     topLink: {
         title: string;
@@ -17,10 +20,15 @@ interface Stats {
     } | null;
 }
 
-export function RealtimeStats({ onConnectionChange }: RealtimeStatsProps) {
+export function RealtimeStats({
+    onConnectionChange,
+    timeRangeMinutes = 60,
+    refreshInterval = 5,
+    refreshKey = 0
+}: RealtimeStatsProps) {
     const [stats, setStats] = useState<Stats>({
         activeUsers: 0,
-        clicksLastHour: 0,
+        clicksInRange: 0,
         clicksToday: 0,
         topLink: null,
     });
@@ -29,7 +37,7 @@ export function RealtimeStats({ onConnectionChange }: RealtimeStatsProps) {
     // Fetch initial stats
     const fetchStats = async () => {
         try {
-            const response = await fetch('/api/analytics/realtime/stats');
+            const response = await fetch(`/api/analytics/realtime/stats?timeRange=${timeRangeMinutes}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
@@ -49,10 +57,26 @@ export function RealtimeStats({ onConnectionChange }: RealtimeStatsProps) {
     useEffect(() => {
         fetchStats();
 
-        const interval = setInterval(fetchStats, 5000); // Update every 5 seconds
+        if (refreshInterval > 0) {
+            const interval = setInterval(fetchStats, refreshInterval * 1000);
+            return () => clearInterval(interval);
+        }
+    }, [timeRangeMinutes, refreshInterval, refreshKey]);
 
-        return () => clearInterval(interval);
-    }, []);
+    // Get time range label
+    const getTimeRangeLabel = () => {
+        if (timeRangeMinutes < 60) {
+            return `${timeRangeMinutes} min`;
+        } else if (timeRangeMinutes < 1440) {
+            const hours = Math.floor(timeRangeMinutes / 60);
+            const mins = timeRangeMinutes % 60;
+            return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+        } else {
+            const days = Math.floor(timeRangeMinutes / 1440);
+            const hours = Math.floor((timeRangeMinutes % 1440) / 60);
+            return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+        }
+    };
 
     if (isLoading) {
         return (
@@ -96,11 +120,14 @@ export function RealtimeStats({ onConnectionChange }: RealtimeStatsProps) {
                         <p className="text-2xl font-bold text-card-foreground">
                             {stats.activeUsers}
                         </p>
+                        <p className="text-xs text-muted-foreground">
+                            Últimos 5 min
+                        </p>
                     </div>
                 </div>
             </Card>
 
-            {/* Clicks Last Hour */}
+            {/* Clicks in Range */}
             <Card className="p-6">
                 <div className="flex items-center">
                     <div className="p-2 bg-blue-500/10 rounded-lg">
@@ -120,10 +147,13 @@ export function RealtimeStats({ onConnectionChange }: RealtimeStatsProps) {
                     </div>
                     <div className="ml-4">
                         <p className="text-sm font-medium text-muted-foreground">
-                            Última Hora
+                            Clicks en Rango
                         </p>
                         <p className="text-2xl font-bold text-card-foreground">
-                            {stats.clicksLastHour}
+                            {stats.clicksInRange}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Últimos {getTimeRangeLabel()}
                         </p>
                     </div>
                 </div>
@@ -159,6 +189,9 @@ export function RealtimeStats({ onConnectionChange }: RealtimeStatsProps) {
                         </p>
                         <p className="text-2xl font-bold text-card-foreground">
                             {stats.clicksToday}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Total del día
                         </p>
                     </div>
                 </div>

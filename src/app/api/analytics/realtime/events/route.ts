@@ -44,12 +44,16 @@ export async function GET(request: NextRequest) {
             });
         });
 
-        // Get recent events (last 50 events from the last hour)
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        // Get time range from query params (in minutes)
+        const { searchParams } = new URL(request.url);
+        const timeRangeMinutes = parseInt(searchParams.get('timeRange') || '60');
+
+        // Get recent events (last 50 events from the specified time range)
+        const timeRangeAgo = new Date(Date.now() - timeRangeMinutes * 60 * 1000);
 
         const events = await AnalyticsEvent.find({
             linkId: { $in: linkIds },
-            timestamp: { $gte: oneHourAgo },
+            timestamp: { $gte: timeRangeAgo },
         })
             .sort({ timestamp: -1 })
             .limit(50)

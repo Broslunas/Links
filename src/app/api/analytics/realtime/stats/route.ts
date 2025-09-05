@@ -24,6 +24,10 @@ export async function GET(request: NextRequest) {
 
         await connectDB();
 
+        // Get time range from query params (in minutes)
+        const { searchParams } = new URL(request.url);
+        const timeRangeMinutes = parseInt(searchParams.get('timeRange') || '60');
+
         // Get user's links
         const userLinks = await Link.find({ userId: session.user.id }).select('_id title');
         const linkIds = userLinks.map(link => link._id);
@@ -41,13 +45,13 @@ export async function GET(request: NextRequest) {
         }
 
         const now = new Date();
-        const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+        const timeRangeAgo = new Date(now.getTime() - timeRangeMinutes * 60 * 1000);
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        // Get clicks in the last hour
-        const clicksLastHour = await AnalyticsEvent.countDocuments({
+        // Get clicks in the specified time range
+        const clicksInRange = await AnalyticsEvent.countDocuments({
             linkId: { $in: linkIds },
-            timestamp: { $gte: oneHourAgo },
+            timestamp: { $gte: timeRangeAgo },
         });
 
         // Get clicks today
@@ -124,7 +128,7 @@ export async function GET(request: NextRequest) {
 
         // Si no hay datos reales, generar datos de prueba para demostración
         const demoActiveUsers = activeUsers || 5;
-        const demoClicksLastHour = clicksLastHour || 12;
+        const demoClicksInRange = clicksInRange || Math.floor(Math.random() * 50) + 10;
         const demoClicksToday = clicksToday || 87;
 
         if (!topLink && userLinks.length > 0) {
@@ -138,7 +142,7 @@ export async function GET(request: NextRequest) {
             success: true,
             data: {
                 activeUsers: demoActiveUsers,
-                clicksLastHour: demoClicksLastHour,
+                clicksInRange: demoClicksInRange,
                 clicksToday: demoClicksToday,
                 topLink,
             },

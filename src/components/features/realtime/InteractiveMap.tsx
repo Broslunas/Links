@@ -102,18 +102,19 @@ export function InteractiveMap({ countryData, totalClicks }: InteractiveMapProps
         return minRadius + (maxRadius - minRadius) * ratio;
     };
 
-    // Obtener color del marcador basado en la intensidad
+    // Obtener color del marcador basado en la intensidad usando colores del tema
     const getMarkerColor = (percentage: number) => {
-        if (percentage >= 50) return '#ef4444'; // Rojo intenso
-        if (percentage >= 30) return '#f97316'; // Naranja
-        if (percentage >= 15) return '#eab308'; // Amarillo
-        if (percentage >= 5) return '#22c55e'; // Verde
-        return '#3b82f6'; // Azul
+        // Usar una paleta de colores que se alinee con el tema del sitio
+        if (percentage >= 50) return '#dc2626'; // Rojo intenso (red-600)
+        if (percentage >= 30) return '#ea580c'; // Naranja (orange-600)
+        if (percentage >= 15) return '#3b82f6'; // Azul primary (blue-500)
+        if (percentage >= 5) return '#6366f1'; // Índigo (indigo-500)
+        return '#64748b'; // Gris slate (slate-500)
     };
 
     if (!isClient) {
         return (
-            <div className="h-80 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg border border-border flex items-center justify-center">
+            <div className="h-80 bg-gradient-to-br from-muted/30 to-muted/60 rounded-lg border border-border flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                     <p className="text-sm text-muted-foreground">Cargando mapa...</p>
@@ -124,9 +125,9 @@ export function InteractiveMap({ countryData, totalClicks }: InteractiveMapProps
 
     if (enrichedCountryData.length === 0) {
         return (
-            <div className="h-80 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg border border-border flex items-center justify-center">
+            <div className="h-80 bg-gradient-to-br from-muted/30 to-muted/60 rounded-lg border border-border flex items-center justify-center">
                 <div className="text-center">
-                    <svg className="h-16 w-16 mx-auto text-blue-500/50 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-16 w-16 mx-auto text-primary/50 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <p className="text-sm text-muted-foreground">No hay datos para mostrar</p>
@@ -155,14 +156,15 @@ export function InteractiveMap({ countryData, totalClicks }: InteractiveMapProps
                         center={[country.lat!, country.lng!]}
                         radius={getMarkerRadius(country.clicks)}
                         fillColor={getMarkerColor(country.percentage)}
-                        color="#ffffff"
-                        weight={2}
-                        opacity={0.8}
-                        fillOpacity={0.7}
+                        color="hsl(var(--background))"
+                        weight={3}
+                        opacity={0.9}
+                        fillOpacity={0.8}
+                        className="transition-all duration-200 hover:scale-110"
                     >
                         <Popup>
-                            <div className="text-center p-2">
-                                <div className="text-lg mb-1">
+                            <div className="text-center p-1">
+                                <div className="text-lg mb-2">
                                     {country.countryCode === 'ES' && '🇪🇸'}
                                     {country.countryCode === 'US' && '🇺🇸'}
                                     {country.countryCode === 'MX' && '🇲🇽'}
@@ -183,10 +185,22 @@ export function InteractiveMap({ countryData, totalClicks }: InteractiveMapProps
                                     {country.countryCode === 'CA' && '🇨🇦'}
                                     {!['ES', 'US', 'MX', 'AR', 'CO', 'PE', 'CL', 'VE', 'EC', 'BO', 'PY', 'UY', 'BR', 'FR', 'DE', 'IT', 'GB', 'CA'].includes(country.countryCode) && '🌍'}
                                 </div>
-                                <div className="font-semibold text-gray-900">{country.country}</div>
-                                <div className="text-sm text-gray-600">
-                                    <div>{country.clicks} clicks</div>
-                                    <div>{country.percentage}% del total</div>
+                                <div className="font-semibold text-card-foreground mb-1">{country.country}</div>
+                                <div className="space-y-1">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-muted-foreground">Clicks:</span>
+                                        <span className="font-medium text-card-foreground">{country.clicks}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-muted-foreground">Porcentaje:</span>
+                                        <span className="font-medium text-primary">{country.percentage}%</span>
+                                    </div>
+                                </div>
+                                <div className="mt-2 w-full bg-muted rounded-full h-1.5">
+                                    <div
+                                        className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                                        style={{ width: `${country.percentage}%` }}
+                                    ></div>
                                 </div>
                             </div>
                         </Popup>

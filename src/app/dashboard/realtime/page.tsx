@@ -1,15 +1,45 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Card } from '@/components/ui/card';
+import { Card } from '@/components/ui/Card';
 import { RealtimeEvents } from '@/components/features/realtime/RealtimeEvents';
 import { RealtimeStats } from '@/components/features/realtime/RealtimeStats';
 import { RealtimeMap } from '@/components/features/realtime/RealtimeMap';
+import { TimeRangeFilter, TimeRange } from '@/components/features/realtime/TimeRangeFilter';
+import { RefreshSettings, RefreshInterval } from '@/components/features/realtime/RefreshSettings';
 
 export default function RealtimePage() {
     const { data: session, status } = useSession();
     const [isConnected, setIsConnected] = useState(false);
+    const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('1h');
+    const [timeRangeMinutes, setTimeRangeMinutes] = useState(60);
+    const [refreshInterval, setRefreshInterval] = useState<RefreshInterval>(3);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    // Handle time range changes
+    const handleTimeRangeChange = useCallback((range: TimeRange, minutes: number) => {
+        setSelectedTimeRange(range);
+        setTimeRangeMinutes(minutes);
+        setRefreshKey(prev => prev + 1); // Force refresh components
+    }, []);
+
+    // Handle refresh interval changes
+    const handleRefreshIntervalChange = useCallback((interval: RefreshInterval) => {
+        setRefreshInterval(interval);
+    }, []);
+
+    // Manual refresh function
+    const handleManualRefresh = useCallback(() => {
+        setIsRefreshing(true);
+        setRefreshKey(prev => prev + 1);
+
+        // Reset refreshing state after a short delay
+        setTimeout(() => {
+            setIsRefreshing(false);
+        }, 1000);
+    }, []);
 
     // Handle authentication state
     useEffect(() => {
@@ -47,7 +77,7 @@ export default function RealtimePage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground">
                         Monitor en Tiempo Real
@@ -57,17 +87,52 @@ export default function RealtimePage() {
                     </p>
                 </div>
 
-                {/* Connection Status */}
-                <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className="text-sm text-muted-foreground">
-                        {isConnected ? 'Conectado' : 'Desconectado'}
-                    </span>
+                {/* Connection Status & Controls */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <span className="text-sm text-muted-foreground">
+                            {isConnected ? 'Conectado' : 'Desconectado'}
+                        </span>
+                    </div>
+
+                    <RefreshSettings
+                        selectedInterval={refreshInterval}
+                        onIntervalChange={handleRefreshIntervalChange}
+                        onManualRefresh={handleManualRefresh}
+                        isRefreshing={isRefreshing}
+                    />
                 </div>
             </div>
 
+            {/* Time Range Filter */}
+            <Card className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-card-foreground">
+                        Filtros de Tiempo
+                    </h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Personaliza el rango de datos</span>
+                    </div>
+                </div>
+
+                <TimeRangeFilter
+                    selectedRange={selectedTimeRange}
+                    onRangeChange={handleTimeRangeChange}
+                    customMinutes={timeRangeMinutes}
+                />
+            </Card>
+
             {/* Real-time Stats Cards */}
-            <RealtimeStats onConnectionChange={setIsConnected} />
+            <RealtimeStats
+                onConnectionChange={setIsConnected}
+                timeRangeMinutes={timeRangeMinutes}
+                refreshInterval={refreshInterval}
+                refreshKey={refreshKey}
+            />
 
             {/* Main Content Grid */}
             <div className="grid gap-6 lg:grid-cols-2">
@@ -82,7 +147,11 @@ export default function RealtimePage() {
                             <span className="text-sm text-muted-foreground">En vivo</span>
                         </div>
                     </div>
-                    <RealtimeEvents />
+                    <RealtimeEvents
+                        timeRangeMinutes={timeRangeMinutes}
+                        refreshInterval={refreshInterval}
+                        refreshKey={refreshKey}
+                    />
                 </Card>
 
                 {/* Geographic Map */}
@@ -92,10 +161,17 @@ export default function RealtimePage() {
                             Actividad Geográfica
                         </h2>
                         <div className="text-sm text-muted-foreground">
-                            Últimas 24 horas
+                            {selectedTimeRange === 'custom'
+                                ? `Últimos ${timeRangeMinutes < 60 ? `${timeRangeMinutes}m` : `${Math.floor(timeRangeMinutes / 60)}h`}`
+                                : selectedTimeRange === '24h' ? 'Últimas 24 horas' : `Últimos ${selectedTimeRange}`
+                            }
                         </div>
                     </div>
-                    <RealtimeMap />
+                    <RealtimeMap
+                        timeRangeMinutes={timeRangeMinutes}
+                        refreshInterval={refreshInterval}
+                        refreshKey={refreshKey}
+                    />
                 </Card>
             </div>
         </div>

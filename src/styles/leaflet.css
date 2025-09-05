@@ -1,12 +1,49 @@
 /* Leaflet CSS */
 @import 'leaflet/dist/leaflet.css';
 
-/* Custom styles for Leaflet in dark mode */
+/* Custom styles for Leaflet integration with theme */
 .leaflet-container {
-  background: transparent;
+  background: hsl(var(--background));
+  font-family: inherit;
 }
 
-/* Dark mode adjustments */
+/* Control styles that match the theme */
+.leaflet-control-zoom a {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-color: hsl(var(--border));
+  transition: all 0.2s ease;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  border-color: hsl(var(--primary));
+}
+
+/* Popup styles that match the theme */
+.leaflet-popup-content-wrapper {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  border: 1px solid hsl(var(--border));
+}
+
+.leaflet-popup-tip {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-top: none;
+  border-right: none;
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+/* Dark mode specific adjustments */
 .dark .leaflet-control-zoom a {
   background-color: hsl(var(--card));
   color: hsl(var(--card-foreground));
@@ -15,29 +52,50 @@
 
 .dark .leaflet-control-zoom a:hover {
   background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
 }
 
 .dark .leaflet-popup-content-wrapper {
   background-color: hsl(var(--card));
   color: hsl(var(--card-foreground));
+  border-color: hsl(var(--border));
 }
 
 .dark .leaflet-popup-tip {
   background-color: hsl(var(--card));
+  border-color: hsl(var(--border));
 }
 
-/* Custom popup styles */
-.leaflet-popup-content {
-  margin: 8px 12px;
-  line-height: 1.4;
+/* Attribution styles */
+.leaflet-control-attribution {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  font-size: 11px;
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--border));
 }
 
-.leaflet-popup-content-wrapper {
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+.leaflet-control-attribution a {
+  color: hsl(var(--primary));
+  text-decoration: none;
 }
 
-/* Marker styles */
+.leaflet-control-attribution a:hover {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+}
+
+/* Marker styles with theme colors */
 .leaflet-marker-icon {
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 2px 4px hsl(var(--primary) / 0.2));
+}
+
+/* Circle marker enhancements */
+.leaflet-interactive {
+  transition: all 0.2s ease;
+}
+
+.leaflet-interactive:hover {
+  filter: brightness(1.1);
+  transform: scale(1.05);
 }

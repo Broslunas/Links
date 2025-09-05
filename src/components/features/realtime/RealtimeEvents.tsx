@@ -17,14 +17,24 @@ interface RealtimeEvent {
     os: string;
 }
 
-export function RealtimeEvents() {
+interface RealtimeEventsProps {
+    timeRangeMinutes?: number;
+    refreshInterval?: number;
+    refreshKey?: number;
+}
+
+export function RealtimeEvents({
+    timeRangeMinutes = 60,
+    refreshInterval = 3,
+    refreshKey = 0
+}: RealtimeEventsProps) {
     const [events, setEvents] = useState<RealtimeEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     // Fetch recent events
     const fetchEvents = async () => {
         try {
-            const response = await fetch('/api/analytics/realtime/events');
+            const response = await fetch(`/api/analytics/realtime/events?timeRange=${timeRangeMinutes}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
@@ -42,10 +52,11 @@ export function RealtimeEvents() {
     useEffect(() => {
         fetchEvents();
 
-        const interval = setInterval(fetchEvents, 3000); // Update every 3 seconds
-
-        return () => clearInterval(interval);
-    }, []);
+        if (refreshInterval > 0) {
+            const interval = setInterval(fetchEvents, refreshInterval * 1000);
+            return () => clearInterval(interval);
+        }
+    }, [timeRangeMinutes, refreshInterval, refreshKey]);
 
     const getDeviceIcon = (device: string) => {
         switch (device) {
@@ -123,7 +134,7 @@ export function RealtimeEvents() {
                 </div>
                 <p className="text-muted-foreground">No hay eventos recientes</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                    Los nuevos clicks aparecerán aquí en tiempo real
+                    Los nuevos clicks aparecerán aquí en el rango de tiempo seleccionado
                 </p>
             </div>
         );

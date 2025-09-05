@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { InteractiveMap } from './InteractiveMap';
+import { MapLegend } from './MapLegend';
 
 interface CountryData {
     country: string;
@@ -10,7 +11,17 @@ interface CountryData {
     percentage: number;
 }
 
-export function RealtimeMap() {
+interface RealtimeMapProps {
+    timeRangeMinutes?: number;
+    refreshInterval?: number;
+    refreshKey?: number;
+}
+
+export function RealtimeMap({
+    timeRangeMinutes = 1440,
+    refreshInterval = 10,
+    refreshKey = 0
+}: RealtimeMapProps) {
     const [countryData, setCountryData] = useState<CountryData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [totalClicks, setTotalClicks] = useState(0);
@@ -19,7 +30,7 @@ export function RealtimeMap() {
     // Fetch geographic data
     const fetchGeographicData = async () => {
         try {
-            const response = await fetch('/api/analytics/realtime/geographic');
+            const response = await fetch(`/api/analytics/realtime/geographic?timeRange=${timeRangeMinutes}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
@@ -38,10 +49,11 @@ export function RealtimeMap() {
     useEffect(() => {
         fetchGeographicData();
 
-        const interval = setInterval(fetchGeographicData, 10000); // Update every 10 seconds
-
-        return () => clearInterval(interval);
-    }, []);
+        if (refreshInterval > 0) {
+            const interval = setInterval(fetchGeographicData, refreshInterval * 1000);
+            return () => clearInterval(interval);
+        }
+    }, [timeRangeMinutes, refreshInterval, refreshKey]);
 
     const getCountryFlag = (countryCode: string) => {
         // Simple country code to flag emoji mapping
@@ -113,8 +125,8 @@ export function RealtimeMap() {
                     <button
                         onClick={() => setShowMap(true)}
                         className={`px-3 py-1 text-sm rounded-md transition-colors ${showMap
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
                             }`}
                     >
                         Mapa
@@ -122,8 +134,8 @@ export function RealtimeMap() {
                     <button
                         onClick={() => setShowMap(false)}
                         className={`px-3 py-1 text-sm rounded-md transition-colors ${!showMap
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
                             }`}
                     >
                         Lista
@@ -136,7 +148,10 @@ export function RealtimeMap() {
 
             {/* Interactive Map */}
             {showMap && (
-                <InteractiveMap countryData={countryData} totalClicks={totalClicks} />
+                <div className="space-y-4">
+                    <InteractiveMap countryData={countryData} totalClicks={totalClicks} />
+                    <MapLegend />
+                </div>
             )}
 
             {/* Country List */}

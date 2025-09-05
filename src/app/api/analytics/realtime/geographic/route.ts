@@ -38,15 +38,19 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // Get events from last 24 hours
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        // Get time range from query params (in minutes)
+        const { searchParams } = new URL(request.url);
+        const timeRangeMinutes = parseInt(searchParams.get('timeRange') || '1440'); // Default 24 hours
+
+        // Get events from specified time range
+        const timeRangeAgo = new Date(Date.now() - timeRangeMinutes * 60 * 1000);
 
         // Aggregate clicks by country
         let countryStats = await AnalyticsEvent.aggregate([
             {
                 $match: {
                     linkId: { $in: linkIds },
-                    timestamp: { $gte: twentyFourHoursAgo },
+                    timestamp: { $gte: timeRangeAgo },
                 },
             },
             {
