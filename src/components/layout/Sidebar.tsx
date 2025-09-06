@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils';
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 interface UserRole {
@@ -165,7 +167,7 @@ const adminNavigation = {
   ),
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false, onToggleCollapse }) => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [userRole, setUserRole] = useState<'user' | 'admin'>('user');
@@ -205,13 +207,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     <>
       {/* Desktop sidebar */}
       <aside
-        className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col"
+        className={`hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col transition-all duration-300 ease-in-out ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}
         role="complementary"
         aria-label="Barra lateral de navegación del dashboard"
       >
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-card border-r border-border px-6 py-4">
-          {/* Logo */}
-          <div className="flex h-16 shrink-0 items-center">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-card border-r border-border px-4 py-4 relative">
+          {/* Logo and collapse button */}
+          <div className="flex h-16 shrink-0 items-center justify-between">
             <Link
               href="/dashboard"
               className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md"
@@ -225,10 +227,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   height="32"
                 />
               </div>
-              <span className="text-xl font-bold text-card-foreground">
+              <span className={`text-xl font-bold text-card-foreground ${isCollapsed ? 'hidden' : 'block'}`}>
                 Broslunas Links
               </span>
             </Link>
+            
+            {/* El botón de colapso se ha movido al encabezado */}
           </div>
 
           {/* Navigation */}
@@ -254,8 +258,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                           aria-current={isActive ? 'page' : undefined}
                           aria-label={`Ir a ${item.name}`}
                         >
-                          <span aria-hidden="true">{item.icon}</span>
-                          <span>{item.name}</span>
+                          <span aria-hidden="true" className={isCollapsed ? 'mx-auto' : ''}>{item.icon}</span>
+                          <span className={isCollapsed ? 'hidden' : 'block'}>{item.name}</span>
                         </Link>
                       </li>
                     );
@@ -273,8 +277,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         aria-current={(pathname === adminNavigation.href || (pathname?.startsWith(adminNavigation.href + '/') || false)) ? 'page' : undefined}
                         aria-label={`Ir a ${adminNavigation.name}`}
                       >
-                        <span aria-hidden="true">{adminNavigation.icon}</span>
-                        <span>{adminNavigation.name}</span>
+                        <span aria-hidden="true" className={isCollapsed ? 'mx-auto' : ''}>{adminNavigation.icon}</span>
+                        <span className={isCollapsed ? 'hidden' : 'block'}>{adminNavigation.name}</span>
                       </Link>
                     </li>
                   )}
@@ -293,7 +297,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       aria-label="Ir a Términos y Servicios"
                     >
                       <svg
-                        className="h-5 w-5"
+                        className={`h-5 w-5 ${isCollapsed ? 'mx-auto' : ''}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -303,10 +307,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M8 17l4 4 4-4m-4-5v9"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
-                      <span>Términos y Servicios</span>
+                      <span className={isCollapsed ? 'hidden' : 'block'}>Términos y Servicios</span>
                     </Link>
                   </li>
                   <li role="listitem">
@@ -317,7 +321,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       aria-label="Ir a Política de Privacidad"
                     >
                       <svg
-                        className="h-5 w-5"
+                        className={`h-5 w-5 ${isCollapsed ? 'mx-auto' : ''}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -327,10 +331,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M12 11c0-1.104.896-2 2-2s2 .896 2 2-2 2-2 2-2-.896-2-2zm0 0V7a4 4 0 118 0v4a4 4 0 01-8 0z"
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                         />
                       </svg>
-                      <span>Política de Privacidad</span>
+                      <span className={isCollapsed ? 'hidden' : 'block'}>Política de Privacidad</span>
                     </Link>
                   </li>
                 </ul>
@@ -346,7 +350,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   aria-label="Cerrar sesión y salir del dashboard"
                 >
                   <svg
-                    className="h-5 w-5 mr-3"
+                    className={`h-5 w-5 ${isCollapsed ? 'mx-auto' : 'mr-3'}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -359,7 +363,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                     />
                   </svg>
-                  <span>Cerrar Sesión</span>
+                  <span className={isCollapsed ? 'hidden' : 'block'}>Cerrar Sesión</span>
                 </Button>
               </li>
             </ul>
@@ -370,8 +374,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Mobile sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 z-50 flex w-64 flex-col transition-transform duration-300 ease-in-out lg:hidden',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          'fixed inset-y-0 z-50 flex flex-col transition-transform duration-300 ease-in-out lg:hidden',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
+          isCollapsed ? 'w-20' : 'w-64'
         )}
         role="complementary"
         aria-label="Barra lateral móvil de navegación del dashboard"
@@ -393,7 +398,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   height="32"
                 />
               </div>
-              <span className="text-xl font-bold text-card-foreground">
+              <span className={`text-xl font-bold text-card-foreground ${isCollapsed ? 'hidden' : 'block'}`}>
                 Broslunas Links
               </span>
             </Link>
@@ -444,8 +449,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                           aria-current={isActive ? 'page' : undefined}
                           aria-label={`Ir a ${item.name}`}
                         >
-                          <span aria-hidden="true">{item.icon}</span>
-                          <span>{item.name}</span>
+                          <span aria-hidden="true" className={isCollapsed ? 'mx-auto' : ''}>{item.icon}</span>
+                        <span className={isCollapsed ? 'hidden' : 'block'}>{item.name}</span>
                         </Link>
                       </li>
                     );
@@ -464,8 +469,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         aria-current={(pathname === adminNavigation.href || (pathname?.startsWith(adminNavigation.href + '/') || false)) ? 'page' : undefined}
                         aria-label={`Ir a ${adminNavigation.name}`}
                       >
-                        <span aria-hidden="true">{adminNavigation.icon}</span>
-                        <span>{adminNavigation.name}</span>
+                        <span aria-hidden="true" className={isCollapsed ? 'mx-auto' : ''}>{adminNavigation.icon}</span>
+                        <span className={isCollapsed ? 'hidden' : 'block'}>{adminNavigation.name}</span>
                       </Link>
                     </li>
                   )}
@@ -482,7 +487,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   aria-label="Cerrar sesión y salir del dashboard"
                 >
                   <svg
-                    className="h-5 w-5 mr-3"
+                    className={`h-5 w-5 ${isCollapsed ? 'mx-auto' : 'mr-3'}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -495,7 +500,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                     />
                   </svg>
-                  <span>Cerrar Sesión</span>
+                  <span className={isCollapsed ? 'hidden' : 'block'}>Cerrar Sesión</span>
                 </Button>
               </li>
             </ul>
