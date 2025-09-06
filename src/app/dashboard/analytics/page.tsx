@@ -9,7 +9,7 @@ export default function AnalyticsPage() {
       <div>
         <h1 className="text-3xl font-bold text-foreground">Analíticas</h1>
         <p className="text-muted-foreground">
-          Comprehensive insights into your link performance
+          Información detallada sobre el rendimiento de tus enlaces
         </p>
       </div>
 
