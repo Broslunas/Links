@@ -143,44 +143,6 @@ const navigation = [
       </svg>
     ),
   },
-  {
-    name: 'Términos y Servicios',
-    href: '/terms-and-services',
-    icon: (
-      <svg
-        className="h-5 w-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M8 17l4 4 4-4m-4-5v9"
-        />
-      </svg>
-    ),
-  },
-  {
-    name: 'Política de Privacidad',
-    href: '/privacy-policy',
-    icon: (
-      <svg
-        className="h-5 w-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 11c0-1.104.896-2 2-2s2 .896 2 2-2 2-2 2-2-.896-2-2zm0 0V7a4 4 0 118 0v4a4 4 0 01-8 0z"
-        />
-      </svg>
-    ),
-  },
 ];
 
 const adminNavigation = {
@@ -305,7 +267,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         className={cn(
                           'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
                           (pathname === adminNavigation.href || (pathname?.startsWith(adminNavigation.href + '/') || false))
-                            ? 'bg-primary text-primary-foreground'
+                            ? 'bg-destructive text-destructive-foreground'
                             : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                         )}
                         aria-current={(pathname === adminNavigation.href || (pathname?.startsWith(adminNavigation.href + '/') || false)) ? 'page' : undefined}
@@ -319,6 +281,61 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 </ul>
               </li>
 
+              {/* Legal links */}
+              <li role="listitem">
+                <h2 className="sr-only">Enlaces legales</h2>
+                <ul role="list" className="-mx-2 space-y-1">
+                  <li role="listitem">
+                    <Link
+                      href="/terms-and-services"
+                      onClick={onClose}
+                      className="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 text-muted-foreground hover:text-foreground hover:bg-accent"
+                      aria-label="Ir a Términos y Servicios"
+                    >
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 17l4 4 4-4m-4-5v9"
+                        />
+                      </svg>
+                      <span>Términos y Servicios</span>
+                    </Link>
+                  </li>
+                  <li role="listitem">
+                    <Link
+                      href="/privacy-policy"
+                      onClick={onClose}
+                      className="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 text-muted-foreground hover:text-foreground hover:bg-accent"
+                      aria-label="Ir a Política de Privacidad"
+                    >
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 11c0-1.104.896-2 2-2s2 .896 2 2-2 2-2 2-2-.896-2-2zm0 0V7a4 4 0 118 0v4a4 4 0 01-8 0z"
+                        />
+                      </svg>
+                      <span>Política de Privacidad</span>
+                    </Link>
+                  </li>
+                </ul>
+              </li>
+              
               {/* Sign out button */}
               <li className="mt-auto" role="listitem">
                 <h2 className="sr-only">Acciones de cuenta</h2>
@@ -441,7 +458,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         className={cn(
                           'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
                           (pathname === adminNavigation.href || (pathname?.startsWith(adminNavigation.href + '/') || false))
-                            ? 'bg-primary text-primary-foreground'
+                            ? 'bg-destructive text-destructive-foreground'
                             : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                         )}
                         aria-current={(pathname === adminNavigation.href || (pathname?.startsWith(adminNavigation.href + '/') || false)) ? 'page' : undefined}
