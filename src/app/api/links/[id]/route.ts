@@ -99,6 +99,7 @@ export const PUT = withAuth(async (
     'isTemporary',
     'expiresAt',
     'isExpired',
+    'slug',
   ];
   updatableFields.forEach(field => {
     // Permite actualizar el campo aunque el valor sea vacío, null, false, etc.
@@ -106,6 +107,56 @@ export const PUT = withAuth(async (
       link[field] = body[field];
     }
   });
+
+  // Special handling for slug updates
+  if (Object.prototype.hasOwnProperty.call(body, 'slug') && body.slug !== link.slug) {
+    const newSlug = body.slug.trim().toLowerCase();
+    
+    // Validate slug format
+    if (!/^[a-zA-Z0-9-_]+$/.test(newSlug)) {
+      throw new AppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Slug can only contain letters, numbers, hyphens, and underscores',
+        400
+      );
+    }
+    
+    if (newSlug.length < 3 || newSlug.length > 50) {
+      throw new AppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Slug must be between 3 and 50 characters',
+        400
+      );
+    }
+    
+    // Check if slug is already taken
+    const existingLink = await Link.findOne({ slug: newSlug });
+    if (existingLink) {
+      throw new AppError(
+        ErrorCode.VALIDATION_ERROR,
+        `Slug '${newSlug}' is already taken`,
+        409
+      );
+    }
+    
+    link.slug = newSlug;
+  }
+
+  // Special handling for converting temporary to permanent links
+  if (Object.prototype.hasOwnProperty.call(body, 'isTemporary')) {
+    if (!body.isTemporary) {
+      // Si se convierte a permanente, limpiar campos relacionados con temporalidad
+      link.expiresAt = null;
+      link.isExpired = false;
+    } else if (body.isTemporary && !body.expiresAt) {
+      // Si se convierte a temporal pero no se proporciona expiresAt, usar validación
+      throw new AppError(
+        ErrorCode.VALIDATION_ERROR,
+        'expiresAt is required for temporary links',
+        400
+      );
+    }
+  }
 
   // Special handling for extending expired links
   if (body.extendTime && link.isTemporary) {

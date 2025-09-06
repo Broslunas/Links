@@ -624,13 +624,7 @@ export function LinkList({
                           <h3 className="font-medium text-card-foreground truncate">
                             {link.title || 'Untitled Link'}
                           </h3>
-                          {isTemporaryAndActive(link) && (
-                             <div title="Enlace temporal activo">
-                               <Clock className="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0" />
-                             </div>
-                           )}
                         </div>
-
                         {link.isDisabledByAdmin && (
                           <div className="flex flex-col gap-1">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
@@ -648,21 +642,38 @@ export function LinkList({
                               Contactar Soporte
                             </a>
                           </div>
-                        )}
+                        )}{' '}
                         {isLinkExpired(link) && (
                           <div className="flex flex-col gap-1">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
                               Expirado
                             </span>
-                            <div className="text-xs text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/10 px-2 py-1 rounded border border-yellow-200 dark:border-yellow-800">
-                              <strong>Expiró:</strong>{' '}
-                              {link.expiresAt &&
-                                formatDistanceToNow(new Date(link.expiresAt), {
-                                  addSuffix: true,
-                                  locale: es,
-                                })}
-                            </div>
+
                             <div className="flex gap-1">
+                              <Button
+                                onClick={() => extendLinkTime(link.slug, 1)}
+                                size="sm"
+                                variant="outline"
+                                className="text-xs px-2 py-1 h-auto"
+                              >
+                                +1h
+                              </Button>
+                              <Button
+                                onClick={() => extendLinkTime(link.slug, 3)}
+                                size="sm"
+                                variant="outline"
+                                className="text-xs px-2 py-1 h-auto"
+                              >
+                                +3h
+                              </Button>
+                              <Button
+                                onClick={() => extendLinkTime(link.slug, 12)}
+                                size="sm"
+                                variant="outline"
+                                className="text-xs px-2 py-1 h-auto"
+                              >
+                                +12h
+                              </Button>
                               <Button
                                 onClick={() => extendLinkTime(link.slug, 24)}
                                 size="sm"
@@ -792,6 +803,26 @@ export function LinkList({
                             locale: es,
                           })}
                         </span>
+                        {isTemporaryAndActive(link) && (
+                          <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                            <Clock className="h-4 w-4" />
+                            Expira{' '}
+                            {formatDistanceToNow(new Date(link.expiresAt!), {
+                              addSuffix: true,
+                              locale: es,
+                            })}
+                          </span>
+                        )}
+                        {isLinkExpired(link) && (
+                          <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+                            <Clock className="h-4 w-4" />
+                            Expiró{' '}
+                            {formatDistanceToNow(new Date(link.expiresAt!), {
+                              addSuffix: true,
+                              locale: es,
+                            })}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -954,11 +985,6 @@ export function LinkList({
                         <h3 className="font-semibold text-foreground text-sm line-clamp-2 flex-1">
                           {link.title || 'Untitle Link'}
                         </h3>
-                        {isTemporaryAndActive(link) && (
-                           <div title="Enlace temporal activo">
-                             <Clock className="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0" />
-                           </div>
-                         )}
                       </div>
                     </div>
                     <span
@@ -998,15 +1024,31 @@ export function LinkList({
                   )}
                   {isLinkExpired(link) && (
                     <div className="space-y-2">
-                      <div className="text-xs text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/10 px-2 py-1 rounded border border-yellow-200 dark:border-yellow-800">
-                        <strong>Enlace expirado:</strong>{' '}
-                        {link.expiresAt &&
-                          formatDistanceToNow(new Date(link.expiresAt), {
-                            addSuffix: true,
-                            locale: es,
-                          })}
-                      </div>
                       <div className="flex gap-1">
+                        <Button
+                          onClick={() => extendLinkTime(link.slug, 1)}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs px-2 py-1 h-auto"
+                        >
+                          +1h
+                        </Button>
+                        <Button
+                          onClick={() => extendLinkTime(link.slug, 3)}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs px-2 py-1 h-auto"
+                        >
+                          +3h
+                        </Button>
+                        <Button
+                          onClick={() => extendLinkTime(link.slug, 12)}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs px-2 py-1 h-auto"
+                        >
+                          +12h
+                        </Button>
                         <Button
                           onClick={() => extendLinkTime(link.slug, 24)}
                           size="sm"
@@ -1068,19 +1110,45 @@ export function LinkList({
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center justify-between mb-3 text-sm">
-                  <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground">Clicks:</span>
-                    <span className="font-semibold text-foreground">
-                      {link.clickCount}
+                <div className="space-y-2 mb-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-1">
+                      <span className="text-muted-foreground">Clicks:</span>
+                      <span className="font-semibold text-foreground">
+                        {link.clickCount}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(link.createdAt), {
+                        addSuffix: true,
+                        locale: es,
+                      })}
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(link.createdAt), {
-                      addSuffix: true,
-                      locale: es,
-                    })}
-                  </span>
+                  {isTemporaryAndActive(link) && (
+                    <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        Expira{' '}
+                        {formatDistanceToNow(new Date(link.expiresAt!), {
+                          addSuffix: true,
+                          locale: es,
+                        })}
+                      </span>
+                    </div>
+                  )}
+                  {isLinkExpired(link) && (
+                    <div className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        Expiró{' '}
+                        {formatDistanceToNow(new Date(link.expiresAt!), {
+                          addSuffix: true,
+                          locale: es,
+                        })}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}

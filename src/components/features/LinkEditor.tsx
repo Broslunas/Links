@@ -40,11 +40,13 @@ export function LinkEditor({
         originalUrl: link.originalUrl,
         slug: link.slug,
         title: link.title || '',
-        description: link.description || '',
+        description: link.description || ' ',
         isPublicStats: link.isPublicStats,
         isActive: link.isActive,
         isTemporary: link.isTemporary || false,
-        expiresAt: link.expiresAt ? new Date(link.expiresAt).toISOString().slice(0, 16) : '',
+        expiresAt: link.expiresAt
+          ? new Date(link.expiresAt).toISOString().slice(0, 16)
+          : '',
       });
       setErrors({});
     }
@@ -71,9 +73,11 @@ export function LinkEditor({
 
     if (formData.slug.trim()) {
       const slug = formData.slug.trim();
-      if (!/^[a-z0-9-_]+$/i.test(slug)) {
+      if (!/^[a-zA-Z0-9-_]+$/.test(slug)) {
         newErrors.slug =
           'Slug can only contain letters, numbers, hyphens, and underscores';
+      } else if (slug.length < 3) {
+        newErrors.slug = 'Slug must be at least 3 characters long';
       } else if (slug.length > 50) {
         newErrors.slug = 'Slug must be 50 characters or less';
       }
@@ -90,7 +94,8 @@ export function LinkEditor({
     // Validación para enlaces temporales
     if (formData.isTemporary) {
       if (!formData.expiresAt) {
-        newErrors.expiresAt = 'La fecha de expiración es requerida para enlaces temporales';
+        newErrors.expiresAt =
+          'La fecha de expiración es requerida para enlaces temporales';
       } else {
         const expirationDate = new Date(formData.expiresAt);
         const now = new Date();
@@ -116,11 +121,14 @@ export function LinkEditor({
         originalUrl: formData.originalUrl.trim(),
         slug: formData.slug.trim().toLowerCase(),
         title: formData.title.trim() || undefined,
-        description: formData.description.trim() || undefined,
+        description: formData.description.trim() || ' ',
         isPublicStats: formData.isPublicStats,
         isActive: formData.isActive,
         isTemporary: formData.isTemporary,
-        expiresAt: formData.isTemporary && formData.expiresAt ? new Date(formData.expiresAt) : undefined,
+        expiresAt:
+          formData.isTemporary && formData.expiresAt
+            ? new Date(formData.expiresAt)
+            : undefined,
       };
 
       const response = await fetch(`/api/links/${link.slug}`, {
@@ -137,7 +145,12 @@ export function LinkEditor({
         onLinkUpdated(data.data);
         onClose();
       } else {
-        if (data.error?.code === 'SLUG_EXISTS') {
+        if (
+          data.error?.code === 'VALIDATION_ERROR' &&
+          data.error.message.includes('Slug')
+        ) {
+          setErrors({ slug: data.error.message });
+        } else if (data.error?.code === 'SLUG_EXISTS') {
           setErrors({ slug: data.error.message });
         } else {
           onError(data.error?.message || 'Failed to update link');
@@ -261,7 +274,9 @@ export function LinkEditor({
               </label>
               <Button
                 type="button"
-                onClick={() => handleInputChange('isActive', !formData.isActive)}
+                onClick={() =>
+                  handleInputChange('isActive', !formData.isActive)
+                }
                 disabled={loading}
                 variant={formData.isActive ? 'default' : 'outline'}
                 className={`w-full justify-center ${
@@ -283,7 +298,9 @@ export function LinkEditor({
               </label>
               <Button
                 type="button"
-                onClick={() => handleInputChange('isPublicStats', !formData.isPublicStats)}
+                onClick={() =>
+                  handleInputChange('isPublicStats', !formData.isPublicStats)
+                }
                 disabled={loading}
                 variant={formData.isPublicStats ? 'default' : 'outline'}
                 className={`w-full justify-center ${
@@ -292,7 +309,9 @@ export function LinkEditor({
                     : 'text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-900/20'
                 }`}
               >
-                {formData.isPublicStats ? '✓ Estadísticas Públicas' : '✗ Estadísticas Privadas'}
+                {formData.isPublicStats
+                  ? '✓ Estadísticas Públicas'
+                  : '✗ Estadísticas Privadas'}
               </Button>
               <p className="text-xs text-muted-foreground mt-1">
                 Permitir que otros vean estadísticas agregadas para este enlace
@@ -321,10 +340,13 @@ export function LinkEditor({
                     : 'text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-900/20'
                 }`}
               >
-                {formData.isTemporary ? '⏰ Enlace Temporal' : '🔗 Enlace Permanente'}
+                {formData.isTemporary
+                  ? '⏰ Enlace Temporal'
+                  : '🔗 Enlace Permanente'}
               </Button>
               <p className="text-xs text-muted-foreground mt-1">
-                Los enlaces temporales se desactivan automáticamente después de la fecha de expiración
+                Los enlaces temporales se desactivan automáticamente después de
+                la fecha de expiración
               </p>
             </div>
 
@@ -350,7 +372,9 @@ export function LinkEditor({
                   } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
                 {errors.expiresAt && (
-                  <p className="text-red-500 text-xs mt-1">{errors.expiresAt}</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.expiresAt}
+                  </p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
                   El enlace dejará de funcionar después de esta fecha y hora
