@@ -20,6 +20,10 @@ interface FormData {
   title: string;
   description: string;
   isPublicStats: boolean;
+  isTemporary: boolean;
+  temporaryDuration: string;
+  customDuration: number;
+  customDurationUnit: 'hours' | 'days';
 }
 
 interface FormErrors {
@@ -27,6 +31,7 @@ interface FormErrors {
   slug?: string;
   title?: string;
   description?: string;
+  customDuration?: string;
 }
 
 export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
@@ -37,6 +42,10 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
     title: '',
     description: '',
     isPublicStats: false,
+    isTemporary: false,
+    temporaryDuration: '1h',
+    customDuration: 1,
+    customDurationUnit: 'days',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -118,6 +127,17 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
         'La descripción debe tener 500 caracteres o menos';
     }
 
+    // Validate custom duration if temporary and custom is selected
+    if (formData.isTemporary && formData.temporaryDuration === 'custom') {
+      if (formData.customDuration < 1) {
+        newErrors.customDuration = 'La duración debe ser mayor a 0';
+      } else if (formData.customDurationUnit === 'days' && formData.customDuration > 30) {
+        newErrors.customDuration = 'La duración máxima es de 30 días';
+      } else if (formData.customDurationUnit === 'hours' && formData.customDuration > 720) {
+        newErrors.customDuration = 'La duración máxima es de 720 horas (30 días)';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -130,12 +150,41 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
     }
 
     const createLinkOperation = async () => {
+      // Calcular fecha de expiración si es temporal
+      let expiresAt: Date | undefined;
+      if (formData.isTemporary) {
+        const now = new Date();
+        if (formData.temporaryDuration === 'custom') {
+          const duration = formData.customDuration;
+          const unit = formData.customDurationUnit;
+          if (unit === 'hours') {
+            expiresAt = new Date(now.getTime() + duration * 60 * 60 * 1000);
+          } else {
+            expiresAt = new Date(now.getTime() + duration * 24 * 60 * 60 * 1000);
+          }
+        } else {
+          switch (formData.temporaryDuration) {
+            case '1h':
+              expiresAt = new Date(now.getTime() + 1 * 60 * 60 * 1000);
+              break;
+            case '12h':
+              expiresAt = new Date(now.getTime() + 12 * 60 * 60 * 1000);
+              break;
+            case '1d':
+              expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+              break;
+          }
+        }
+      }
+
       const createData: CreateLinkData = {
         originalUrl: formData.originalUrl.trim(),
         slug: formData.slug.trim() || undefined,
         title: formData.title.trim() || undefined,
         description: formData.description.trim() || undefined,
         isPublicStats: formData.isPublicStats,
+        isTemporary: formData.isTemporary,
+        expiresAt: expiresAt,
       };
 
       const response = await fetch('/api/links', {
@@ -195,6 +244,10 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
           title: '',
           description: '',
           isPublicStats: userPreferences?.defaultPublicStats || false,
+          isTemporary: false,
+          temporaryDuration: '1h',
+          customDuration: 1,
+          customDurationUnit: 'days',
         });
         setShowAdvanced(false);
         onLinkCreated?.(linkData);
@@ -209,7 +262,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean
+    value: string | boolean | number
   ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
 
@@ -276,7 +329,11 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
           slug: '',
           title: '',
           description: '',
-          isPublicStats: userPreferences?.defaultPublicStats || false
+          isPublicStats: userPreferences?.defaultPublicStats || false,
+          isTemporary: false,
+          temporaryDuration: '1h',
+          customDuration: 1,
+          customDurationUnit: 'days',
         });
         setErrors({});
         setShowAdvanced(false);
@@ -482,22 +539,92 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
               />
             </div>
 
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="publicStats"
-                checked={formData.isPublicStats}
-                onChange={e =>
-                  handleInputChange('isPublicStats', e.target.checked)
-                }
-                className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
-              />
-              <label
-                htmlFor="publicStats"
-                className="text-sm text-card-foreground"
-              >
-                Permitir estadísticas públicas
-              </label>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="isTemporary"
+                  checked={formData.isTemporary}
+                  onChange={e =>
+                    handleInputChange('isTemporary', e.target.checked)
+                  }
+                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                />
+                <label
+                  htmlFor="isTemporary"
+                  className="text-sm text-card-foreground"
+                >
+                  Enlace temporal (se eliminará automáticamente)
+                </label>
+              </div>
+
+              {formData.isTemporary && (
+                <div className="ml-7 space-y-3 p-4 bg-muted/50 rounded-lg border">
+                  <div>
+                    <label className="text-sm font-medium text-card-foreground mb-2 block">
+                      Duración del enlace
+                    </label>
+                    <select
+                      value={formData.temporaryDuration}
+                      onChange={e => handleInputChange('temporaryDuration', e.target.value)}
+                      className="w-full px-3 py-2 border border-border rounded-md bg-background text-card-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                      <option value="1h">1 hora</option>
+                      <option value="12h">12 horas</option>
+                      <option value="1d">1 día</option>
+                      <option value="custom">Personalizado</option>
+                    </select>
+                  </div>
+
+                  {formData.temporaryDuration === 'custom' && (
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <Input
+                          type="number"
+                          min="1"
+                          max={formData.customDurationUnit === 'days' ? '30' : '720'}
+                          value={formData.customDuration.toString()}
+                          onChange={e => handleInputChange('customDuration', parseInt(e.target.value) || 1)}
+                          error={errors.customDuration}
+                          placeholder="Cantidad"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <select
+                          value={formData.customDurationUnit}
+                          onChange={e => handleInputChange('customDurationUnit', e.target.value as 'hours' | 'days')}
+                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-card-foreground focus:ring-2 focus:ring-primary focus:border-transparent h-10"
+                        >
+                          <option value="hours">Horas</option>
+                          <option value="days">Días</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">
+                    💡 Los enlaces temporales se eliminarán automáticamente cuando expiren. Duración máxima: 30 días.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="publicStats"
+                  checked={formData.isPublicStats}
+                  onChange={e =>
+                    handleInputChange('isPublicStats', e.target.checked)
+                  }
+                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                />
+                <label
+                  htmlFor="publicStats"
+                  className="text-sm text-card-foreground"
+                >
+                  Permitir estadísticas públicas
+                </label>
+              </div>
             </div>
           </div>
         )}

@@ -47,6 +47,9 @@ export const GET = withAuth(async (
     isPublicStats: link.isPublicStats,
     isActive: link.isActive,
     isFavorite: link.isFavorite,
+    isTemporary: link.isTemporary,
+    expiresAt: link.expiresAt?.toISOString(),
+    isExpired: link.isExpired,
     createdAt: link.createdAt,
     updatedAt: link.updatedAt,
     clickCount: link.clickCount,
@@ -93,6 +96,9 @@ export const PUT = withAuth(async (
     'isActive',
     'originalUrl',
     'isFavorite',
+    'isTemporary',
+    'expiresAt',
+    'isExpired',
   ];
   updatableFields.forEach(field => {
     // Permite actualizar el campo aunque el valor sea vacío, null, false, etc.
@@ -100,6 +106,18 @@ export const PUT = withAuth(async (
       link[field] = body[field];
     }
   });
+
+  // Special handling for extending expired links
+  if (body.extendTime && link.isTemporary) {
+    const now = new Date();
+    const extensionHours = parseInt(body.extendTime);
+    
+    if (extensionHours > 0 && extensionHours <= 720) { // Max 30 days
+      link.expiresAt = new Date(now.getTime() + extensionHours * 60 * 60 * 1000);
+      link.isExpired = false;
+      link.isActive = true;
+    }
+  }
   link.updatedAt = new Date();
   await link.save();
 

@@ -20,12 +20,45 @@ export async function handleRedirect(
     try {
         await connectDB();
 
+        // First, check if the link exists but is expired (both in Link and TempLink collections)
+        const [expiredLink, expiredTempLink] = await Promise.all([
+            Link.findOne({
+                slug: slug.toLowerCase(),
+                $or: [
+                    { isExpired: true },
+                    { 
+                        isTemporary: true,
+                        expiresAt: { $lte: new Date() }
+                    }
+                ]
+            }),
+            TempLink.findOne({
+                slug: slug.toLowerCase(),
+                expiresAt: { $lte: new Date() }
+            })
+        ]);
+
+        if (expiredLink || expiredTempLink) {
+            return {
+                success: false,
+                error: 'Este enlace ha expirado y ya no está disponible'
+            };
+        }
+
         // Find the link by slug (check both regular links and temporary links)
         const [link, tempLink] = await Promise.all([
             Link.findOne({
                 slug: slug.toLowerCase(),
                 isActive: true,
-                isDisabledByAdmin: { $ne: true } // Exclude links disabled by admin
+                isDisabledByAdmin: { $ne: true }, // Exclude links disabled by admin
+                isExpired: { $ne: true }, // Exclude expired links
+                $or: [
+                    { isTemporary: { $ne: true } }, // Non-temporary links
+                    { 
+                        isTemporary: true,
+                        expiresAt: { $gt: new Date() } // Only non-expired temporary links
+                    }
+                ]
             }),
             TempLink.findOne({
                 slug: slug.toLowerCase(),
@@ -40,7 +73,7 @@ export async function handleRedirect(
         if (!targetLink) {
             return {
                 success: false,
-                error: 'Link not found, inactive, expired, or disabled'
+                error: 'Link not found, inactive, or disabled'
             };
         }
 

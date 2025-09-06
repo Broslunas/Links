@@ -21,10 +21,47 @@ export const GET = withAuth(async (request: NextRequest, auth: AuthContext) => {
 // POST /api/links - Create new link
 export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => {
     const body: CreateLinkData = await parseRequestBody<CreateLinkData>(request);
-    const { originalUrl, slug, title, description, isPublicStats = false } = body;
+    const { originalUrl, slug, title, description, isPublicStats = false, isTemporary = false, expiresAt } = body;
 
     // Validate required fields
-    validateRequest(body, ['originalUrl'], ['slug', 'title', 'description', 'isPublicStats']);
+    validateRequest(body, ['originalUrl'], ['slug', 'title', 'description', 'isPublicStats', 'isTemporary', 'expiresAt']);
+
+    // Validate temporary link fields
+    if (isTemporary) {
+        if (!expiresAt) {
+            throw new AppError(
+                ErrorCode.VALIDATION_ERROR,
+                'expiresAt is required for temporary links',
+                400
+            );
+        }
+        
+        const expirationDate = new Date(expiresAt);
+        const now = new Date();
+        const maxExpirationDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 días
+        
+        if (expirationDate <= now) {
+            throw new AppError(
+                ErrorCode.VALIDATION_ERROR,
+                'Expiration date must be in the future',
+                400
+            );
+        }
+        
+        if (expirationDate > maxExpirationDate) {
+            throw new AppError(
+                ErrorCode.VALIDATION_ERROR,
+                'Expiration date cannot be more than 30 days in the future',
+                400
+            );
+        }
+    } else if (expiresAt) {
+        throw new AppError(
+            ErrorCode.VALIDATION_ERROR,
+            'expiresAt can only be set for temporary links',
+            400
+        );
+    }
 
     // Validate and sanitize URL
     let sanitizedUrl = originalUrl.trim();
@@ -65,6 +102,8 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
         title: title?.trim() || undefined,
         description: description?.trim() || undefined,
         isPublicStats,
+        isTemporary,
+        expiresAt: isTemporary ? new Date(expiresAt!) : undefined,
     });
 
     await newLink.save();
@@ -80,6 +119,8 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
         isActive: newLink.isActive,
         isFavorite: newLink.isFavorite,
         clickCount: newLink.clickCount,
+        isTemporary: newLink.isTemporary,
+        expiresAt: newLink.expiresAt?.toISOString(),
         createdAt: newLink.createdAt,
         updatedAt: newLink.updatedAt,
         shortUrl: `${process.env.NEXTAUTH_URL}/${newLink.slug}`,

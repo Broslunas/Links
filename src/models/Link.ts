@@ -12,6 +12,9 @@ export interface ILink extends Document {
   disabledReason?: string;
   isFavorite: boolean;
   clickCount: number;
+  isTemporary: boolean;
+  expiresAt?: Date;
+  isExpired: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -85,6 +88,36 @@ const LinkSchema = new Schema<ILink>(
       default: 0,
       min: 0,
     },
+    isTemporary: {
+      type: Boolean,
+      default: false,
+    },
+    expiresAt: {
+      type: Date,
+      default: null,
+      validate: {
+        validator: function(this: ILink, expiresAt: Date) {
+          // Si es temporal, debe tener fecha de expiración
+          if (this.isTemporary && !expiresAt) {
+            return false;
+          }
+          // Si no es temporal, no debe tener fecha de expiración
+          if (!this.isTemporary && expiresAt) {
+            return false;
+          }
+          // Si tiene fecha de expiración, debe ser futura
+          if (expiresAt && expiresAt <= new Date()) {
+            return false;
+          }
+          return true;
+        },
+        message: 'Invalid expiration date for temporary link',
+      },
+    },
+    isExpired: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -97,6 +130,8 @@ LinkSchema.index({ userId: 1 });
 LinkSchema.index({ userId: 1, createdAt: -1 });
 LinkSchema.index({ isActive: 1 });
 LinkSchema.index({ isPublicStats: 1 });
+LinkSchema.index({ isTemporary: 1, expiresAt: 1 });
+LinkSchema.index({ expiresAt: 1 }, { sparse: true });
 
 export default mongoose.models.Link ||
   mongoose.model<ILink>('Link', LinkSchema);

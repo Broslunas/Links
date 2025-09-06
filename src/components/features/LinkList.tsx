@@ -7,7 +7,7 @@ import { Link, ApiResponse } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { QRCodeModal } from './QRCodeModal';
-import { Star } from 'lucide-react';
+import { Star, Clock } from 'lucide-react';
 
 type FilterStatus = 'all' | 'active' | 'inactive';
 type FilterStats = 'all' | 'public' | 'private';
@@ -45,22 +45,9 @@ export function LinkList({
   const [dateFilter, setDateFilter] = useState<
     'all' | 'today' | 'week' | 'month'
   >('all');
-  const [filterFavorites, setFilterFavorites] = useState<'all' | 'favorites' | 'non-favorites'>('all');
-
-  const addTagToLink = async (linkId: string, tag: string) => {
-    try {
-      const link = links.find(l => l.id === linkId);
-
-      await fetch(`/api/links/${linkId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      fetchLinks();
-    } catch (error) {
-      console.error('Error adding tag:', error);
-    }
-  };
+  const [filterFavorites, setFilterFavorites] = useState<
+    'all' | 'favorites' | 'non-favorites'
+  >('all');
 
   const toggleFavorite = async (linkSlug: string) => {
     try {
@@ -71,9 +58,9 @@ export function LinkList({
 
       if (response.ok) {
         // Update the local state immediately for better UX
-        setLinks(prevLinks => 
-          prevLinks.map(link => 
-            link.slug === linkSlug 
+        setLinks(prevLinks =>
+          prevLinks.map(link =>
+            link.slug === linkSlug
               ? { ...link, isFavorite: !link.isFavorite }
               : link
           )
@@ -84,6 +71,34 @@ export function LinkList({
     } catch (error) {
       console.error('Error toggling favorite:', error);
     }
+  };
+
+  const extendLinkTime = async (linkSlug: string, hours: number) => {
+    try {
+      const response = await fetch(`/api/links/${linkSlug}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ extendTime: hours }),
+      });
+
+      if (response.ok) {
+        // Refresh the links list to show updated expiration
+        fetchLinks();
+      } else {
+        console.error('Error extending link time');
+      }
+    } catch (error) {
+      console.error('Error extending link time:', error);
+    }
+  };
+
+  const isLinkExpired = (link: Link) => {
+    if (!link.isTemporary || !link.expiresAt) return false;
+    return new Date(link.expiresAt) < new Date();
+  };
+
+  const isTemporaryAndActive = (link: Link) => {
+    return link.isTemporary && link.expiresAt && !isLinkExpired(link);
   };
 
   // Keyboard shortcuts
@@ -228,7 +243,13 @@ export function LinkList({
         (filterFavorites === 'favorites' && link.isFavorite) ||
         (filterFavorites === 'non-favorites' && !link.isFavorite);
 
-      return matchesSearch && matchesStatus && matchesStats && matchesDate && matchesFavorites;
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesStats &&
+        matchesDate &&
+        matchesFavorites
+      );
     });
 
     // Sort links
@@ -476,7 +497,11 @@ export function LinkList({
               </label>
               <select
                 value={filterFavorites}
-                onChange={e => setFilterFavorites(e.target.value as 'all' | 'favorites' | 'non-favorites')}
+                onChange={e =>
+                  setFilterFavorites(
+                    e.target.value as 'all' | 'favorites' | 'non-favorites'
+                  )
+                }
                 className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
               >
                 <option value="all">Todos</option>
@@ -585,18 +610,26 @@ export function LinkList({
                           onClick={() => toggleFavorite(link.slug)}
                           variant="ghost"
                           size="sm"
-                          className={`p-1 h-auto ${link.isFavorite 
-                            ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
-                            : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                          className={`p-1 h-auto ${
+                            link.isFavorite
+                              ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
+                              : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
                           }`}
                         >
-                          <Star 
+                          <Star
                             className={`h-4 w-4 ${link.isFavorite ? 'fill-current' : ''}`}
                           />
                         </Button>
-                        <h3 className="font-medium text-card-foreground truncate">
-                          {link.title || 'Untitled Link'}
-                        </h3>
+                        <div className="flex items-center gap-1">
+                          <h3 className="font-medium text-card-foreground truncate">
+                            {link.title || 'Untitled Link'}
+                          </h3>
+                          {isTemporaryAndActive(link) && (
+                             <div title="Enlace temporal activo">
+                               <Clock className="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0" />
+                             </div>
+                           )}
+                        </div>
 
                         {link.isDisabledByAdmin && (
                           <div className="flex flex-col gap-1">
@@ -616,11 +649,54 @@ export function LinkList({
                             </a>
                           </div>
                         )}
-                        {!link.isActive && !link.isDisabledByAdmin && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
-                            Inactivo
-                          </span>
+                        {isLinkExpired(link) && (
+                          <div className="flex flex-col gap-1">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
+                              Expirado
+                            </span>
+                            <div className="text-xs text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/10 px-2 py-1 rounded border border-yellow-200 dark:border-yellow-800">
+                              <strong>Expiró:</strong>{' '}
+                              {link.expiresAt &&
+                                formatDistanceToNow(new Date(link.expiresAt), {
+                                  addSuffix: true,
+                                  locale: es,
+                                })}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                onClick={() => extendLinkTime(link.slug, 24)}
+                                size="sm"
+                                variant="outline"
+                                className="text-xs px-2 py-1 h-auto"
+                              >
+                                +24h
+                              </Button>
+                              <Button
+                                onClick={() => extendLinkTime(link.slug, 168)}
+                                size="sm"
+                                variant="outline"
+                                className="text-xs px-2 py-1 h-auto"
+                              >
+                                +7d
+                              </Button>
+                              <Button
+                                onClick={() => extendLinkTime(link.slug, 720)}
+                                size="sm"
+                                variant="outline"
+                                className="text-xs px-2 py-1 h-auto"
+                              >
+                                +30d
+                              </Button>
+                            </div>
+                          </div>
                         )}
+                        {!link.isActive &&
+                          !link.isDisabledByAdmin &&
+                          !isLinkExpired(link) && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
+                              Inactivo
+                            </span>
+                          )}
                         {link.isPublicStats && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
                             Estadísticas públicas
@@ -864,29 +940,45 @@ export function LinkList({
                         onClick={() => toggleFavorite(link.slug)}
                         variant="ghost"
                         size="sm"
-                        className={`p-1 h-auto mt-0.5 ${link.isFavorite 
-                          ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
-                          : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                        className={`p-1 h-auto mt-0.5 ${
+                          link.isFavorite
+                            ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
+                            : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
                         }`}
                       >
-                        <Star 
+                        <Star
                           className={`h-4 w-4 ${link.isFavorite ? 'fill-current' : ''}`}
                         />
                       </Button>
-                      <h3 className="font-semibold text-foreground text-sm line-clamp-2 flex-1">
-                        {link.title}
-                      </h3>
+                      <div className="flex items-center gap-1 flex-1">
+                        <h3 className="font-semibold text-foreground text-sm line-clamp-2 flex-1">
+                          {link.title || 'Untitle Link'}
+                        </h3>
+                        {isTemporaryAndActive(link) && (
+                           <div title="Enlace temporal activo">
+                             <Clock className="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0" />
+                           </div>
+                         )}
+                      </div>
                     </div>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                         link.isDisabledByAdmin
                           ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                          : link.isActive
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          : isLinkExpired(link)
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                            : link.isActive
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                       }`}
                     >
-                      {link.isDisabledByAdmin ? 'Deshabilitado por Admin' : link.isActive ? 'Activo' : 'Inactivo'}
+                      {link.isDisabledByAdmin
+                        ? 'Deshabilitado por Admin'
+                        : isLinkExpired(link)
+                          ? 'Expirado'
+                          : link.isActive
+                            ? 'Activo'
+                            : 'Inactivo'}
                     </span>
                   </div>
                   {link.isDisabledByAdmin && (
@@ -902,6 +994,44 @@ export function LinkList({
                       >
                         Contactar Soporte
                       </a>
+                    </div>
+                  )}
+                  {isLinkExpired(link) && (
+                    <div className="space-y-2">
+                      <div className="text-xs text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/10 px-2 py-1 rounded border border-yellow-200 dark:border-yellow-800">
+                        <strong>Enlace expirado:</strong>{' '}
+                        {link.expiresAt &&
+                          formatDistanceToNow(new Date(link.expiresAt), {
+                            addSuffix: true,
+                            locale: es,
+                          })}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          onClick={() => extendLinkTime(link.slug, 24)}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs px-2 py-1 h-auto"
+                        >
+                          +24h
+                        </Button>
+                        <Button
+                          onClick={() => extendLinkTime(link.slug, 168)}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs px-2 py-1 h-auto"
+                        >
+                          +7d
+                        </Button>
+                        <Button
+                          onClick={() => extendLinkTime(link.slug, 720)}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs px-2 py-1 h-auto"
+                        >
+                          +30d
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>

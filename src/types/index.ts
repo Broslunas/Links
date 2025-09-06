@@ -43,6 +43,9 @@ export interface Link {
   disabledReason?: string;
   isFavorite: boolean;
   clickCount: number;
+  isTemporary: boolean;
+  expiresAt?: string;
+  isExpired?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -81,6 +84,9 @@ export interface CreateLinkData {
   title?: string;
   description?: string;
   isPublicStats?: boolean;
+  isTemporary?: boolean;
+  expiresAt?: Date;
+  isExpired?: boolean;
 }
 
 export interface CreateLinkResponse extends Link {
@@ -94,6 +100,9 @@ export interface UpdateLinkData {
   description?: string;
   isPublicStats?: boolean;
   isActive?: boolean;
+  isTemporary?: boolean;
+  expiresAt?: Date;
+  isExpired?: boolean;
 }
 
 export interface AnalyticsData {
