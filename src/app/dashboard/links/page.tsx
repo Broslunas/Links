@@ -56,7 +56,7 @@ export default function LinksPage() {
     setDeleteLoading(true);
 
     try {
-      const response = await fetch(`/api/links/${deletingLink.id}`, {
+      const response = await fetch(`/api/links/${deletingLink.slug}`, {
         method: 'DELETE',
       });
 
