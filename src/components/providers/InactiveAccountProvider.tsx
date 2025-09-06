@@ -9,12 +9,12 @@ interface InactiveAccountProviderProps {
 }
 
 const InactiveAccountProvider: React.FC<InactiveAccountProviderProps> = ({ children }) => {
-  const { shouldShowModal } = useInactiveAccountCheck();
+  const { shouldShowModal, closeModal } = useInactiveAccountCheck();
 
   return (
     <>
       {children}
-      <InactiveAccountModal isOpen={shouldShowModal} />
+      <InactiveAccountModal isOpen={shouldShowModal} onClose={closeModal} />
     </>
   );
 };

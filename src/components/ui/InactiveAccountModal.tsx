@@ -7,10 +7,12 @@ import { AlertTriangle, Settings, Home, Mail } from 'lucide-react';
 
 interface InactiveAccountModalProps {
   isOpen: boolean;
+  onClose?: () => void;
 }
 
 const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({
   isOpen,
+  onClose,
 }) => {
   const router = useRouter();
 
@@ -33,7 +35,7 @@ const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({
             <div className="flex-shrink-0">
               <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Cuenta Inactiva
               </h2>
@@ -41,6 +43,17 @@ const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({
                 Tu cuenta ha sido desactivada
               </p>
             </div>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                aria-label="Cerrar modal"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Content */}
@@ -70,15 +83,27 @@ const InactiveAccountModal: React.FC<InactiveAccountModalProps> = ({
                 Ir a Configuración
               </Button>
 
-              <Button
-                onClick={() => handleNavigation('/')}
-                variant="outline"
-                className="w-full flex items-center justify-center gap-2"
-                size="lg"
-              >
-                <Home className="h-4 w-4" />
-                Página Principal
-              </Button>
+              {onClose ? (
+                <Button
+                  onClick={onClose}
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2"
+                  size="lg"
+                >
+                  <Home className="h-4 w-4" />
+                  Cerrar
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => handleNavigation('/')}
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2"
+                  size="lg"
+                >
+                  <Home className="h-4 w-4" />
+                  Página Principal
+                </Button>
+              )}
 
               <Button
                 onClick={() => handleNavigation('/contacto')}

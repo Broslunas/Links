@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 interface UseInactiveAccountCheckReturn {
   isAccountInactive: boolean;
   shouldShowModal: boolean;
   isLoading: boolean;
+  closeModal: () => void;
 }
 
 // Rutas permitidas cuando la cuenta está inactiva
@@ -40,8 +41,11 @@ const isRouteAllowed = (pathname: string): boolean => {
 export const useInactiveAccountCheck = (): UseInactiveAccountCheckReturn => {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isAccountInactive, setIsAccountInactive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const checkAccountStatus = async () => {
@@ -58,7 +62,22 @@ export const useInactiveAccountCheck = (): UseInactiveAccountCheckReturn => {
         if (response.ok) {
           const data = await response.json();
           const userIsActive = data.isActive ?? true; // Por defecto true si no está definido
-          setIsAccountInactive(!userIsActive);
+          const isInactive = !userIsActive;
+          setIsAccountInactive(isInactive);
+          
+          // Si el usuario está inactivo y está en una ruta protegida, redirigir
+          if (isInactive && !isRouteAllowed(pathname)) {
+            // Verificar si viene del dashboard
+            const fromDashboard = pathname.startsWith('/dashboard');
+            
+            if (fromDashboard) {
+              // Redirigir a home con parámetro para mostrar modal
+              router.push('/?blocked=dashboard');
+            } else {
+              // Solo redirigir sin mostrar modal
+              router.push('/');
+            }
+          }
         } else {
           // Si hay error en la petición, asumir que la cuenta está activa
           setIsAccountInactive(false);
@@ -73,20 +92,31 @@ export const useInactiveAccountCheck = (): UseInactiveAccountCheckReturn => {
     };
 
     checkAccountStatus();
-  }, [session, status]);
+  }, [session, status, pathname, router]);
 
-  // Determinar si se debe mostrar el modal
-  const shouldShowModal = !!(
-    isAccountInactive &&
-    !isLoading &&
-    status === 'authenticated' &&
-    pathname &&
-    !isRouteAllowed(pathname)
-  );
+  // Verificar si se debe mostrar el modal basado en parámetros URL
+  useEffect(() => {
+    const blocked = searchParams.get('blocked');
+    if (blocked === 'dashboard' && isAccountInactive && pathname === '/') {
+      setShowModal(true);
+    }
+  }, [searchParams, isAccountInactive, pathname]);
+
+  const closeModal = () => {
+    setShowModal(false);
+    // Limpiar el parámetro de la URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('blocked');
+    router.replace(url.pathname + url.search);
+  };
+
+  // Solo mostrar modal si estamos en home y viene de dashboard
+  const shouldShowModal = showModal && pathname === '/' && isAccountInactive;
 
   return {
     isAccountInactive,
     shouldShowModal,
     isLoading,
+    closeModal,
   };
 };
