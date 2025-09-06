@@ -27,6 +27,8 @@ export function LinkEditor({
     description: '',
     isPublicStats: false,
     isActive: true,
+    isTemporary: false,
+    expiresAt: '',
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,6 +43,8 @@ export function LinkEditor({
         description: link.description || '',
         isPublicStats: link.isPublicStats,
         isActive: link.isActive,
+        isTemporary: link.isTemporary || false,
+        expiresAt: link.expiresAt ? new Date(link.expiresAt).toISOString().slice(0, 16) : '',
       });
       setErrors({});
     }
@@ -83,6 +87,19 @@ export function LinkEditor({
       newErrors.description = 'Description must be 500 characters or less';
     }
 
+    // Validación para enlaces temporales
+    if (formData.isTemporary) {
+      if (!formData.expiresAt) {
+        newErrors.expiresAt = 'La fecha de expiración es requerida para enlaces temporales';
+      } else {
+        const expirationDate = new Date(formData.expiresAt);
+        const now = new Date();
+        if (expirationDate <= now) {
+          newErrors.expiresAt = 'La fecha de expiración debe ser futura';
+        }
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -102,6 +119,8 @@ export function LinkEditor({
         description: formData.description.trim() || undefined,
         isPublicStats: formData.isPublicStats,
         isActive: formData.isActive,
+        isTemporary: formData.isTemporary,
+        expiresAt: formData.isTemporary && formData.expiresAt ? new Date(formData.expiresAt) : undefined,
       };
 
       const response = await fetch(`/api/links/${link.slug}`, {
@@ -279,6 +298,65 @@ export function LinkEditor({
                 Permitir que otros vean estadísticas agregadas para este enlace
               </p>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Enlace temporal
+              </label>
+              <Button
+                type="button"
+                onClick={() => {
+                  const newIsTemporary = !formData.isTemporary;
+                  handleInputChange('isTemporary', newIsTemporary);
+                  // Si se desactiva el enlace temporal, limpiar la fecha de expiración
+                  if (!newIsTemporary) {
+                    handleInputChange('expiresAt', '');
+                  }
+                }}
+                disabled={loading}
+                variant={formData.isTemporary ? 'default' : 'outline'}
+                className={`w-full justify-center ${
+                  formData.isTemporary
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                    : 'text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-900/20'
+                }`}
+              >
+                {formData.isTemporary ? '⏰ Enlace Temporal' : '🔗 Enlace Permanente'}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1">
+                Los enlaces temporales se desactivan automáticamente después de la fecha de expiración
+              </p>
+            </div>
+
+            {formData.isTemporary && (
+              <div>
+                <label
+                  htmlFor="expiresAt"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
+                  Fecha y hora de expiración *
+                </label>
+                <input
+                  id="expiresAt"
+                  type="datetime-local"
+                  value={formData.expiresAt}
+                  onChange={e => handleInputChange('expiresAt', e.target.value)}
+                  disabled={loading}
+                  min={new Date().toISOString().slice(0, 16)}
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
+                    errors.expiresAt
+                      ? 'border-red-300 focus:ring-red-500'
+                      : 'border-input bg-background text-foreground'
+                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                />
+                {errors.expiresAt && (
+                  <p className="text-red-500 text-xs mt-1">{errors.expiresAt}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  El enlace dejará de funcionar después de esta fecha y hora
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
