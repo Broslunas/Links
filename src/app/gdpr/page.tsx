@@ -393,10 +393,11 @@ const GDPRPage: React.FC = () => (
                 Para cualquier consulta sobre GDPR o protección de datos:
               </p>
               <a
-                href="mailto:pablo@broslunas.com"
+                href="/contacto"
+                target="_blank"
                 className="inline-flex items-center px-6 py-3 bg-white text-green-600 font-semibold rounded-xl hover:bg-green-50 transition-colors duration-200 shadow-lg"
               >
-                📧 pablo@broslunas.com
+                Contactar con Soporte
               </a>
               <p className="mt-6 text-green-100 text-sm">
                 Última actualización: {new Date().toLocaleDateString('es-ES')}
