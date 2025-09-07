@@ -16,7 +16,7 @@ export default function SignInPageClient() {
             Inicia sesión en tu cuenta
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Usa tu cuenta de GitHub, Google o Discord para acceder
+            Usa tu cuenta de GitHub, Google, Discord o Twitch para acceder
           </p>
         </div>
         <SignInForm />
