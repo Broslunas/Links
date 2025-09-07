@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 import { Button, Input, LoadingSpinner } from '../../../components/ui';
 import { ThemeToggle } from '../../../components/ui/ThemeToggle';
 import { useToast } from '../../../hooks/useToast';
@@ -15,6 +16,7 @@ import {
 interface UserSettings {
   name: string;
   email: string;
+  image?: string;
   defaultPublicStats: boolean;
   emailNotifications: boolean;
 }
@@ -28,9 +30,13 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings>({
     name: '',
     email: '',
+    image: '',
     defaultPublicStats: false,
     emailNotifications: true,
   });
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [originalPreferences, setOriginalPreferences] = useState({
     defaultPublicStats: false,
     emailNotifications: true,
@@ -51,7 +57,9 @@ export default function SettingsPage() {
         ...prev,
         name: session.user.name || '',
         email: session.user.email || '',
+        image: session.user.image || '',
       }));
+      setImagePreview(session.user.image || '');
     }
   }, [session]);
 
@@ -84,6 +92,51 @@ export default function SettingsPage() {
     loadPreferences();
   }, [session]);
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      error('Por favor selecciona un archivo de imagen válido');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      error('La imagen debe ser menor a 5MB');
+      return;
+    }
+
+    setImageUploading(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64String = e.target?.result as string;
+        setImagePreview(base64String);
+        setSettings(prev => ({ ...prev, image: base64String }));
+        setImageUploading(false);
+      };
+      reader.onerror = () => {
+        error('Error al procesar la imagen');
+        setImageUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      error('Error al subir la imagen');
+      setImageUploading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview('');
+    setSettings(prev => ({ ...prev, image: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSaveSettings = async () => {
     setSaving(true);
 
@@ -94,6 +147,11 @@ export default function SettingsPage() {
       // Check if name changed
       if (settings.name !== session?.user?.name) {
         updateData.name = settings.name;
+      }
+
+      // Check if image changed
+      if (settings.image !== session?.user?.image) {
+        updateData.image = settings.image;
       }
 
       // Always include preferences (they might have changed)
@@ -117,13 +175,14 @@ export default function SettingsPage() {
           );
         }
 
-        // Update session with new name if it changed
-        if (updateData.name) {
+        // Update session with new data if it changed
+        if (updateData.name || updateData.image) {
           await update({
             ...session,
             user: {
               ...session?.user,
               name: settings.name,
+              image: settings.image,
             },
           });
         }
@@ -306,6 +365,7 @@ export default function SettingsPage() {
               disabled={
                 saving ||
                 (settings.name === session?.user?.name &&
+                  settings.image === session?.user?.image &&
                   settings.defaultPublicStats ===
                     originalPreferences.defaultPublicStats &&
                   settings.emailNotifications ===
@@ -325,7 +385,66 @@ export default function SettingsPage() {
             </Button>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Profile Image Section */}
+            <div className="flex flex-col items-center space-y-4 pb-6 border-b border-border">
+              <div className="relative">
+                {imagePreview ? (
+                  <Image
+                    src={imagePreview}
+                    alt="Imagen de perfil"
+                    width={120}
+                    height={120}
+                    className="h-32 w-32 rounded-full object-cover border-4 border-border"
+                  />
+                ) : (
+                  <div className="h-32 w-32 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center border-4 border-border">
+                    <svg className="h-16 w-16 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+                {imageUploading && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                    <LoadingSpinner size="sm" className="text-white" />
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex flex-col items-center space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={imageUploading}
+                >
+                  {imageUploading ? 'Subiendo...' : 'Cambiar imagen'}
+                </Button>
+                {imagePreview && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveImage}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    Eliminar imagen
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground text-center">
+                  JPG, PNG o GIF. Máximo 5MB.
+                </p>
+              </div>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label
