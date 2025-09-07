@@ -7,7 +7,7 @@ declare module 'next-auth' {
             email: string;
             name: string;
             image?: string;
-            provider: 'github' | 'google' | 'discord';
+            provider: 'github' | 'google' | 'discord' | 'twitch';
             role: 'user' | 'admin';
         };
     }
@@ -17,7 +17,7 @@ declare module 'next-auth' {
         email: string;
         name: string;
         image?: string;
-        provider: 'github' | 'google' | 'discord';
+        provider: 'github' | 'google' | 'discord' | 'twitch';
         role: 'user' | 'admin';
     }
 }
@@ -28,7 +28,7 @@ declare module 'next-auth/jwt' {
         email: string;
         name: string;
         image?: string;
-        provider: 'github' | 'google' | 'discord';
+        provider: 'github' | 'google' | 'discord' | 'twitch';
         role: 'user' | 'admin';
     }
 }

@@ -3,7 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { FaGithub, FaGoogle, FaDiscord } from 'react-icons/fa';
+import { FaGithub, FaGoogle, FaDiscord, FaTwitch } from 'react-icons/fa';
 
 export default function SignInForm() {
   const [isLoading, setIsLoading] = useState<string | null>(null);
@@ -11,7 +11,7 @@ export default function SignInForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
 
-  const handleSignIn = async (provider: 'github' | 'google' | 'discord') => {
+  const handleSignIn = async (provider: 'github' | 'google' | 'discord' | 'twitch') => {
     setIsLoading(provider);
     setError(null);
 
@@ -87,6 +87,24 @@ export default function SignInForm() {
           </div>
         ) : (
           'Continuar con Discord'
+        )}
+      </button>
+
+      <button
+        onClick={() => handleSignIn('twitch')}
+        disabled={isLoading !== null}
+        className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+          <FaTwitch className="h-5 w-5" />
+        </span>
+        {isLoading === 'twitch' ? (
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            Conectando...
+          </div>
+        ) : (
+          'Continuar con Twitch'
         )}
       </button>
 

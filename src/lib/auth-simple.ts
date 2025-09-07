@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth';
 import GithubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
 import DiscordProvider from 'next-auth/providers/discord';
+import TwitchProvider from 'next-auth/providers/twitch';
 import { connectDB } from './db-utils';
 import User from '../models/User';
 import { sendSubscriptionWebhook } from './newsletter-webhook';
@@ -28,6 +29,10 @@ export const authOptions: NextAuthOptions = {
           scope: 'identify email',
         },
       },
+    }),
+    TwitchProvider({
+      clientId: process.env.TWITCH_CLIENT_ID!,
+      clientSecret: process.env.TWITCH_CLIENT_SECRET!,
     }),
   ],
   pages: {
@@ -59,7 +64,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name || '',
           image: user.image,
-          provider: account.provider as 'github' | 'google' | 'discord',
+          provider: account.provider as 'github' | 'google' | 'discord' | 'twitch',
           providerId: account.providerAccountId,
         };
 
@@ -85,6 +90,30 @@ export const authOptions: NextAuthOptions = {
             accent_color: discordProfile.accent_color,
             premium_type: discordProfile.premium_type,
             public_flags: discordProfile.public_flags,
+          };
+        }
+
+        // Add Twitch-specific data if available
+        if (account.provider === 'twitch' && profile) {
+          const twitchProfile = profile as any;
+
+          userData.twitchUsername = twitchProfile.login;
+          userData.twitchDisplayName = twitchProfile.display_name;
+          userData.twitchBroadcasterType = twitchProfile.broadcaster_type;
+          userData.twitchDescription = twitchProfile.description;
+          userData.twitchViewCount = twitchProfile.view_count;
+
+          // Store complete profile data for future reference
+          userData.providerData = {
+            login: twitchProfile.login,
+            display_name: twitchProfile.display_name,
+            type: twitchProfile.type,
+            broadcaster_type: twitchProfile.broadcaster_type,
+            description: twitchProfile.description,
+            profile_image_url: twitchProfile.profile_image_url,
+            offline_image_url: twitchProfile.offline_image_url,
+            view_count: twitchProfile.view_count,
+            created_at: twitchProfile.created_at,
           };
         }
 
@@ -115,6 +144,18 @@ export const authOptions: NextAuthOptions = {
             existingUser.discordGlobalName = discordProfile.global_name;
             existingUser.discordVerified = discordProfile.verified;
             existingUser.discordLocale = discordProfile.locale;
+            existingUser.providerData = userData.providerData;
+          }
+
+          // Update Twitch-specific fields if this is a Twitch login
+          if (account.provider === 'twitch' && profile) {
+            const twitchProfile = profile as any;
+
+            existingUser.twitchUsername = twitchProfile.login;
+            existingUser.twitchDisplayName = twitchProfile.display_name;
+            existingUser.twitchBroadcasterType = twitchProfile.broadcaster_type;
+            existingUser.twitchDescription = twitchProfile.description;
+            existingUser.twitchViewCount = twitchProfile.view_count;
             existingUser.providerData = userData.providerData;
           }
         }
@@ -158,7 +199,7 @@ export const authOptions: NextAuthOptions = {
           token.email = user.email;
           token.name = user.name;
           token.image = user.image;
-          token.provider = account.provider as 'github' | 'google' | 'discord';
+          token.provider = account.provider as 'github' | 'google' | 'discord' | 'twitch';
         }
       }
       
@@ -189,7 +230,8 @@ export const authOptions: NextAuthOptions = {
         session.user.provider = token.provider as
           | 'github'
           | 'google'
-          | 'discord';
+          | 'discord'
+          | 'twitch';
         session.user.role = (token.role as 'user' | 'admin') || 'user'; // Include role
       }
       return session;
