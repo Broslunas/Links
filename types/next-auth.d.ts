@@ -26,9 +26,7 @@ declare module 'next-auth/jwt' {
     interface JWT {
         id: string;
         email: string;
-        name: string;
-        image?: string;
-        provider: 'github' | 'google' | 'discord' | 'twitch';
         role: 'user' | 'admin';
+        lastUpdated?: number;
     }
 }

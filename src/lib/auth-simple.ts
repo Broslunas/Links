@@ -11,7 +11,25 @@ export const authOptions: NextAuthOptions = {
   // Use JWT strategy instead of database adapter to avoid connection issues
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours - only update session once per day
   },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 30 * 24 * 60 * 60 // 30 days
+      }
+    }
+  },
+  useSecureCookies: process.env.NODE_ENV === 'production',
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
@@ -68,53 +86,17 @@ export const authOptions: NextAuthOptions = {
           providerId: account.providerAccountId,
         };
 
-        // Add Discord-specific data if available
+        // Store minimal provider-specific data to reduce database size
         if (account.provider === 'discord' && profile) {
           const discordProfile = profile as any;
-
           userData.discordUsername = discordProfile.username;
-          userData.discordDiscriminator = discordProfile.discriminator;
           userData.discordGlobalName = discordProfile.global_name;
-          userData.discordVerified = discordProfile.verified;
-          userData.discordLocale = discordProfile.locale;
-
-          // Store complete profile data for future reference
-          userData.providerData = {
-            username: discordProfile.username,
-            discriminator: discordProfile.discriminator,
-            global_name: discordProfile.global_name,
-            verified: discordProfile.verified,
-            locale: discordProfile.locale,
-            avatar: discordProfile.avatar,
-            banner: discordProfile.banner,
-            accent_color: discordProfile.accent_color,
-            premium_type: discordProfile.premium_type,
-            public_flags: discordProfile.public_flags,
-          };
         }
 
-        // Add Twitch-specific data if available
         if (account.provider === 'twitch' && profile) {
           const twitchProfile = profile as any;
-
           userData.twitchUsername = twitchProfile.login;
           userData.twitchDisplayName = twitchProfile.display_name;
-          userData.twitchBroadcasterType = twitchProfile.broadcaster_type;
-          userData.twitchDescription = twitchProfile.description;
-          userData.twitchViewCount = twitchProfile.view_count;
-
-          // Store complete profile data for future reference
-          userData.providerData = {
-            login: twitchProfile.login,
-            display_name: twitchProfile.display_name,
-            type: twitchProfile.type,
-            broadcaster_type: twitchProfile.broadcaster_type,
-            description: twitchProfile.description,
-            profile_image_url: twitchProfile.profile_image_url,
-            offline_image_url: twitchProfile.offline_image_url,
-            view_count: twitchProfile.view_count,
-            created_at: twitchProfile.created_at,
-          };
         }
 
         if (!existingUser) {
@@ -135,28 +117,17 @@ export const authOptions: NextAuthOptions = {
           existingUser.name = user.name || existingUser.name;
           existingUser.image = user.image || existingUser.image;
 
-          // Update Discord-specific fields if this is a Discord login
+          // Update minimal provider-specific fields
           if (account.provider === 'discord' && profile) {
             const discordProfile = profile as any;
-
             existingUser.discordUsername = discordProfile.username;
-            existingUser.discordDiscriminator = discordProfile.discriminator;
             existingUser.discordGlobalName = discordProfile.global_name;
-            existingUser.discordVerified = discordProfile.verified;
-            existingUser.discordLocale = discordProfile.locale;
-            existingUser.providerData = userData.providerData;
           }
 
-          // Update Twitch-specific fields if this is a Twitch login
           if (account.provider === 'twitch' && profile) {
             const twitchProfile = profile as any;
-
             existingUser.twitchUsername = twitchProfile.login;
             existingUser.twitchDisplayName = twitchProfile.display_name;
-            existingUser.twitchBroadcasterType = twitchProfile.broadcaster_type;
-            existingUser.twitchDescription = twitchProfile.description;
-            existingUser.twitchViewCount = twitchProfile.view_count;
-            existingUser.providerData = userData.providerData;
           }
         }
 
@@ -168,7 +139,7 @@ export const authOptions: NextAuthOptions = {
       }
     },
     async jwt({ token, user, account, trigger }) {
-      // On initial sign in, persist user info in JWT token
+      // On initial sign in, store minimal data in JWT token to reduce cookie size
       if (user && account) {
         try {
           await connectDB();
@@ -185,33 +156,30 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (dbUser) {
-            token.id = dbUser._id.toString(); // Use our MongoDB ObjectId
+            // Store only essential data to minimize cookie size
+            token.id = dbUser._id.toString();
             token.email = dbUser.email;
-            token.name = dbUser.name;
-            token.image = dbUser.image;
-            token.provider = dbUser.provider;
-            token.role = dbUser.role || 'user'; // Include role with default
+            token.role = dbUser.role || 'user';
+            token.lastUpdated = Date.now();
           }
         } catch (error) {
           console.error('Error in JWT callback:', error);
-          // Fallback to original values if database lookup fails
+          // Fallback to minimal data
           token.id = user.id;
           token.email = user.email;
-          token.name = user.name;
-          token.image = user.image;
-          token.provider = account.provider as 'github' | 'google' | 'discord' | 'twitch';
+          token.role = 'user';
+          token.lastUpdated = Date.now();
         }
       }
       
-      // On session update or every request, refresh user data from database
-      if (trigger === 'update' || (!user && token.email)) {
+      // Only refresh role on explicit update trigger
+      if (trigger === 'update' && token.email && !user) {
         try {
           await connectDB();
           const dbUser = await User.findOne({ email: token.email });
           if (dbUser) {
-            token.name = dbUser.name;
-            token.image = dbUser.image;
-            token.role = dbUser.role || 'user'; // Include role with default
+            token.role = dbUser.role || 'user';
+            token.lastUpdated = Date.now();
           }
         } catch (error) {
           console.error('Error refreshing user data in JWT callback:', error);
@@ -221,18 +189,30 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      // Send properties to the client
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.email = token.email as string;
-        session.user.name = token.name as string;
-        session.user.image = token.image as string;
-        session.user.provider = token.provider as
-          | 'github'
-          | 'google'
-          | 'discord'
-          | 'twitch';
-        session.user.role = (token.role as 'user' | 'admin') || 'user'; // Include role
+      // Fetch user data from database for session to minimize JWT size
+      if (token && token.id) {
+        try {
+          await connectDB();
+          const dbUser = await User.findById(token.id);
+          
+          if (dbUser) {
+            session.user.id = token.id as string;
+            session.user.email = token.email as string;
+            session.user.name = dbUser.name || '';
+            session.user.image = dbUser.image || '';
+            session.user.provider = dbUser.provider;
+            session.user.role = (token.role as 'user' | 'admin') || 'user';
+          }
+        } catch (error) {
+          console.error('Error fetching user data for session:', error);
+          // Fallback to token data
+          session.user.id = token.id as string;
+          session.user.email = token.email as string;
+          session.user.name = '';
+          session.user.image = '';
+          session.user.provider = 'github'; // Default fallback
+          session.user.role = (token.role as 'user' | 'admin') || 'user';
+        }
       }
       return session;
     },
