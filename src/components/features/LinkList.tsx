@@ -42,6 +42,29 @@ export function LinkList({
   const [filterByTag, setFilterByTag] = useState<string>('');
 
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [isMobile, setIsMobile] = useState(false);
+  const [isVerySmallScreen, setIsVerySmallScreen] = useState(false);
+
+  // Check if screen is mobile size
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 1100); // md breakpoint
+      setIsVerySmallScreen(width < 640); // sm breakpoint for very small screens
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // Force table view (cards/grid) on mobile or very small screens
+  useEffect(() => {
+    if ((isMobile || isVerySmallScreen) && viewMode === 'cards') {
+      setViewMode('table');
+    }
+  }, [isMobile, isVerySmallScreen, viewMode]);
   const [dateFilter, setDateFilter] = useState<
     'all' | 'today' | 'week' | 'month'
   >('all');
@@ -410,29 +433,31 @@ export function LinkList({
               />
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewMode('cards')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'cards'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-background text-foreground border border-border hover:bg-accent'
-                }`}
-              >
-                Lista
-              </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'table'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-background text-foreground border border-border hover:bg-accent'
-                }`}
-              >
-                Tarjeta
-              </button>
-            </div>
+            {/* View Mode Toggle - Hide completely on mobile and very small screens */}
+            {!isMobile && !isVerySmallScreen && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'cards'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background text-foreground border border-border hover:bg-accent'
+                  }`}
+                >
+                  Lista
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'table'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background text-foreground border border-border hover:bg-accent'
+                  }`}
+                >
+                  Tarjetas
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Filters Row */}
