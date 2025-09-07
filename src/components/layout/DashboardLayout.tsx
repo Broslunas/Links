@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Sidebar } from './Sidebar';
+import UserProfileEditModal from '../dashboard/UserProfileEditModal';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     return false;
   });
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -213,23 +215,35 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
               {/* User menu */}
               <div className="flex items-center space-x-3">
-                {session?.user?.image && (
-                  <Image
-                    src={session.user.image}
-                    alt={session.user.name || 'User'}
-                    width={32}
-                    height={32}
-                    className="h-8 w-8 rounded-full"
-                  />
-                )}
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-foreground">
-                    {session?.user?.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {session?.user?.email}
-                  </p>
-                </div>
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  title="Editar perfil"
+                >
+                  {session?.user?.image ? (
+                    <Image
+                      src={session.user.image}
+                      alt={session.user.name || 'User'}
+                      width={32}
+                      height={32}
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                      <svg className="h-5 w-5 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="hidden sm:block text-left">
+                    <p className="text-sm font-medium text-foreground">
+                      {session?.user?.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {session?.user?.email}
+                    </p>
+                  </div>
+                </button>
 
                 {/* Logout button */}
                 <Button
@@ -266,6 +280,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           <div className="px-4 py-8 sm:px-6 lg:px-8">{children}</div>
         </main>
       </div>
+
+      {/* User Profile Edit Modal */}
+      <UserProfileEditModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onProfileUpdate={() => {
+          // Refresh the session to get updated user data
+          window.location.reload();
+        }}
+      />
     </div>
   );
 };

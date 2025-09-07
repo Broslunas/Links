@@ -27,7 +27,7 @@ export async function PUT(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { name, defaultPublicStats, emailNotifications } = body;
+    const { name, image, defaultPublicStats, emailNotifications } = body;
 
     // Validate name if provided
     if (name !== undefined) {
@@ -55,6 +55,53 @@ export async function PUT(request: NextRequest) {
             error: {
               code: 'VALIDATION_ERROR',
               message: 'Name must be 100 characters or less',
+            },
+            timestamp: new Date().toISOString(),
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate image if provided
+    if (image !== undefined) {
+      if (typeof image !== 'string') {
+        return NextResponse.json<ApiResponse>(
+          {
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Image must be a valid base64 string',
+            },
+            timestamp: new Date().toISOString(),
+          },
+          { status: 400 }
+        );
+      }
+
+      // Validate base64 format and size (max 5MB)
+      if (image && !image.startsWith('data:image/')) {
+        return NextResponse.json<ApiResponse>(
+          {
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Image must be a valid base64 data URL',
+            },
+            timestamp: new Date().toISOString(),
+          },
+          { status: 400 }
+        );
+      }
+
+      // Check image size (approximate base64 size check)
+      if (image && image.length > 7000000) { // ~5MB in base64
+        return NextResponse.json<ApiResponse>(
+          {
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Image size must be less than 5MB',
             },
             timestamp: new Date().toISOString(),
           },
@@ -112,6 +159,9 @@ export async function PUT(request: NextRequest) {
     if (name !== undefined) {
       user.name = name.trim();
     }
+    if (image !== undefined) {
+      user.image = image;
+    }
     if (defaultPublicStats !== undefined) {
       user.defaultPublicStats = defaultPublicStats;
     }
@@ -126,6 +176,7 @@ export async function PUT(request: NextRequest) {
         success: true,
         data: {
           name: user.name,
+          image: user.image,
           defaultPublicStats: user.defaultPublicStats,
           emailNotifications: user.emailNotifications,
           message: 'Profile updated successfully',
