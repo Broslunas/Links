@@ -5,7 +5,7 @@ export interface User {
   email: string;
   name: string;
   image?: string;
-  provider: 'github' | 'google' | 'discord';
+  provider: 'github' | 'google' | 'discord' | 'twitch';
   providerId: string;
   // Discord-specific fields
   discordUsername?: string;

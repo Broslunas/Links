@@ -4,7 +4,7 @@ export interface IUser extends Document {
     email: string;
     name: string;
     image?: string;
-    provider: 'github' | 'google' | 'discord';
+    provider: 'github' | 'google' | 'discord' | 'twitch';
     providerId: string;
     role: 'user' | 'admin';
     isActive?: boolean;

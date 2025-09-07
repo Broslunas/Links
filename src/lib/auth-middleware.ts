@@ -14,7 +14,7 @@ export interface AuthContext {
     id: string;
     email?: string | null;
     name?: string | null;
-    provider?: 'github' | 'google' | 'discord';
+    provider?: 'github' | 'google' | 'discord' | 'twitch';
     role?: 'user' | 'admin';
   };
   authMethod: 'session' | 'api_token';
@@ -23,19 +23,19 @@ export interface AuthContext {
 /**
  * Middleware para autenticar requests usando sesión o API token
  */
-export async function authenticateRequest(request: NextRequest): Promise<AuthContext> {
+export async function authenticateRequest(
+  request: NextRequest
+): Promise<AuthContext> {
   // Intentar autenticación por API token primero
   const authHeader = request.headers.get('authorization');
-  const apiToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const apiToken = authHeader?.startsWith('Bearer ')
+    ? authHeader.slice(7)
+    : null;
 
   if (apiToken) {
     const user = await validateApiToken(apiToken);
     if (!user) {
-      throw new AppError(
-        ErrorCode.INVALID_TOKEN,
-        'Invalid API token',
-        401
-      );
+      throw new AppError(ErrorCode.INVALID_TOKEN, 'Invalid API token', 401);
     }
 
     // Update lastUsedAt timestamp for the API token
@@ -48,9 +48,9 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthCon
         email: user.email,
         name: user.name,
         provider: user.provider,
-        role: user.role || 'user'
+        role: user.role || 'user',
       },
-      authMethod: 'api_token'
+      authMethod: 'api_token',
     };
   }
 
@@ -59,21 +59,15 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthCon
   const userValidation = validateUserSession(session);
 
   if (!userValidation.isValid || !userValidation.userId) {
-    throw new AppError(
-      ErrorCode.UNAUTHORIZED,
-      'Authentication required',
-      401
-    );
+    throw new AppError(ErrorCode.UNAUTHORIZED, 'Authentication required', 401);
   }
 
   // Obtener el usuario completo de la base de datos para incluir el rol
-  const dbUser = await User.findById(userValidation.userId).lean() as IUser | null;
+  const dbUser = (await User.findById(
+    userValidation.userId
+  ).lean()) as IUser | null;
   if (!dbUser) {
-    throw new AppError(
-      ErrorCode.UNAUTHORIZED,
-      'User not found',
-      401
-    );
+    throw new AppError(ErrorCode.UNAUTHORIZED, 'User not found', 401);
   }
 
   return {
@@ -83,9 +77,9 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthCon
       email: session!.user.email,
       name: session!.user.name,
       provider: session!.user.provider || 'github',
-      role: dbUser.role || 'user'
+      role: dbUser.role || 'user',
     },
-    authMethod: 'session'
+    authMethod: 'session',
   };
 }
 
@@ -93,7 +87,11 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthCon
  * Wrapper para endpoints que requieren autenticación
  */
 export function withAuth<T extends any[]>(
-  handler: (request: NextRequest, auth: AuthContext, ...args: T) => Promise<Response>
+  handler: (
+    request: NextRequest,
+    auth: AuthContext,
+    ...args: T
+  ) => Promise<Response>
 ) {
   return async (request: NextRequest, ...args: T): Promise<Response> => {
     try {
@@ -106,11 +104,7 @@ export function withAuth<T extends any[]>(
 
       console.error('[Auth Middleware Error]:', error);
       return createErrorResponse(
-        new AppError(
-          ErrorCode.INTERNAL_ERROR,
-          'Authentication failed',
-          500
-        )
+        new AppError(ErrorCode.INTERNAL_ERROR, 'Authentication failed', 500)
       );
     }
   };
@@ -119,7 +113,10 @@ export function withAuth<T extends any[]>(
 /**
  * Verificar si el usuario autenticado es propietario del recurso
  */
-export function verifyResourceOwnership(authUserId: string, resourceUserId: string): void {
+export function verifyResourceOwnership(
+  authUserId: string,
+  resourceUserId: string
+): void {
   if (authUserId !== resourceUserId) {
     throw new AppError(
       ErrorCode.FORBIDDEN,
@@ -133,7 +130,10 @@ export function verifyResourceOwnership(authUserId: string, resourceUserId: stri
  * Verificar si el usuario autenticado puede acceder al recurso a través de la API
  * Específicamente diseñado para endpoints de API pública
  */
-export function verifyApiResourceOwnership(authUserId: string, resourceUserId: string): void {
+export function verifyApiResourceOwnership(
+  authUserId: string,
+  resourceUserId: string
+): void {
   if (authUserId !== resourceUserId) {
     throw new AppError(
       ErrorCode.FORBIDDEN,
@@ -147,16 +147,15 @@ export function verifyApiResourceOwnership(authUserId: string, resourceUserId: s
  * Verificar si el usuario autenticado es propietario de un enlace específico
  * Busca el enlace en la base de datos y verifica la propiedad
  */
-export async function verifyLinkOwnership(authUserId: string, linkId: string): Promise<void> {
+export async function verifyLinkOwnership(
+  authUserId: string,
+  linkId: string
+): Promise<void> {
   try {
     const link = await Link.findById(linkId);
 
     if (!link) {
-      throw new AppError(
-        ErrorCode.LINK_NOT_FOUND,
-        'Link not found',
-        404
-      );
+      throw new AppError(ErrorCode.LINK_NOT_FOUND, 'Link not found', 404);
     }
 
     if (link.userId.toString() !== authUserId) {
@@ -192,7 +191,10 @@ export async function verifyLinkOwnership(authUserId: string, linkId: string): P
  * Verificar si el usuario autenticado es propietario de un enlace por slug
  * Busca el enlace por slug y verifica la propiedad
  */
-export async function verifyLinkOwnershipBySlug(authUserId: string, slug: string): Promise<void> {
+export async function verifyLinkOwnershipBySlug(
+  authUserId: string,
+  slug: string
+): Promise<void> {
   try {
     const link = await Link.findOne({ slug });
 
@@ -230,13 +232,9 @@ export async function verifyLinkOwnershipBySlug(authUserId: string, slug: string
 export async function verifyAdminRole(authUserId: string): Promise<void> {
   try {
     const user = await User.findById(authUserId);
-    
+
     if (!user) {
-      throw new AppError(
-        ErrorCode.NOT_FOUND,
-        'User not found',
-        404
-      );
+      throw new AppError(ErrorCode.NOT_FOUND, 'User not found', 404);
     }
 
     if (user.role !== 'admin') {
@@ -263,16 +261,20 @@ export async function verifyAdminRole(authUserId: string): Promise<void> {
  * Wrapper para endpoints que requieren rol de administrador
  */
 export function withAdminAuth<T extends any[]>(
-  handler: (request: NextRequest, auth: AuthContext, ...args: T) => Promise<Response>
+  handler: (
+    request: NextRequest,
+    auth: AuthContext,
+    ...args: T
+  ) => Promise<Response>
 ) {
   return async (request: NextRequest, ...args: T): Promise<Response> => {
     try {
       const auth = await authenticateRequest(request);
       await verifyAdminRole(auth.userId);
-      
+
       // Agregar información de rol al contexto de autenticación
       auth.user.role = 'admin';
-      
+
       return await handler(request, auth, ...args);
     } catch (error) {
       if (error instanceof AppError) {
@@ -313,11 +315,7 @@ export function requireDevelopment<T extends any[]>(
     } catch (error) {
       console.error('[Development Middleware Error]:', error);
       return createErrorResponse(
-        new AppError(
-          ErrorCode.INTERNAL_ERROR,
-          'Request failed',
-          500
-        )
+        new AppError(ErrorCode.INTERNAL_ERROR, 'Request failed', 500)
       );
     }
   };
@@ -337,7 +335,11 @@ export function withPublicAccess<T extends any[]>(
     try {
       // Si se requiere autenticación, crear un handler compatible con withAuth
       if (options?.requireAuth) {
-        const authHandler = async (request: NextRequest, auth: AuthContext, ...handlerArgs: T) => {
+        const authHandler = async (
+          request: NextRequest,
+          auth: AuthContext,
+          ...handlerArgs: T
+        ) => {
           return await handler(request, ...handlerArgs);
         };
         return withAuth(authHandler)(request, ...args);
@@ -348,11 +350,7 @@ export function withPublicAccess<T extends any[]>(
     } catch (error) {
       console.error('[Public Access Error]:', error);
       return createErrorResponse(
-        new AppError(
-          ErrorCode.INTERNAL_ERROR,
-          'Request failed',
-          500
-        )
+        new AppError(ErrorCode.INTERNAL_ERROR, 'Request failed', 500)
       );
     }
   };
