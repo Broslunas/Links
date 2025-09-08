@@ -965,7 +965,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                         ))}
                       </select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Selecciona un dominio personalizado para tu enlace corto
+                        Selecciona un dominio personalizado. Los enlaces están disponibles en todos los dominios verificados.
                       </p>
                     </div>
                   )}

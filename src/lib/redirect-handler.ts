@@ -63,8 +63,8 @@ export async function handleRedirect(
                 };
             }
 
-            // Filter links by custom domain
-            domainFilter = { customDomain: customDomain._id };
+            // Allow all links on custom domains (no domain filtering)
+            domainFilter = {};
         } else {
             // For default domain, only show links without custom domain or with default domain
             domainFilter = {
@@ -272,10 +272,9 @@ export async function shouldRedirectToMainDomain(
             };
         }
         
-        // Check if the slug exists as a valid link for this domain
+        // Check if the slug exists as a valid link (available on all domains)
         const link = await Link.findOne({
             slug: slug.toLowerCase(),
-            customDomain: customDomain._id,
             isActive: true,
             isDisabledByAdmin: { $ne: true },
             isExpired: { $ne: true },
