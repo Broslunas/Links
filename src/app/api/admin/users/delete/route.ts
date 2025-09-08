@@ -29,12 +29,15 @@ export async function GET(request: NextRequest) {
       userId: userId,
       token,
       status: 'pending',
-      expiresAt: { $gt: new Date() }
+      expiresAt: { $gt: new Date() },
     }).populate('adminId', 'name email');
 
     if (!deleteRequest) {
       return NextResponse.json(
-        { success: false, error: { message: 'Solicitud de eliminación no válida o expirada' } },
+        {
+          success: false,
+          error: { message: 'Solicitud de eliminación no válida o expirada' },
+        },
         { status: 404 }
       );
     }
@@ -54,14 +57,13 @@ export async function GET(request: NextRequest) {
       user: {
         _id: userToDelete._id,
         email: userToDelete.email,
-        name: userToDelete.name || 'Sin nombre'
+        name: userToDelete.name || 'Sin nombre',
       },
       deleteRequest: {
         reason: deleteRequest.reason,
-        createdAt: deleteRequest.createdAt
-      }
+        createdAt: deleteRequest.createdAt,
+      },
     });
-
   } catch (error) {
     console.error('Error en delete confirmation:', error);
     return NextResponse.json(
@@ -91,12 +93,15 @@ export async function POST(request: NextRequest) {
       userId: userId,
       token,
       status: 'pending',
-      expiresAt: { $gt: new Date() }
+      expiresAt: { $gt: new Date() },
     }).populate('adminId', 'name email');
 
     if (!deleteRequest) {
       return NextResponse.json(
-        { success: false, error: { message: 'Solicitud de eliminación no válida o expirada' } },
+        {
+          success: false,
+          error: { message: 'Solicitud de eliminación no válida o expirada' },
+        },
         { status: 404 }
       );
     }
@@ -112,17 +117,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Programar la eliminación para 1 hora después
-    const scheduledDeletionAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora desde ahora
-    
+    const scheduledDeletionAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
     try {
       // Marcar la solicitud como confirmada y programar eliminación
-      await DeleteRequest.findByIdAndUpdate(
-        deleteRequest._id,
-        { 
-          status: 'confirmed',
-          scheduledDeletionAt: scheduledDeletionAt
-        }
-      );
+      await DeleteRequest.findByIdAndUpdate(deleteRequest._id, {
+        status: 'confirmed',
+        scheduledDeletionAt: scheduledDeletionAt,
+      });
 
       // Registrar la acción de confirmación
       await AdminAction.create({
@@ -133,27 +135,32 @@ export async function POST(request: NextRequest) {
         targetEmail: userToDelete.email,
         reason: deleteRequest.reason,
         metadata: {
-          scheduledDeletionAt: scheduledDeletionAt.toISOString()
+          scheduledDeletionAt: scheduledDeletionAt.toISOString(),
         },
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+        ipAddress:
+          request.headers.get('x-forwarded-for') ||
+          request.headers.get('x-real-ip') ||
+          'unknown',
       });
 
       // Webhook removido - solo se envía en la solicitud inicial, no en la confirmación
 
       return NextResponse.json({
         success: true,
-        message: 'Eliminación confirmada. Los datos del usuario serán eliminados en 1 hora.',
-        scheduledDeletionAt: scheduledDeletionAt.toISOString()
+        message:
+          'Eliminación confirmada. Los datos del usuario serán eliminados en 1 hora.',
+        scheduledDeletionAt: scheduledDeletionAt.toISOString(),
       });
-
     } catch (confirmationError) {
       console.error('Error en confirmación de eliminación:', confirmationError);
       return NextResponse.json(
-        { success: false, error: { message: 'Error al confirmar la eliminación del usuario' } },
+        {
+          success: false,
+          error: { message: 'Error al confirmar la eliminación del usuario' },
+        },
         { status: 500 }
       );
     }
-
   } catch (error) {
     console.error('Error en delete execution:', error);
     return NextResponse.json(
