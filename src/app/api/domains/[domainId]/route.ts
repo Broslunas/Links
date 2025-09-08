@@ -233,10 +233,10 @@ export async function DELETE(
         const vercel = new VercelIntegration();
         const vercelResponse = await vercel.removeDomain(domain.fullDomain);
         
-        if (vercelResponse.success) {
+        if (vercelResponse.data) {
           console.log(`Dominio ${domain.fullDomain} eliminado exitosamente de Vercel`);
         } else {
-          console.warn(`Error eliminando dominio de Vercel: ${vercelResponse.error}`);
+          console.warn(`Error eliminando dominio de Vercel: ${vercelResponse.error?.message}`);
           // Continuar con la eliminación de la base de datos aunque falle Vercel
         }
       } catch (vercelError) {

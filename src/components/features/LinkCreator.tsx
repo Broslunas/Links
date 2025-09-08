@@ -466,6 +466,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
       customDurationUnit: 'days',
       expirationDate: '',
       expirationTime: '23:59',
+      customDomain: '',
     });
     setErrors({});
     setCurrentStep(0);

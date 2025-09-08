@@ -10,6 +10,8 @@ export interface RedirectResult {
     originalUrl?: string;
     error?: string;
     customDomain?: string;
+    shouldRedirectToMain?: boolean;
+    mainDomainUrl?: string;
 }
 
 /**
@@ -187,6 +189,93 @@ export async function handleRedirect(
         return {
             success: false,
             error: 'Internal server error'
+        };
+    }
+}
+
+/**
+ * Check if a request from custom domain should redirect to main domain
+ */
+export async function shouldRedirectToMainDomain(
+    pathname: string,
+    request: Request
+): Promise<RedirectResult> {
+    try {
+        const requestDomain = extractDomainFromRequest(request);
+        const mainDomain = process.env.NEXT_PUBLIC_APP_URL || 'https://broslunas.link';
+        
+        // If it's not a custom domain, no redirect needed
+        if (requestDomain === process.env.DEFAULT_DOMAIN || requestDomain === 'localhost:3000') {
+            return { success: true };
+        }
+        
+        // Check if this is a custom domain request
+        await connectDB();
+        const customDomain = await CustomDomain.findOne({
+            fullDomain: requestDomain,
+            isVerified: true,
+            isActive: true
+        });
+        
+        if (!customDomain) {
+            return {
+                success: false,
+                error: 'Dominio personalizado no encontrado o no verificado'
+            };
+        }
+        
+        // If it's root path, redirect to main domain
+        if (pathname === '/') {
+            return {
+                success: true,
+                shouldRedirectToMain: true,
+                mainDomainUrl: mainDomain
+            };
+        }
+        
+        // If it's not a valid slug format, redirect to main domain with same path
+        const slug = pathname.slice(1);
+        if (!isValidSlug(slug)) {
+            return {
+                success: true,
+                shouldRedirectToMain: true,
+                mainDomainUrl: `${mainDomain}${pathname}`
+            };
+        }
+        
+        // Check if the slug exists as a valid link for this domain
+        const link = await Link.findOne({
+            slug: slug.toLowerCase(),
+            customDomain: customDomain._id,
+            isActive: true,
+            isDisabledByAdmin: { $ne: true },
+            isExpired: { $ne: true },
+            $or: [
+                { isTemporary: { $ne: true } },
+                { 
+                    isTemporary: true,
+                    expiresAt: { $gt: new Date() }
+                }
+            ]
+        });
+        
+        // If no link found, redirect to main domain with same path
+        if (!link) {
+            return {
+                success: true,
+                shouldRedirectToMain: true,
+                mainDomainUrl: `${mainDomain}${pathname}`
+            };
+        }
+        
+        // Link exists, allow normal processing
+        return { success: true };
+        
+    } catch (error) {
+        console.error('Error checking redirect to main domain:', error);
+        return {
+            success: false,
+            error: 'Error interno del servidor'
         };
     }
 }

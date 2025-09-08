@@ -7,6 +7,7 @@ import { ErrorBoundary } from '../components/ui/ErrorBoundary';
 import CookieConsentModal from '../components/ui/CookieConsentModal';
 import InactiveAccountProvider from '../components/providers/InactiveAccountProvider';
 import { ConditionalLayout } from '../components/layout/ConditionalLayout';
+import CustomDomainRedirectHandler from '../components/CustomDomainRedirectHandler';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -94,8 +95,10 @@ export default function RootLayout({
           <ThemeProvider>
             <SessionProvider>
               <InactiveAccountProvider>
-                <ConditionalLayout>{children}</ConditionalLayout>
-                <CookieConsentModal />
+                <CustomDomainRedirectHandler>
+                  <ConditionalLayout>{children}</ConditionalLayout>
+                  <CookieConsentModal />
+                </CustomDomainRedirectHandler>
               </InactiveAccountProvider>
             </SessionProvider>
           </ThemeProvider>

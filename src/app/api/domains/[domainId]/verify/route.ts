@@ -239,7 +239,11 @@ export async function POST(
     console.log(`Registros DNS configurados:`, domain.dnsRecords);
 
     // Crear dominio en Vercel si no existe
-    let vercelResult = { success: true, domainId: domain.vercelDomainId, configId: domain.vercelConfigurationId };
+    let vercelResult: { success: boolean; domainId?: string; configId?: string; error?: string } = { 
+      success: true, 
+      domainId: domain.vercelDomainId || undefined, 
+      configId: domain.vercelConfigurationId || undefined 
+    };
     
     if (!domain.vercelDomainId) {
       console.log(`Creando dominio en Vercel: ${domain.fullDomain}`);
