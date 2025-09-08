@@ -138,36 +138,7 @@ export async function POST(request: NextRequest) {
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
       });
 
-      // Enviar webhook de confirmación
-      try {
-        const adminUser = deleteRequest.adminId as any;
-        const cancelUrl = `${process.env.NEXTAUTH_URL}/dashboard?cancelDeletionUser=${userId}&token=${deleteRequest.token}`;
-        
-        const webhookData = {
-          name: userToDelete.name || userToDelete.email,
-          email: userToDelete.email,
-          emailAdmin: adminUser?.email || 'admin',
-          nameAdmin: adminUser?.name || adminUser?.email || 'Admin',
-          reason: deleteRequest.reason,
-          status: 'pendingConfirmation',
-          scheduledDeletionAt: scheduledDeletionAt.toISOString(),
-          cancelUrl: cancelUrl
-        };
-
-        const webhookResponse = await fetch('https://hook.eu2.make.com/e7mprt6w5vpm6bru3pgjde3pw6i0mxgq', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(webhookData)
-        });
-
-        if (!webhookResponse.ok) {
-          console.error('Error enviando webhook de confirmación:', await webhookResponse.text());
-        }
-      } catch (webhookError) {
-        console.error('Error enviando webhook de confirmación:', webhookError);
-      }
+      // Webhook removido - solo se envía en la solicitud inicial, no en la confirmación
 
       return NextResponse.json({
         success: true,
