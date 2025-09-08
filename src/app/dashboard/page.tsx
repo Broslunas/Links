@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ToastContainer, ConfirmationModal } from '../../components/ui';
 import { LinkCreator, LinkList, LinkEditor } from '../../components/features';
 import { useToast } from '../../hooks/useToast';
@@ -9,6 +10,8 @@ import { Link, ApiResponse } from '../../types';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { toasts, success, error } = useToast();
 
   // All useState hooks must be at the top, before any conditional returns
@@ -32,6 +35,16 @@ export default function DashboardPage() {
         '/auth/signin?callbackUrl=' + encodeURIComponent(window.location.href);
     }
   }, [status]);
+
+  // Check for cancel deletion parameters
+  useEffect(() => {
+    const cancelDeletionUserId = searchParams.get('cancelDeletionUser');
+    const token = searchParams.get('token');
+    
+    if (cancelDeletionUserId && token) {
+      handleCancelDeletion(cancelDeletionUserId, token);
+    }
+  }, [searchParams]);
 
   // Fetch dashboard stats
   const fetchStats = async () => {
@@ -123,6 +136,35 @@ export default function DashboardPage() {
       error('Error al eliminar el enlace', 'Error');
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleCancelDeletion = async (userId: string, token: string) => {
+    try {
+      const response = await fetch('/api/admin/users/cancel-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId,
+          token
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        success('Solicitud de eliminación cancelada correctamente.', 'Cancelación exitosa');
+        router.replace('/dashboard');
+      } else {
+        error(data.error?.message || 'Error al cancelar la solicitud de eliminación', 'Error');
+        router.replace('/dashboard');
+      }
+    } catch (err) {
+      console.error('Error cancelando eliminación:', err);
+      error('Error inesperado al cancelar la solicitud de eliminación.', 'Error');
+      router.replace('/dashboard');
     }
   };
 

@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Preparar datos para el webhook
-    const cancelUrl = `${process.env.NEXTAUTH_URL}/dashboard/admin?cancelDeletionUser=${userId}&token=${token}`;
+    const cancelUrl = `${process.env.NEXTAUTH_URL}/dashboard?cancelDeletionUser=${userId}&token=${token}`;
     
     const webhookData = {
       name: userToDelete.name || userToDelete.email,
