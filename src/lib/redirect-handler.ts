@@ -3,15 +3,25 @@ import { extractAnalyticsData, hashIP } from './analytics';
 import Link from '../models/Link';
 import TempLink from '../models/TempLink';
 import AnalyticsEvent from '../models/AnalyticsEvent';
+import CustomDomain from '../models/CustomDomain';
 
 export interface RedirectResult {
     success: boolean;
     originalUrl?: string;
     error?: string;
+    customDomain?: string;
 }
 
 /**
- * Handle URL redirection with analytics tracking
+ * Extract domain from request headers
+ */
+function extractDomainFromRequest(request: Request): string {
+    const url = new URL(request.url);
+    return url.hostname;
+}
+
+/**
+ * Handle URL redirection with analytics tracking and custom domain support
  */
 export async function handleRedirect(
     slug: string,
@@ -20,10 +30,43 @@ export async function handleRedirect(
     try {
         await connectDB();
 
+        // Extract domain from request
+        const requestDomain = extractDomainFromRequest(request);
+        let customDomain = null;
+        let domainFilter = {};
+
+        // Check if this is a custom domain request
+        if (requestDomain !== process.env.DEFAULT_DOMAIN && requestDomain !== 'localhost:3000') {
+            customDomain = await CustomDomain.findOne({
+                fullDomain: requestDomain,
+                isVerified: true,
+                isActive: true
+            });
+
+            if (!customDomain) {
+                return {
+                    success: false,
+                    error: 'Dominio personalizado no encontrado o no verificado'
+                };
+            }
+
+            // Filter links by custom domain
+            domainFilter = { customDomain: customDomain._id };
+        } else {
+            // For default domain, only show links without custom domain or with default domain
+            domainFilter = {
+                $or: [
+                    { customDomain: { $exists: false } },
+                    { customDomain: null }
+                ]
+            };
+        }
+
         // First, check if the link exists but is expired (both in Link and TempLink collections)
         const [expiredLink, expiredTempLink] = await Promise.all([
             Link.findOne({
                 slug: slug.toLowerCase(),
+                ...domainFilter,
                 $or: [
                     { isExpired: true },
                     { 
@@ -49,6 +92,7 @@ export async function handleRedirect(
         const [link, tempLink] = await Promise.all([
             Link.findOne({
                 slug: slug.toLowerCase(),
+                ...domainFilter,
                 isActive: true,
                 isDisabledByAdmin: { $ne: true }, // Exclude links disabled by admin
                 isExpired: { $ne: true }, // Exclude expired links
@@ -60,6 +104,7 @@ export async function handleRedirect(
                     }
                 ]
             }),
+            // Note: TempLink doesn't support custom domains yet
             TempLink.findOne({
                 slug: slug.toLowerCase(),
                 expiresAt: { $gt: new Date() } // Only non-expired temp links
@@ -133,7 +178,8 @@ export async function handleRedirect(
 
         return {
             success: true,
-            originalUrl: targetLink.originalUrl
+            originalUrl: targetLink.originalUrl,
+            customDomain: customDomain?.fullDomain
         };
 
     } catch (error) {
