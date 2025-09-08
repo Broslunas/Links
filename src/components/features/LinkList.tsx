@@ -32,7 +32,9 @@ export function LinkList({
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedLinkUrl, setSelectedLinkUrl] = useState('');
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [selectedLinkForShare, setSelectedLinkForShare] = useState<Link | null>(null);
+  const [selectedLinkForShare, setSelectedLinkForShare] = useState<Link | null>(
+    null
+  );
 
   // Filter and search states
   const [searchTerm, setSearchTerm] = useState('');
@@ -737,22 +739,22 @@ export function LinkList({
                             </span>
                           )}
                         {link.isPublicStats && (
-                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-                             Estadísticas públicas
-                           </span>
-                         )}
-                         {link.isShared && (
-                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
-                             <Users className="h-3 w-3 mr-1" />
-                             Compartido ({link.sharedWith?.length || 0})
-                           </span>
-                         )}
-                         {link.sharedByUser && (
-                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                             <Users className="h-3 w-3 mr-1" />
-                             Compartido por {link.sharedByUser.name}
-                           </span>
-                         )}
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                            Estadísticas públicas
+                          </span>
+                        )}
+                        {link.isShared && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
+                            <Users className="h-3 w-3 mr-1" />
+                            Compartido ({link.sharedWith?.length || 0})
+                          </span>
+                        )}
+                        {link.sharedByUser && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                            <Users className="h-3 w-3 mr-1" />
+                            Compartido por {link.sharedByUser.name}
+                          </span>
+                        )}
                       </div>
 
                       <div className="space-y-1">
@@ -947,8 +949,12 @@ export function LinkList({
 
                     <Button
                       onClick={() => {
-                        setSelectedLinkForShare(link);
-                        setShareModalOpen(true);
+                        if (link?.slug) {
+                          setSelectedLinkForShare(link);
+                          setShareModalOpen(true);
+                        } else {
+                          console.error('Link slug is missing:', link);
+                        }
                       }}
                       variant="outline"
                       size="sm"
@@ -1283,8 +1289,12 @@ export function LinkList({
 
                   <Button
                     onClick={() => {
-                      setSelectedLinkForShare(link);
-                      setShareModalOpen(true);
+                      if (link?.slug) {
+                        setSelectedLinkForShare(link);
+                        setShareModalOpen(true);
+                      } else {
+                        console.error('Link slug is missing:', link);
+                      }
                     }}
                     variant="outline"
                     size="sm"
@@ -1354,7 +1364,7 @@ export function LinkList({
           setShareModalOpen(false);
           setSelectedLinkForShare(null);
         }}
-        linkId={selectedLinkForShare?.id || ''}
+        linkId={selectedLinkForShare?.slug || ''}
         linkTitle={selectedLinkForShare?.title}
         linkSlug={selectedLinkForShare?.slug}
       />

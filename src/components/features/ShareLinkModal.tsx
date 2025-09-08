@@ -64,19 +64,24 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
       canDelete: false
     }
   });
-  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+  const [copiedStates, setCopiedStates] = useState<{ [key: string]: boolean }>({});
 
   // Cargar usuarios compartidos cuando se abre el modal
   useEffect(() => {
-    if (isOpen && linkId) {
+    if (isOpen && linkSlug) {
       loadSharedUsers();
     }
-  }, [isOpen, linkId]);
+  }, [isOpen, linkSlug]);
 
   const loadSharedUsers = async () => {
+    if (!linkSlug) {
+      console.warn('No linkSlug provided, skipping loadSharedUsers');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/links/${linkId}/share`);
+      const response = await fetch(`/api/links/${linkSlug}/share`);
       if (response.ok) {
         const data = await response.json();
         // Mapear la estructura del API a la que espera el componente
@@ -99,6 +104,11 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
   };
 
   const handleShare = async () => {
+    if (!linkSlug) {
+      toast.error('Slug de enlace no válido');
+      return;
+    }
+
     if (!shareForm.email.trim()) {
       toast.error('Por favor ingresa un email');
       return;
@@ -113,7 +123,7 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
 
     setIsSharing(true);
     try {
-      const response = await fetch(`/api/links/${linkId}/share`, {
+      const response = await fetch(`/api/links/${linkSlug}/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -150,8 +160,13 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
   };
 
   const handleRemoveShare = async (userId: string, userEmail: string) => {
+    if (!linkSlug) {
+      toast.error('Slug de enlace no válido');
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/links/${linkId}/share`, {
+      const response = await fetch(`/api/links/${linkSlug}/share`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
@@ -172,12 +187,14 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
     }
   };
 
-  const copyToClipboard = async (text: string, email: string) => {
+  const copyToClipboard = async (text: string, key: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedEmail(email);
+      setCopiedStates(prev => ({ ...prev, [key]: true }));
       toast.success('Email copiado al portapapeles');
-      setTimeout(() => setCopiedEmail(null), 2000);
+      setTimeout(() => {
+        setCopiedStates(prev => ({ ...prev, [key]: false }));
+      }, 2000);
     } catch (error) {
       toast.error('Error al copiar email');
     }
@@ -234,6 +251,7 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
             <h3 className="text-lg font-medium">Usuarios con acceso</h3>
             <Button
               onClick={() => setShowShareForm(true)}
+              disabled={!linkSlug}
               className="flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
@@ -368,10 +386,10 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => copyToClipboard(user.email, user.email)}
+                        onClick={() => copyToClipboard(user.email, `email-${user._id}`)}
                         className="h-6 w-6"
                       >
-                        {copiedEmail === user.email ? (
+                        {copiedStates[`email-${user._id}`] ? (
                           <Check className="h-3 w-3 text-green-600" />
                         ) : (
                           <Copy className="h-3 w-3" />

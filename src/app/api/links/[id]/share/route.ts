@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../../lib/db-utils';
-import { withAuth, AuthContext, verifyLinkAccess } from '../../../../../lib/auth-middleware';
+import { withAuth, AuthContext, verifyLinkAccessBySlug } from '../../../../../lib/auth-middleware';
 import { createSuccessResponse } from '../../../../../lib/api-response';
 import { AppError, ErrorCode } from '../../../../../lib/api-errors';
 import SharedLink from '../../../../../models/SharedLink';
 import User from '../../../../../models/User';
 
-// POST /api/links/[id]/share - Compartir enlace con otro usuario
+// POST /api/links/[id]/share - Compartir enlace con otro usuario (usando slug)
 export const POST = withAuth(async (
   request: NextRequest,
   auth: AuthContext,
   { params }: { params: { id: string } }
 ) => {
-  const { id } = params;
+  const { id: slug } = params;
 
-  if (!id) {
+  if (!slug) {
     throw new AppError(
       ErrorCode.VALIDATION_ERROR,
-      'Link ID is required',
+      'Link slug is required',
       400
     );
   }
@@ -25,7 +25,7 @@ export const POST = withAuth(async (
   await connectDB();
 
   // Verificar que el usuario tenga permisos para compartir el enlace
-  const { isOwner, sharedLink } = await verifyLinkAccess(auth.userId, id, 'canShare');
+  const { isOwner, sharedLink, link } = await verifyLinkAccessBySlug(auth.userId, slug, 'canShare');
   
   // Solo el propietario o usuarios con permiso canShare pueden compartir
   if (!isOwner && (!sharedLink || !sharedLink.permissions.canShare)) {
@@ -89,7 +89,7 @@ export const POST = withAuth(async (
 
   // Verificar si ya existe un enlace compartido con este usuario
   const existingShare = await SharedLink.findOne({
-    linkId: id,
+    linkId: link._id,
     sharedWithUserId: targetUser._id
   });
 
@@ -125,7 +125,7 @@ export const POST = withAuth(async (
 
   // Crear nuevo enlace compartido
   const newSharedLink = new SharedLink({
-    linkId: id,
+    linkId: link._id,
     ownerId: isOwner ? auth.userId : sharedLink.ownerId,
     sharedWithUserId: targetUser._id,
     sharedWithEmail: email.toLowerCase(),
@@ -156,18 +156,18 @@ export const POST = withAuth(async (
   });
 });
 
-// GET /api/links/[id]/share - Obtener lista de usuarios con los que se ha compartido el enlace
+// GET /api/links/[id]/share - Obtener lista de usuarios con los que se ha compartido el enlace (usando slug)
 export const GET = withAuth(async (
   request: NextRequest,
   auth: AuthContext,
   { params }: { params: { id: string } }
 ) => {
-  const { id } = params;
+  const { id: slug } = params;
 
-  if (!id) {
+  if (!slug) {
     throw new AppError(
       ErrorCode.VALIDATION_ERROR,
-      'Link ID is required',
+      'Link slug is required',
       400
     );
   }
@@ -175,11 +175,11 @@ export const GET = withAuth(async (
   await connectDB();
 
   // Verificar que el usuario tenga acceso al enlace
-  const { isOwner, sharedLink } = await verifyLinkAccess(auth.userId, id);
+  const { isOwner, sharedLink, link } = await verifyLinkAccessBySlug(auth.userId, slug);
 
   // Obtener todos los enlaces compartidos para este link
   const sharedLinks = await SharedLink.find({
-    linkId: id,
+    linkId: link._id,
     isActive: true
   })
   .populate('sharedWithUserId', 'email name image')
@@ -212,18 +212,18 @@ export const GET = withAuth(async (
   });
 });
 
-// DELETE /api/links/[id]/share - Eliminar enlace compartido por userId
+// DELETE /api/links/[id]/share - Eliminar enlace compartido por userId (usando slug)
 export const DELETE = withAuth(async (
   request: NextRequest,
   auth: AuthContext,
   { params }: { params: { id: string } }
 ) => {
-  const { id } = params;
+  const { id: slug } = params;
 
-  if (!id) {
+  if (!slug) {
     throw new AppError(
       ErrorCode.VALIDATION_ERROR,
-      'Link ID is required',
+      'Link slug is required',
       400
     );
   }
@@ -242,11 +242,11 @@ export const DELETE = withAuth(async (
   }
 
   // Verificar que el usuario tenga acceso al enlace
-  const { isOwner, sharedLink } = await verifyLinkAccess(auth.userId, id);
+  const { isOwner, sharedLink, link } = await verifyLinkAccessBySlug(auth.userId, slug);
 
   // Buscar el enlace compartido específico
   const sharedLinkToDelete = await SharedLink.findOne({
-    linkId: id,
+    linkId: link._id,
     sharedWithUserId: userId,
     isActive: true
   });
