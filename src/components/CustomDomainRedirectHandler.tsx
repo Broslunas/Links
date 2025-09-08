@@ -22,7 +22,8 @@ export default function CustomDomainRedirectHandler({ children }: CustomDomainRe
       // Skip if we're already on the main domain or localhost
       if (currentDomain === 'localhost' || 
           currentDomain === '127.0.0.1' || 
-          currentDomain.includes('broslunas.link') || 
+          currentDomain === 'broslunas.link' ||
+          currentDomain === 'www.broslunas.link' ||
           currentDomain.includes('vercel.app') ||
           currentDomain.includes('localhost')) {
         return;
