@@ -38,7 +38,10 @@ export async function handleRedirect(
         let domainFilter = {};
 
         // Check if this is a custom domain request
-        if (requestDomain !== process.env.DEFAULT_DOMAIN && requestDomain !== 'localhost:3000') {
+        if (requestDomain !== process.env.DEFAULT_DOMAIN && 
+            requestDomain !== 'localhost:3000' && 
+            requestDomain !== 'broslunas.link' && 
+            requestDomain !== 'www.broslunas.link') {
             customDomain = await CustomDomain.findOne({
                 fullDomain: requestDomain,
                 isVerified: true,
@@ -209,7 +212,8 @@ export async function shouldRedirectToMainDomain(
             requestDomain === 'localhost:3000' ||
             requestDomain === 'localhost' ||
             requestDomain === '127.0.0.1' ||
-            requestDomain.includes('broslunas.link') ||
+            requestDomain === 'broslunas.link' ||
+            requestDomain === 'www.broslunas.link' ||
             requestDomain.includes('vercel.app')) {
             return { success: true };
         }

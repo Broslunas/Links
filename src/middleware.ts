@@ -23,6 +23,8 @@ const DEFAULT_DOMAINS = [
   'localhost',
   '127.0.0.1:3000',
   '127.0.0.1',
+  'broslunas.link',
+  'www.broslunas.link',
   process.env.DEFAULT_DOMAIN,
   process.env.VERCEL_URL,
   process.env.NEXT_PUBLIC_APP_URL?.replace('https://', '').replace('http://', ''),
