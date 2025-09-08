@@ -56,12 +56,7 @@ interface SharedLink {
   sharedAt: string;
 }
 
-interface SharedLinksResponse {
-  sharedLinks: SharedLink[];
-  totalLinks: number;
-  totalPages: number;
-  currentPage: number;
-}
+// Interfaz removida - ahora manejamos la respuesta de la API directamente
 
 export default function SharedLinksPage() {
   const { data: session, status } = useSession();
@@ -104,11 +99,17 @@ export default function SharedLinksPage() {
 
       const response = await fetch(`/api/links/shared-with-me?${params}`);
       if (response.ok) {
-        const data: SharedLinksResponse = await response.json();
-        setSharedLinks(data.sharedLinks);
-        setTotalPages(data.totalPages);
-        setTotalLinks(data.totalLinks);
+        const result = await response.json();
+        if (result.success && result.data) {
+          setSharedLinks(result.data.sharedLinks || []);
+          setTotalPages(result.data.pagination?.totalPages || 1);
+          setTotalLinks(result.data.pagination?.totalItems || 0);
+        } else {
+          setSharedLinks([]);
+          toast.error('Error al cargar enlaces compartidos');
+        }
       } else {
+        setSharedLinks([]);
         toast.error('Error al cargar enlaces compartidos');
       }
     } catch (error) {

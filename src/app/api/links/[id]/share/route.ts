@@ -188,22 +188,22 @@ export const GET = withAuth(async (
 
   const formattedShares = sharedLinks.map(share => ({
     id: share._id.toString(),
-    sharedWithUser: {
+    sharedWithUser: share.sharedWithUserId ? {
       id: share.sharedWithUserId._id.toString(),
       email: share.sharedWithUserId.email,
       name: share.sharedWithUserId.name,
       image: share.sharedWithUserId.image,
-    },
-    owner: {
+    } : null,
+    owner: share.ownerId ? {
       id: share.ownerId._id.toString(),
       email: share.ownerId.email,
       name: share.ownerId.name,
-    },
+    } : null,
     permissions: share.permissions,
     expiresAt: share.expiresAt,
     createdAt: share.createdAt,
     updatedAt: share.updatedAt,
-  }));
+  })).filter(share => share.sharedWithUser && share.owner);
 
   return createSuccessResponse({
     shares: formattedShares,

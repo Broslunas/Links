@@ -27,11 +27,15 @@ export interface AuthContext {
 export async function authenticateRequest(
   request: NextRequest
 ): Promise<AuthContext> {
+  console.log('[Auth Debug] Starting authentication request');
+  
   // Intentar autenticación por API token primero
   const authHeader = request.headers.get('authorization');
   const apiToken = authHeader?.startsWith('Bearer ')
     ? authHeader.slice(7)
     : null;
+  
+  console.log('[Auth Debug] API token present:', !!apiToken);
 
   if (apiToken) {
     const user = await validateApiToken(apiToken);
@@ -56,11 +60,24 @@ export async function authenticateRequest(
   }
 
   // Intentar autenticación por sesión
+  console.log('[Auth Debug] Attempting session authentication');
   const session = await getServerSession(authOptions);
+  console.log('[Auth Debug] Session obtained:', {
+    hasSession: !!session,
+    hasUser: !!session?.user,
+    userId: session?.user?.id
+  });
   const userValidation = validateUserSession(session);
+  console.log('[Auth Debug] User validation result:', userValidation);
 
   if (!userValidation.isValid || !userValidation.userId) {
-    throw new AppError(ErrorCode.UNAUTHORIZED, 'Authentication required', 401);
+    console.error('[Auth Debug] Session validation failed:', {
+      hasSession: !!session,
+      hasUserId: !!session?.user?.id,
+      userId: session?.user?.id,
+      validationError: userValidation.error
+    });
+    throw new AppError(ErrorCode.UNAUTHORIZED, userValidation.error || 'Authentication required', 401);
   }
 
   // Obtener el usuario completo de la base de datos para incluir el rol

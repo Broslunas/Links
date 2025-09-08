@@ -5,6 +5,7 @@ import { createSuccessResponse } from '../../../../lib/api-response';
 import { AppError, ErrorCode } from '../../../../lib/api-errors';
 import SharedLink from '../../../../models/SharedLink';
 import Link from '../../../../models/Link';
+import mongoose from 'mongoose';
 
 // GET /api/links/shared-with-me - Obtener enlaces compartidos conmigo
 export const GET = withAuth(async (
@@ -21,15 +22,17 @@ export const GET = withAuth(async (
   const sortBy = searchParams.get('sortBy') || 'createdAt';
   const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-  // Construir filtros
+  // Construir filtros - convertir userId a ObjectId
   const filters: any = {
-    sharedWithUserId: auth.userId,
+    sharedWithUserId: new mongoose.Types.ObjectId(auth.userId),
     isActive: true,
     $or: [
       { expiresAt: null },
       { expiresAt: { $gt: new Date() } }
     ]
   };
+
+
 
   // Filtrar por permiso específico
   if (permission && ['canView', 'canEdit', 'canDelete', 'canViewStats', 'canShare'].includes(permission)) {
@@ -43,7 +46,12 @@ export const GET = withAuth(async (
   // Calcular skip
   const skip = (page - 1) * limit;
 
+
+
   // Obtener enlaces compartidos con información del enlace y propietario
+  
+
+  
   const sharedLinksAggregation = await SharedLink.aggregate([
     { $match: filters },
     {
@@ -80,9 +88,8 @@ export const GET = withAuth(async (
         _id: 1,
         permissions: 1,
         expiresAt: 1,
-        createdAt: 1,
-        updatedAt: 1,
-        link: {
+        sharedAt: '$createdAt',
+        linkId: {
           _id: '$link._id',
           slug: '$link.slug',
           title: '$link.title',
@@ -94,7 +101,7 @@ export const GET = withAuth(async (
           createdAt: '$link.createdAt',
           updatedAt: '$link.updatedAt'
         },
-        owner: {
+        sharedBy: {
           _id: '$owner._id',
           name: '$owner.name',
           email: '$owner.email',
@@ -147,28 +154,27 @@ export const GET = withAuth(async (
 
   // Formatear resultados
   const formattedSharedLinks = sharedLinksAggregation.map(item => ({
-    id: item._id.toString(),
+    _id: item._id.toString(),
     permissions: item.permissions,
     expiresAt: item.expiresAt,
-    sharedAt: item.createdAt,
-    updatedAt: item.updatedAt,
-    link: {
-      id: item.link._id.toString(),
-      slug: item.link.slug,
-      title: item.link.title,
-      description: item.link.description,
-      originalUrl: item.link.originalUrl,
-      isActive: item.link.isActive,
-      clickCount: item.link.clickCount,
-      isPublicStats: item.link.isPublicStats,
-      createdAt: item.link.createdAt,
-      updatedAt: item.link.updatedAt
+    sharedAt: item.sharedAt,
+    linkId: {
+      _id: item.linkId._id.toString(),
+      slug: item.linkId.slug,
+      title: item.linkId.title,
+      description: item.linkId.description,
+      originalUrl: item.linkId.originalUrl,
+      isActive: item.linkId.isActive,
+      clickCount: item.linkId.clickCount,
+      isPublicStats: item.linkId.isPublicStats,
+      createdAt: item.linkId.createdAt,
+      updatedAt: item.linkId.updatedAt
     },
-    owner: {
-      id: item.owner._id.toString(),
-      name: item.owner.name,
-      email: item.owner.email,
-      image: item.owner.image
+    sharedBy: {
+      _id: item.sharedBy._id.toString(),
+      name: item.sharedBy.name,
+      email: item.sharedBy.email,
+      image: item.sharedBy.image
     }
   }));
 
