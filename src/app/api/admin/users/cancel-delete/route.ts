@@ -6,9 +6,12 @@ import AdminAction from '@/models/AdminAction';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Iniciando proceso de cancelación de eliminación');
     await connectDB();
+    console.log('Conexión a BD establecida');
 
     const { userId, token } = await request.json();
+    console.log('Parámetros recibidos:', { userId, token: token ? 'presente' : 'ausente' });
 
     if (!userId || !token) {
       return NextResponse.json(
@@ -18,11 +21,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar la solicitud de eliminación
+    console.log('Buscando solicitud de eliminación...');
     const deleteRequest = await DeleteRequest.findOne({
       userId: userId,
       token: token,
       status: { $in: ['pending', 'confirmed'] }
     }).populate('adminId', 'name email');
+    console.log('Solicitud encontrada:', deleteRequest ? 'sí' : 'no');
 
     if (!deleteRequest) {
       return NextResponse.json(
@@ -107,11 +112,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error cancelando solicitud de eliminación:', error);
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace available');
     return NextResponse.json(
       { 
         success: false, 
         error: { 
-          message: 'Error interno del servidor al cancelar la solicitud' 
+          message: 'Error interno del servidor al cancelar la solicitud',
+          details: error instanceof Error ? error.message : 'Error desconocido'
         } 
       },
       { status: 500 }

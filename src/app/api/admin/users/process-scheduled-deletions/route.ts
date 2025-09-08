@@ -31,13 +31,23 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Buscar solicitudes confirmadas cuyo tiempo de eliminación programada ya pasó
+    // y que no hayan sido canceladas
     const now = new Date();
     const scheduledDeletions = await DeleteRequest.find({
       status: 'confirmed',
       scheduledDeletionAt: { $lte: now }
     }).populate('adminId', 'name email');
+    
+    // Filtrar las que no han sido canceladas (verificación adicional)
+    const validDeletions = [];
+    for (const deletion of scheduledDeletions) {
+      const currentStatus = await DeleteRequest.findById(deletion._id).select('status');
+      if (currentStatus && currentStatus.status === 'confirmed') {
+        validDeletions.push(deletion);
+      }
+    }
 
-    if (scheduledDeletions.length === 0) {
+    if (validDeletions.length === 0) {
       return NextResponse.json({
         success: true,
         message: 'No hay eliminaciones programadas para procesar',
@@ -48,7 +58,7 @@ export async function POST(request: NextRequest) {
     let processedCount = 0;
     const results = [];
 
-    for (const deleteRequest of scheduledDeletions) {
+    for (const deleteRequest of validDeletions) {
       const session = await mongoose.startSession();
       
       try {
