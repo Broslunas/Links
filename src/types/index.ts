@@ -48,6 +48,22 @@ export interface Link {
   isExpired?: boolean;
   createdAt: string;
   updatedAt: string;
+  // Shared link properties
+  isShared?: boolean;
+  sharedWith?: SharedLinkUser[];
+  sharedByUser?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface SharedLinkUser {
+  id: string;
+  name: string;
+  email: string;
+  permission: 'read' | 'write';
+  sharedAt: string;
 }
 
 export interface AnalyticsEvent {

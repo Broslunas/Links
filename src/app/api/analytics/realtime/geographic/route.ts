@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-simple';
 import connectDB from '@/lib/mongodb';
 import AnalyticsEvent from '@/models/AnalyticsEvent';
 import Link from '@/models/Link';
+import SharedLink from '@/models/SharedLink';
 
 export async function GET(request: NextRequest) {
     try {
@@ -26,7 +27,29 @@ export async function GET(request: NextRequest) {
 
         // Get user's links
         const userLinks = await Link.find({ userId: session.user.id }).select('_id');
-        const linkIds = userLinks.map(link => link._id);
+        
+        // Get links shared with user that have canViewStats permission
+        const sharedLinks = await SharedLink.find({
+            sharedWithUserId: session.user.id,
+            'permissions.canViewStats': true,
+            isActive: true,
+            $or: [
+                { expiresAt: null },
+                { expiresAt: { $gt: new Date() } }
+            ]
+        }).populate('linkId', '_id');
+        
+        // Combine user's own links with shared links
+        const allLinks = [...userLinks];
+        sharedLinks.forEach(sharedLink => {
+            if (sharedLink.linkId) {
+                allLinks.push({
+                    _id: sharedLink.linkId._id
+                });
+            }
+        });
+        
+        const linkIds = allLinks.map(link => link._id);
 
         if (linkIds.length === 0) {
             return NextResponse.json({

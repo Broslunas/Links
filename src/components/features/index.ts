@@ -6,6 +6,7 @@ export { PublicStatsViewer } from './PublicStatsViewer';
 export { ModernStatsViewer } from './ModernStatsViewer';
 export { ModernPublicStatsViewer } from './ModernPublicStatsViewer';
 export { QRCodeModal } from './QRCodeModal';
+export { ShareLinkModal } from './ShareLinkModal';
 
 // Realtime components
 export { RealtimeEvents, RealtimeStats, RealtimeMap } from './realtime';
