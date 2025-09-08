@@ -26,19 +26,28 @@ export default async function SlugPage({ params }: SlugPageProps) {
   }
 
   try {
+    console.log('🔍 SlugPage: Processing slug:', slug);
+    
     // Create a mock request object for handleRedirect
     const headersList = headers();
-    const mockRequest = new Request('http://localhost:3000', {
+    const host = headersList.get('host') || 'localhost:3000';
+    const protocol = headersList.get('x-forwarded-proto') || 'http';
+    const mockRequest = new Request(`${protocol}://${host}/${slug}`, {
       headers: headersList
     });
 
+    console.log('🔍 SlugPage: Calling handleRedirect with:', slug);
     // Use the handleRedirect function which includes expired link checks
     const result = await handleRedirect(slug, mockRequest);
+    console.log('🔍 SlugPage: handleRedirect result:', result);
 
     // If there's an error (including expired links), show 404
     if (!result.success) {
+      console.log('❌ SlugPage: Redirect failed, showing 404');
       notFound();
     }
+    
+    console.log('✅ SlugPage: Redirect successful, showing redirect page');
 
     // Render the redirect page with destination URL
     return (
