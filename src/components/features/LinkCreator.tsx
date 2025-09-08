@@ -62,12 +62,14 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
   const [userPreferences, setUserPreferences] = useState<{
     defaultPublicStats: boolean;
   } | null>(null);
-  const [customDomains, setCustomDomains] = useState<Array<{
-    id: string;
-    domain: string;
-    isDefault: boolean;
-    isVerified: boolean;
-  }>>([]);
+  const [customDomains, setCustomDomains] = useState<
+    Array<{
+      id: string;
+      domain: string;
+      isDefault: boolean;
+      isVerified: boolean;
+    }>
+  >([]);
   const [formData, setFormData] = useState<FormData>({
     originalUrl: '',
     slug: '',
@@ -123,11 +125,15 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
         if (domainsResponse.ok) {
           const domainsResult = await domainsResponse.json();
           if (domainsResult.success && domainsResult.data) {
-            const verifiedDomains = domainsResult.data.filter((domain: any) => domain.isVerified);
+            const verifiedDomains = domainsResult.data.filter(
+              (domain: any) => domain.isVerified
+            );
             setCustomDomains(verifiedDomains);
-            
+
             // Si hay un dominio por defecto, seleccionarlo automáticamente
-            const defaultDomain = verifiedDomains.find((domain: any) => domain.isDefault);
+            const defaultDomain = verifiedDomains.find(
+              (domain: any) => domain.isDefault
+            );
             if (defaultDomain) {
               setFormData(prev => ({
                 ...prev,
@@ -954,18 +960,22 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                       </label>
                       <select
                         value={formData.customDomain}
-                        onChange={e => handleInputChange('customDomain', e.target.value)}
+                        onChange={e =>
+                          handleInputChange('customDomain', e.target.value)
+                        }
                         className="w-full px-3 py-2 border border-border rounded-md bg-background text-card-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
                       >
-                        <option value="">Usar dominio por defecto (brl.ink)</option>
+                        <option value="">broslunas.link</option>
                         {customDomains.map(domain => (
                           <option key={domain.id} value={domain.id}>
-                            {domain.domain} {domain.isDefault ? '(Por defecto)' : ''}
+                            {domain.domain}{' '}
+                            {domain.isDefault ? '(Por defecto)' : ''}
                           </option>
                         ))}
                       </select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Selecciona un dominio personalizado. Los enlaces están disponibles en todos los dominios verificados.
+                        Selecciona un dominio personalizado. Los enlaces están
+                        disponibles en todos los dominios verificados.
                       </p>
                     </div>
                   )}
@@ -1236,10 +1246,11 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                           Dominio
                         </h4>
                         <p className="text-sm">
-                          {formData.customDomain 
-                            ? customDomains.find(d => d.id === formData.customDomain)?.domain || 'brl.ink'
-                            : 'brl.ink (por defecto)'
-                          }
+                          {formData.customDomain
+                            ? customDomains.find(
+                                d => d.id === formData.customDomain
+                              )?.domain || 'broslunas.link'
+                            : 'broslunas.link (por defecto)'}
                         </p>
                       </div>
 
