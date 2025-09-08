@@ -45,15 +45,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener información del usuario
+    console.log('Buscando información del usuario...');
     const userToDelete = await User.findById(userId);
     if (!userToDelete) {
+      console.log('Usuario no encontrado');
       return NextResponse.json(
         { success: false, error: { message: 'Usuario no encontrado' } },
         { status: 404 }
       );
     }
+    console.log('Usuario encontrado:', userToDelete.email);
 
     // Cancelar la solicitud
+    console.log('Actualizando status de la solicitud a cancelled...');
     await DeleteRequest.findByIdAndUpdate(
       deleteRequest._id,
       { 
@@ -61,8 +65,10 @@ export async function POST(request: NextRequest) {
         completedAt: new Date()
       }
     );
+    console.log('Status actualizado correctamente');
 
     // Registrar la acción de cancelación
+    console.log('Creando registro de AdminAction...');
     await AdminAction.create({
       adminId: deleteRequest.adminId,
       actionType: 'cancel_delete_user',
@@ -77,8 +83,10 @@ export async function POST(request: NextRequest) {
       },
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     });
+    console.log('AdminAction creado correctamente');
 
     // Enviar webhook de cancelación
+    console.log('Enviando webhook de cancelación...');
     try {
       const adminUser = deleteRequest.adminId as any;
       const webhookData = {
@@ -99,12 +107,14 @@ export async function POST(request: NextRequest) {
       });
 
       if (!webhookResponse.ok) {
-        console.error('Error enviando webhook de cancelación:', await webhookResponse.text());
-      }
+          console.error('Error enviando webhook de cancelación:', await webhookResponse.text());
+        }
+        console.log('Webhook enviado correctamente');
     } catch (webhookError) {
       console.error('Error en webhook de cancelación:', webhookError);
     }
 
+    console.log('Proceso de cancelación completado exitosamente');
     return NextResponse.json({
       success: true,
       message: 'Solicitud de eliminación cancelada correctamente'
