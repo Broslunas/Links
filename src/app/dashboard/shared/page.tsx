@@ -68,7 +68,7 @@ export default function SharedLinksPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalLinks, setTotalLinks] = useState(0);
-  const [sortBy, setSortBy] = useState<'sharedAt' | 'title' | 'clickCount'>(
+  const [sortBy, setSortBy] = useState<'sharedAt' | 'title' | 'clickCount' | 'createdAt'>(
     'sharedAt'
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
