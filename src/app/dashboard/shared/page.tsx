@@ -17,7 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -67,7 +67,9 @@ export default function SharedLinksPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalLinks, setTotalLinks] = useState(0);
-  const [sortBy, setSortBy] = useState<'sharedAt' | 'title' | 'clickCount'>('sharedAt');
+  const [sortBy, setSortBy] = useState<'sharedAt' | 'title' | 'clickCount'>(
+    'sharedAt'
+  );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [permissionFilter, setPermissionFilter] = useState<string>('all');
 
@@ -94,7 +96,7 @@ export default function SharedLinksPage() {
         search: searchTerm,
         sortBy,
         sortOrder,
-        ...(permissionFilter !== 'all' && { permission: permissionFilter })
+        ...(permissionFilter !== 'all' && { permission: permissionFilter }),
       });
 
       const response = await fetch(`/api/links/shared-with-me?${params}`);
@@ -128,10 +130,30 @@ export default function SharedLinksPage() {
 
   const getPermissionBadges = (permissions: SharedLink['permissions']) => {
     const badges = [];
-    if (permissions.canView) badges.push({ label: 'Ver', icon: Eye, color: 'bg-blue-100 text-blue-800' });
-    if (permissions.canEdit) badges.push({ label: 'Editar', icon: Edit3, color: 'bg-green-100 text-green-800' });
-    if (permissions.canViewStats) badges.push({ label: 'Stats', icon: BarChart3, color: 'bg-purple-100 text-purple-800' });
-    if (permissions.canDelete) badges.push({ label: 'Eliminar', icon: Trash2, color: 'bg-red-100 text-red-800' });
+    if (permissions.canView)
+      badges.push({
+        label: 'Ver',
+        icon: Eye,
+        color: 'bg-blue-100 text-blue-800',
+      });
+    if (permissions.canEdit)
+      badges.push({
+        label: 'Editar',
+        icon: Edit3,
+        color: 'bg-green-100 text-green-800',
+      });
+    if (permissions.canViewStats)
+      badges.push({
+        label: 'Stats',
+        icon: BarChart3,
+        color: 'bg-purple-100 text-purple-800',
+      });
+    if (permissions.canDelete)
+      badges.push({
+        label: 'Eliminar',
+        icon: Trash2,
+        color: 'bg-red-100 text-red-800',
+      });
     return badges;
   };
 
@@ -141,7 +163,7 @@ export default function SharedLinksPage() {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -193,7 +215,8 @@ export default function SharedLinksPage() {
             </p>
           </div>
           <div className="text-sm text-muted-foreground">
-            {totalLinks} enlace{totalLinks !== 1 ? 's' : ''} compartido{totalLinks !== 1 ? 's' : ''}
+            {totalLinks} enlace{totalLinks !== 1 ? 's' : ''} compartido
+            {totalLinks !== 1 ? 's' : ''}
           </div>
         </div>
       </div>
@@ -205,7 +228,7 @@ export default function SharedLinksPage() {
             type="text"
             placeholder="Buscar enlaces..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="flex-1"
           />
           <Button type="submit" size="icon">
@@ -216,7 +239,7 @@ export default function SharedLinksPage() {
         <div className="flex gap-2 items-center">
           <select
             value={permissionFilter}
-            onChange={(e) => {
+            onChange={e => {
               setPermissionFilter(e.target.value);
               setCurrentPage(1);
             }}
@@ -231,7 +254,7 @@ export default function SharedLinksPage() {
 
           <select
             value={`${sortBy}-${sortOrder}`}
-            onChange={(e) => {
+            onChange={e => {
               const [field, order] = e.target.value.split('-');
               setSortBy(field as typeof sortBy);
               setSortOrder(order as typeof sortOrder);
@@ -281,12 +304,17 @@ export default function SharedLinksPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {sharedLinks.map((sharedLink) => {
+          {sharedLinks.map(sharedLink => {
             const link = sharedLink.linkId;
-            const permissionBadges = getPermissionBadges(sharedLink.permissions);
-            
+            const permissionBadges = getPermissionBadges(
+              sharedLink.permissions
+            );
+
             return (
-              <Card key={sharedLink._id} className="p-6 hover:shadow-md transition-shadow">
+              <Card
+                key={sharedLink._id}
+                className="p-6 hover:shadow-md transition-shadow"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     {/* Link Title and URL */}
@@ -299,11 +327,15 @@ export default function SharedLinksPage() {
                           /{link.slug}
                         </span>
                         <span>→</span>
-                        <span className="truncate max-w-md">{link.originalUrl}</span>
+                        <span className="truncate max-w-md">
+                          {link.originalUrl}
+                        </span>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => window.open(link.originalUrl, '_blank')}
+                          onClick={() =>
+                            window.open(link.originalUrl, '_blank')
+                          }
                           className="h-6 w-6"
                         >
                           <ExternalLink className="h-3 w-3" />
@@ -324,7 +356,8 @@ export default function SharedLinksPage() {
                         <User className="h-4 w-4" />
                         <span>Compartido por:</span>
                         <span className="font-medium text-foreground">
-                          {sharedLink.sharedBy.name || sharedLink.sharedBy.email}
+                          {sharedLink.sharedBy.name ||
+                            sharedLink.sharedBy.email}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-1">
@@ -334,7 +367,7 @@ export default function SharedLinksPage() {
                             <span
                               key={index}
                               className={cn(
-                                "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+                                'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
                                 badge.color
                               )}
                             >
@@ -354,7 +387,9 @@ export default function SharedLinksPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        <span>Compartido: {formatDate(sharedLink.sharedAt)}</span>
+                        <span>
+                          Compartido: {formatDate(sharedLink.sharedAt)}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
@@ -375,7 +410,9 @@ export default function SharedLinksPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/stats/${link.slug}`)}
+                        onClick={() =>
+                          router.push(`/dashboard/links/${link.slug}/analytics`)
+                        }
                         className="flex items-center gap-2"
                       >
                         <BarChart3 className="h-4 w-4" />
@@ -418,7 +455,9 @@ export default function SharedLinksPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage(prev => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages}
             >
               Siguiente

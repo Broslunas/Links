@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/db-utils';
 import Link from '../../../../models/Link';
 import { ApiResponse } from '../../../../types';
-import { withAuth, AuthContext, verifyResourceOwnership } from '../../../../lib/auth-middleware';
+import { withAuth, AuthContext, verifyResourceOwnership, verifyLinkAccessBySlug } from '../../../../lib/auth-middleware';
 import { createSuccessResponse, createErrorResponse } from '../../../../lib/api-response';
 import { AppError, ErrorCode } from '../../../../lib/api-errors';
 
@@ -23,18 +23,12 @@ export const GET = withAuth(async (
 
   await connectDB();
 
-  // Buscar el link por slug en vez de por _id
-  const link = await Link.findOne({ slug: id });
-  if (!link) {
-    throw new AppError(
-      ErrorCode.LINK_NOT_FOUND,
-      'Link not found',
-      404
-    );
-  }
-
-  // Verificar que el usuario sea propietario del link
-  verifyResourceOwnership(auth.userId, link.userId.toString());
+  // Verificar acceso al enlace (propietario o permisos compartidos)
+  const { isOwner, sharedLink, link } = await verifyLinkAccessBySlug(
+    auth.userId,
+    id,
+    'canView' // Requiere al menos permiso de visualización
+  );
 
   // Transform the link data
   const linkData = {
@@ -75,17 +69,13 @@ export const PUT = withAuth(async (
   }
 
   await connectDB();
-  const link = await Link.findOne({ slug: id });
-  if (!link) {
-    throw new AppError(
-      ErrorCode.LINK_NOT_FOUND,
-      'Link not found',
-      404
-    );
-  }
-
-  // Verificar que el usuario sea propietario del link
-  verifyResourceOwnership(auth.userId, link.userId.toString());
+  
+  // Verificar acceso al enlace (propietario o permisos compartidos)
+  const { isOwner, sharedLink, link } = await verifyLinkAccessBySlug(
+    auth.userId,
+    id,
+    'canEdit' // Requiere permiso de edición para modificar
+  );
 
   const body = await request.json();
   // Only allow updating certain fields
@@ -208,17 +198,13 @@ export const DELETE = withAuth(async (
   }
 
   await connectDB();
-  const link = await Link.findOne({ slug: id });
-  if (!link) {
-    throw new AppError(
-      ErrorCode.LINK_NOT_FOUND,
-      'Link not found',
-      404
-    );
-  }
-
-  // Verificar que el usuario sea propietario del link
-  verifyResourceOwnership(auth.userId, link.userId.toString());
+  
+  // Verificar acceso al enlace (propietario o permisos compartidos)
+  const { isOwner, sharedLink, link } = await verifyLinkAccessBySlug(
+    auth.userId,
+    id,
+    'canDelete' // Requiere permiso de eliminación
+  );
 
   await link.deleteOne();
 
