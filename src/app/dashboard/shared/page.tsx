@@ -22,6 +22,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
+import { LinkEditor } from '@/components/features/LinkEditor';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -72,6 +73,7 @@ export default function SharedLinksPage() {
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [permissionFilter, setPermissionFilter] = useState<string>('all');
+  const [editingLink, setEditingLink] = useState<SharedLink | null>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -173,6 +175,24 @@ export default function SharedLinksPage() {
     } else {
       window.open(link.linkId.originalUrl, '_blank');
     }
+  };
+
+  const handleEditLink = (sharedLink: SharedLink) => {
+    if (sharedLink.permissions.canEdit) {
+      setEditingLink(sharedLink);
+    } else {
+      toast.error('No tienes permisos para editar este enlace');
+    }
+  };
+
+  const handleLinkUpdated = () => {
+    toast.success('Enlace actualizado correctamente');
+    setEditingLink(null);
+    loadSharedLinks(); // Reload the shared links to reflect changes
+  };
+
+  const handleError = (error: string) => {
+    toast.error(error || 'Error al actualizar el enlace');
   };
 
   // Loading state
@@ -419,15 +439,17 @@ export default function SharedLinksPage() {
                         Ver Stats
                       </Button>
                     )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleLinkClick(sharedLink)}
-                      className="flex items-center gap-2"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Ver Enlace
-                    </Button>
+                    {sharedLink.permissions.canEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditLink(sharedLink)}
+                        className="flex items-center gap-2"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                        Editar
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -465,6 +487,36 @@ export default function SharedLinksPage() {
             </Button>
           </div>
         </div>
+      )}
+
+      {/* Link Editor Modal */}
+      {editingLink && (
+        <LinkEditor
+          link={{
+            id: editingLink.linkId._id,
+            originalUrl: editingLink.linkId.originalUrl,
+            slug: editingLink.linkId.slug,
+            title: editingLink.linkId.title,
+            description: editingLink.linkId.description,
+            isActive: editingLink.linkId.isActive,
+            isPublicStats: false, // Default value, will be fetched from API
+            clickCount: editingLink.linkId.clickCount,
+            createdAt: editingLink.linkId.createdAt,
+            updatedAt: editingLink.linkId.createdAt, // Using createdAt as fallback
+            userId: editingLink.linkId.userId
+              ? typeof editingLink.linkId.userId === 'string'
+                ? editingLink.linkId.userId
+                : editingLink.linkId.userId._id
+              : '',
+            isTemporary: false, // Default value
+            expiresAt: undefined, // Default value
+            isFavorite: false, // Default value
+          }}
+          isOpen={!!editingLink}
+          onClose={() => setEditingLink(null)}
+          onLinkUpdated={handleLinkUpdated}
+          onError={handleError}
+        />
       )}
     </div>
   );
