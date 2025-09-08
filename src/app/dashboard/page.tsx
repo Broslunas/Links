@@ -154,7 +154,7 @@ export default function DashboardPage() {
       
       const data = await response.json();
       
-      if (data.success) {
+      if (response.ok && data.success) {
         success('Solicitud de eliminación cancelada correctamente.', 'Cancelación exitosa');
         router.replace('/dashboard');
       } else {
