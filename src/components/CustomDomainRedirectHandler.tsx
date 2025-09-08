@@ -19,9 +19,12 @@ export default function CustomDomainRedirectHandler({ children }: CustomDomainRe
       const currentPath = window.location.pathname;
       const mainDomain = process.env.NEXT_PUBLIC_APP_URL || 'https://broslunas.link';
       
-      // Skip if we're already on the main domain
-      if (currentDomain === 'localhost' || currentDomain === '127.0.0.1' || 
-          currentDomain.includes('broslunas.link') || currentDomain.includes('vercel.app')) {
+      // Skip if we're already on the main domain or localhost
+      if (currentDomain === 'localhost' || 
+          currentDomain === '127.0.0.1' || 
+          currentDomain.includes('broslunas.link') || 
+          currentDomain.includes('vercel.app') ||
+          currentDomain.includes('localhost')) {
         return;
       }
       

@@ -204,8 +204,13 @@ export async function shouldRedirectToMainDomain(
         const requestDomain = extractDomainFromRequest(request);
         const mainDomain = process.env.NEXT_PUBLIC_APP_URL || 'https://broslunas.link';
         
-        // If it's not a custom domain, no redirect needed
-        if (requestDomain === process.env.DEFAULT_DOMAIN || requestDomain === 'localhost:3000') {
+        // If it's the main domain or localhost, no redirect needed
+        if (requestDomain === process.env.DEFAULT_DOMAIN || 
+            requestDomain === 'localhost:3000' ||
+            requestDomain === 'localhost' ||
+            requestDomain === '127.0.0.1' ||
+            requestDomain.includes('broslunas.link') ||
+            requestDomain.includes('vercel.app')) {
             return { success: true };
         }
         
