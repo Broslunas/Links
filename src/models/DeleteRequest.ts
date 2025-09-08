@@ -6,8 +6,9 @@ export interface IDeleteRequest extends Document {
     reason: string;
     token: string;
     expiresAt: Date;
-    status: 'pending' | 'completed' | 'cancelled';
+    status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
     completedAt?: Date;
+    scheduledDeletionAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -39,10 +40,13 @@ const DeleteRequestSchema = new Schema<IDeleteRequest>({
     },
     status: {
         type: String,
-        enum: ['pending', 'completed', 'cancelled'],
+        enum: ['pending', 'confirmed', 'completed', 'cancelled'],
         default: 'pending'
     },
     completedAt: {
+        type: Date
+    },
+    scheduledDeletionAt: {
         type: Date
     }
 }, {

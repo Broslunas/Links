@@ -98,10 +98,13 @@ export default function AdminPage() {
   // Check for delete user parameters
   useEffect(() => {
     const deleteUserId = searchParams.get('deleteUser');
+    const cancelDeletionUserId = searchParams.get('cancelDeletionUser');
     const token = searchParams.get('token');
     
     if (deleteUserId && token && userRole === 'admin') {
       handleDeleteUserConfirmation(deleteUserId, token);
+    } else if (cancelDeletionUserId && token && userRole === 'admin') {
+      handleCancelDeletion(cancelDeletionUserId, token);
     }
   }, [searchParams, userRole]);
 
@@ -214,6 +217,37 @@ export default function AdminPage() {
       alert('Error inesperado al eliminar usuario');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDeletion = async (userId: string, token: string) => {
+    try {
+      const response = await fetch('/api/admin/users/cancel-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId,
+          token
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('Solicitud de eliminación cancelada correctamente.');
+        router.replace('/dashboard/admin');
+        // Recargar datos del admin
+        await loadAdminData();
+      } else {
+        alert(data.error?.message || 'Error al cancelar la solicitud de eliminación');
+        router.replace('/dashboard/admin');
+      }
+    } catch (error) {
+      console.error('Error cancelando eliminación:', error);
+      alert('Error inesperado al cancelar la solicitud de eliminación.');
+      router.replace('/dashboard/admin');
     }
   };
 

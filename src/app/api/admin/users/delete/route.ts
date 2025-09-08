@@ -111,65 +111,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Iniciar transacción para eliminar todos los datos del usuario
-    const session = await mongoose.startSession();
+    // Programar la eliminación para 1 hora después
+    const scheduledDeletionAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora desde ahora
     
     try {
-      await session.withTransaction(async () => {
-        // Eliminar enlaces del usuario
-        await Link.deleteMany({ userId: userId }).session(session);
+      // Marcar la solicitud como confirmada y programar eliminación
+      await DeleteRequest.findByIdAndUpdate(
+        deleteRequest._id,
+        { 
+          status: 'confirmed',
+          scheduledDeletionAt: scheduledDeletionAt
+        }
+      );
 
-        // Eliminar notas del usuario
-        await UserNote.deleteMany({ userId: userId }).session(session);
-
-        // Eliminar advertencias del usuario
-        await UserWarning.deleteMany({ userId: userId }).session(session);
-
-        // Eliminar acciones administrativas relacionadas
-        await AdminAction.deleteMany({ targetId: userId }).session(session);
-
-        // Eliminar el usuario
-        await User.findByIdAndDelete(userId).session(session);
-
-        // Marcar la solicitud como completada
-        await DeleteRequest.findByIdAndUpdate(
-          deleteRequest._id,
-          { 
-            status: 'completed',
-            completedAt: new Date()
-          }
-        ).session(session);
-
-        // Registrar la acción de eliminación completada
-        await AdminAction.create([{
-          adminId: deleteRequest.adminId,
-          actionType: 'delete_user_completed',
-          targetType: 'user',
-          targetId: userId,
-          targetEmail: userToDelete.email,
-          reason: deleteRequest.reason,
-          metadata: {
-            deletedData: {
-              links: true,
-              notes: true,
-              warnings: true,
-              user: true
-            }
-          },
-          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-        }], { session });
+      // Registrar la acción de confirmación
+      await AdminAction.create({
+        adminId: deleteRequest.adminId,
+        actionType: 'delete_user',
+        targetType: 'user',
+        targetId: userId,
+        targetEmail: userToDelete.email,
+        reason: deleteRequest.reason,
+        metadata: {
+          scheduledDeletionAt: scheduledDeletionAt.toISOString()
+        },
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
       });
 
       // Enviar webhook de confirmación
       try {
         const adminUser = deleteRequest.adminId as any;
+        const cancelUrl = `${process.env.NEXTAUTH_URL}/dashboard/admin?cancelDeletionUser=${userId}&token=${deleteRequest.token}`;
+        
         const webhookData = {
           name: userToDelete.name || userToDelete.email,
           email: userToDelete.email,
           emailAdmin: adminUser?.email || 'admin',
           nameAdmin: adminUser?.name || adminUser?.email || 'Admin',
           reason: deleteRequest.reason,
-          status: 'confirmed'
+          status: 'pendingConfirmation',
+          scheduledDeletionAt: scheduledDeletionAt.toISOString(),
+          cancelUrl: cancelUrl
         };
 
         const webhookResponse = await fetch('https://hook.eu2.make.com/e7mprt6w5vpm6bru3pgjde3pw6i0mxgq', {
@@ -189,17 +171,16 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'Usuario y todos sus datos han sido eliminados correctamente'
+        message: 'Eliminación confirmada. Los datos del usuario serán eliminados en 1 hora.',
+        scheduledDeletionAt: scheduledDeletionAt.toISOString()
       });
 
-    } catch (transactionError) {
-      console.error('Error en transacción de eliminación:', transactionError);
+    } catch (confirmationError) {
+      console.error('Error en confirmación de eliminación:', confirmationError);
       return NextResponse.json(
-        { success: false, error: { message: 'Error al eliminar los datos del usuario' } },
+        { success: false, error: { message: 'Error al confirmar la eliminación del usuario' } },
         { status: 500 }
       );
-    } finally {
-      await session.endSession();
     }
 
   } catch (error) {
