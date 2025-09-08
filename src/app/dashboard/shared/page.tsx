@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -68,11 +68,15 @@ export default function SharedLinksPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalLinks, setTotalLinks] = useState(0);
-  const [sortBy, setSortBy] = useState<'sharedAt' | 'title' | 'clickCount'>(
+  const [sortBy, setSortBy] = useState<'sharedAt' | 'title' | 'clickCount' | 'createdAt'>(
     'sharedAt'
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [permissionFilter, setPermissionFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [isMobile, setIsMobile] = useState(false);
   const [editingLink, setEditingLink] = useState<SharedLink | null>(null);
 
   // Redirect if not authenticated
@@ -82,12 +86,32 @@ export default function SharedLinksPage() {
     }
   }, [status, router]);
 
+  // Check if screen is mobile size
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 1100); // md breakpoint
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // Force list view on mobile
+  useEffect(() => {
+    if (isMobile && viewMode === 'cards') {
+      setViewMode('list');
+    }
+  }, [isMobile, viewMode]);
+
   // Load shared links
   useEffect(() => {
     if (session?.user?.id) {
       loadSharedLinks();
     }
-  }, [session, currentPage, searchTerm, sortBy, sortOrder, permissionFilter]);
+  }, [session, currentPage, searchTerm, sortBy, sortOrder, permissionFilter, statusFilter, dateFilter]);
 
   const loadSharedLinks = async () => {
     setLoading(true);
@@ -195,6 +219,83 @@ export default function SharedLinksPage() {
     toast.error(error || 'Error al actualizar el enlace');
   };
 
+  // Filter and sort shared links
+  const filteredAndSortedLinks = useMemo(() => {
+    let filtered = sharedLinks.filter(sharedLink => {
+      const link = sharedLink.linkId;
+      
+      // Search filter
+      const matchesSearch =
+        searchTerm === '' ||
+        link.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        link.originalUrl.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        link.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sharedLink.sharedBy.name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        sharedLink.sharedBy.email
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+
+      // Permission filter
+      const matchesPermission =
+        permissionFilter === 'all' ||
+        (permissionFilter === 'canEdit' && sharedLink.permissions.canEdit) ||
+        (permissionFilter === 'canViewStats' &&
+          sharedLink.permissions.canViewStats) ||
+        (permissionFilter === 'canDelete' && sharedLink.permissions.canDelete);
+
+      // Status filter
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'active' && link.isActive) ||
+        (statusFilter === 'inactive' && !link.isActive);
+
+      // Date filter
+      const matchesDate = (() => {
+        if (dateFilter === 'all') return true;
+        const sharedDate = new Date(sharedLink.sharedAt);
+        const now = new Date();
+
+        switch (dateFilter) {
+          case 'today':
+            return sharedDate.toDateString() === now.toDateString();
+          case 'week':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            return sharedDate >= weekAgo;
+          case 'month':
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            return sharedDate >= monthAgo;
+          default:
+            return true;
+        }
+      })();
+
+      return matchesSearch && matchesPermission && matchesStatus && matchesDate;
+    });
+
+    // Sort the filtered results
+    filtered.sort((a, b) => {
+      const aValue = sortBy === 'sharedAt' ? new Date(a.sharedAt).getTime() : 
+                     sortBy === 'createdAt' ? new Date(a.linkId.createdAt).getTime() :
+                     sortBy === 'clickCount' ? a.linkId.clickCount :
+                     sortBy === 'title' ? (a.linkId.title || '').toLowerCase() : 0;
+      
+      const bValue = sortBy === 'sharedAt' ? new Date(b.sharedAt).getTime() : 
+                     sortBy === 'createdAt' ? new Date(b.linkId.createdAt).getTime() :
+                     sortBy === 'clickCount' ? b.linkId.clickCount :
+                     sortBy === 'title' ? (b.linkId.title || '').toLowerCase() : 0;
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [sharedLinks, searchTerm, permissionFilter, sortBy, sortOrder, statusFilter, dateFilter]);
+
   // Loading state
   if (status === 'loading') {
     return (
@@ -241,54 +342,132 @@ export default function SharedLinksPage() {
         </div>
       </div>
 
-      {/* Filters and Search */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <form onSubmit={handleSearch} className="flex gap-2 flex-1 max-w-md">
-          <Input
-            type="text"
-            placeholder="Buscar enlaces..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="flex-1"
-          />
-          <Button type="submit" size="icon">
-            <Search className="h-4 w-4" />
-          </Button>
-        </form>
+      {/* Navigation Bar with Filters */}
+      <div className="bg-card rounded-lg border border-border mb-6">
+        <div className="p-6 border-b border-border">
+          <div className="flex flex-col gap-4">
+            {/* Search Bar and View Mode */}
+            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+              <div className="relative flex-1 max-w-md">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar por título, URL, slug o usuario..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-border rounded-md leading-5 bg-background placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+                />
+              </div>
 
-        <div className="flex gap-2 items-center">
-          <select
-            value={permissionFilter}
-            onChange={e => {
-              setPermissionFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-3 py-2 border border-input rounded-md bg-background text-sm"
-          >
-            <option value="all">Todos los permisos</option>
-            <option value="canView">Solo ver</option>
-            <option value="canEdit">Puede editar</option>
-            <option value="canViewStats">Puede ver stats</option>
-            <option value="canDelete">Puede eliminar</option>
-          </select>
+              {/* View Mode Toggle - Hide on mobile */}
+              {!isMobile && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-background text-foreground border border-border hover:bg-accent'
+                    }`}
+                  >
+                    Lista
+                  </button>
+                  <button
+                    onClick={() => setViewMode('cards')}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      viewMode === 'cards'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-background text-foreground border border-border hover:bg-accent'
+                    }`}
+                  >
+                    Tarjetas
+                  </button>
+                </div>
+              )}
+            </div>
 
-          <select
-            value={`${sortBy}-${sortOrder}`}
-            onChange={e => {
-              const [field, order] = e.target.value.split('-');
-              setSortBy(field as typeof sortBy);
-              setSortOrder(order as typeof sortOrder);
-              setCurrentPage(1);
-            }}
-            className="px-3 py-2 border border-input rounded-md bg-background text-sm"
-          >
-            <option value="sharedAt-desc">Más recientes</option>
-            <option value="sharedAt-asc">Más antiguos</option>
-            <option value="title-asc">Título A-Z</option>
-            <option value="title-desc">Título Z-A</option>
-            <option value="clickCount-desc">Más clics</option>
-            <option value="clickCount-asc">Menos clics</option>
-          </select>
+            {/* Filters Row */}
+            <div className="flex flex-wrap gap-4 items-center">
+              {/* Status Filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Estado:
+                </label>
+                <select
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                  className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                >
+                  <option value="all">Todos</option>
+                  <option value="active">Activos</option>
+                  <option value="inactive">Inactivos</option>
+                </select>
+              </div>
+
+              {/* Permission Filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Permisos:
+                </label>
+                <select
+                  value={permissionFilter}
+                  onChange={e => {
+                    setPermissionFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                >
+                  <option value="all">Todos</option>
+                  <option value="canEdit">Puede editar</option>
+                  <option value="canViewStats">Ver estadísticas</option>
+                  <option value="canDelete">Puede eliminar</option>
+                </select>
+              </div>
+
+              {/* Date Filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Fecha:
+                </label>
+                <select
+                  value={dateFilter}
+                  onChange={e => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
+                  className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                >
+                  <option value="all">Todas</option>
+                  <option value="today">Hoy</option>
+                  <option value="week">Esta semana</option>
+                  <option value="month">Este mes</option>
+                </select>
+              </div>
+
+              {/* Sort Options */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Ordenar:
+                </label>
+                <select
+                  value={`${sortBy}-${sortOrder}`}
+                  onChange={e => {
+                    const [field, order] = e.target.value.split('-');
+                    setSortBy(field as typeof sortBy);
+                    setSortOrder(order as typeof sortOrder);
+                    setCurrentPage(1);
+                  }}
+                  className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                >
+                  <option value="sharedAt-desc">Más recientes</option>
+                  <option value="sharedAt-asc">Más antiguos</option>
+                  <option value="title-asc">Título A-Z</option>
+                  <option value="title-desc">Título Z-A</option>
+                  <option value="clickCount-desc">Más clics</option>
+                  <option value="clickCount-asc">Menos clics</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -298,23 +477,25 @@ export default function SharedLinksPage() {
           <Loader2 className="h-8 w-8 animate-spin" />
           <span className="ml-2">Cargando enlaces...</span>
         </div>
-      ) : sharedLinks.length === 0 ? (
+      ) : filteredAndSortedLinks.length === 0 ? (
         <Card className="p-12 text-center">
           <Share2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
           <h3 className="text-lg font-medium text-foreground mb-2">
-            No tienes enlaces compartidos
+            {sharedLinks.length === 0 ? 'No tienes enlaces compartidos' : 'No se encontraron enlaces'}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {searchTerm || permissionFilter !== 'all'
-              ? 'No se encontraron enlaces con los filtros aplicados'
-              : 'Aún no tienes enlaces compartidos contigo'}
+            {sharedLinks.length === 0
+              ? 'Aún no tienes enlaces compartidos contigo'
+              : 'No se encontraron enlaces con los filtros aplicados'}
           </p>
-          {(searchTerm || permissionFilter !== 'all') && (
+          {(searchTerm || permissionFilter !== 'all' || statusFilter !== 'all' || dateFilter !== 'all') && (
             <Button
               variant="outline"
               onClick={() => {
                 setSearchTerm('');
                 setPermissionFilter('all');
+                setStatusFilter('all');
+                setDateFilter('all');
                 setCurrentPage(1);
               }}
             >
@@ -323,65 +504,205 @@ export default function SharedLinksPage() {
           )}
         </Card>
       ) : (
-        <div className="space-y-4">
-          {sharedLinks.map(sharedLink => {
+        <div className={viewMode === 'cards' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
+          {filteredAndSortedLinks.map(sharedLink => {
             const link = sharedLink.linkId;
             const permissionBadges = getPermissionBadges(
               sharedLink.permissions
             );
 
-            return (
+            return viewMode === 'cards' ? (
+              // Card View
               <Card
                 key={sharedLink._id}
-                className="p-6 hover:shadow-md transition-shadow"
+                className="p-4 hover:shadow-md transition-all duration-200 hover:border-primary/20 flex flex-col h-full"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    {/* Link Title and URL */}
-                    <div className="mb-3">
-                      <h3 className="text-lg font-medium text-foreground mb-1 truncate">
-                        {link.title || `Enlace /${link.slug}`}
-                      </h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="font-mono bg-muted px-2 py-1 rounded">
-                          /{link.slug}
-                        </span>
-                        <span>→</span>
-                        <span className="truncate max-w-md">
-                          {link.originalUrl}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            window.open(link.originalUrl, '_blank')
-                          }
-                          className="h-6 w-6"
+                {/* Header with title and status */}
+                <div className="mb-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-foreground text-sm line-clamp-2 flex-1 mr-2">
+                      {link.title || 'Enlace sin título'}
+                    </h3>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                        link.isActive
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                      }`}
+                    >
+                      {link.isActive ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* URLs */}
+                <div className="space-y-2 mb-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      URL Original:
+                    </p>
+                    <a
+                      href={link.originalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 break-all"
+                    >
+                      {link.originalUrl}
+                    </a>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Enlace corto:
+                    </p>
+                    <button
+                      onClick={() => handleLinkClick(sharedLink)}
+                      className="text-xs text-primary hover:text-primary/80 font-mono break-all text-left"
+                    >
+                      {window.location.origin}/{link.slug}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {link.description && (
+                  <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                    {link.description}
+                  </p>
+                )}
+
+                {/* Shared by */}
+                <div className="mb-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <User className="h-3 w-3" />
+                    <span>Compartido por:</span>
+                    <span className="font-medium text-foreground">
+                      {sharedLink.sharedBy.name || sharedLink.sharedBy.email}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Permissions */}
+                <div className="mb-3">
+                  <div className="flex flex-wrap gap-1">
+                    {permissionBadges.map((badge, index) => {
+                      const Icon = badge.icon;
+                      return (
+                        <span
+                          key={index}
+                          className={cn(
+                            'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
+                            badge.color
+                          )}
                         >
-                          <ExternalLink className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    {link.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {link.description}
-                      </p>
-                    )}
-
-                    {/* Shared by and permissions */}
-                    <div className="flex flex-wrap items-center gap-3 mb-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <User className="h-4 w-4" />
-                        <span>Compartido por:</span>
-                        <span className="font-medium text-foreground">
-                          {sharedLink.sharedBy.name ||
-                            sharedLink.sharedBy.email}
+                          <Icon className="h-2 w-2" />
+                          {badge.label}
                         </span>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                  <div className="flex items-center gap-1">
+                    <BarChart3 className="h-3 w-3" />
+                    <span>{link.clickCount} clics</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>{formatDate(sharedLink.sharedAt)}</span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 mt-auto">
+                  {sharedLink.permissions.canViewStats && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        router.push(`/dashboard/links/${link.slug}/analytics`)
+                      }
+                      className="flex items-center gap-1 text-xs px-2 py-1 h-7"
+                    >
+                      <BarChart3 className="h-3 w-3" />
+                      Stats
+                    </Button>
+                  )}
+                  {sharedLink.permissions.canEdit && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditLink(sharedLink)}
+                      className="flex items-center gap-1 text-xs px-2 py-1 h-7"
+                    >
+                      <Edit3 className="h-3 w-3" />
+                      Editar
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            ) : (
+              // List View
+              <Card key={sharedLink._id} className="p-4 hover:shadow-sm transition-all duration-200 hover:border-primary/20">
+                <div className="flex items-center justify-between">
+                  {/* Left side - Link info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      {/* Title and status */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium text-foreground text-sm truncate">
+                            {link.title || 'Enlace sin título'}
+                          </h3>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              link.isActive
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                            }`}
+                          >
+                            {link.isActive ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <button
+                            onClick={() => handleLinkClick(sharedLink)}
+                            className="text-primary hover:text-primary/80 font-mono"
+                          >
+                            /{link.slug}
+                          </button>
+                          <span>→</span>
+                          <a
+                            href={link.originalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 truncate max-w-md"
+                          >
+                            {link.originalUrl}
+                          </a>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-1">
-                        {permissionBadges.map((badge, index) => {
+
+                      {/* Stats */}
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <BarChart3 className="h-3 w-3" />
+                          <span>{link.clickCount}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          <span>{sharedLink.sharedBy.name || sharedLink.sharedBy.email}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>{formatDate(sharedLink.sharedAt)}</span>
+                        </div>
+                      </div>
+
+                      {/* Permissions */}
+                      <div className="flex gap-1">
+                        {permissionBadges.slice(0, 2).map((badge, index) => {
                           const Icon = badge.icon;
                           return (
                             <span
@@ -391,40 +712,21 @@ export default function SharedLinksPage() {
                                 badge.color
                               )}
                             >
-                              <Icon className="h-3 w-3" />
+                              <Icon className="h-2 w-2" />
                               {badge.label}
                             </span>
                           );
                         })}
+                        {permissionBadges.length > 2 && (
+                          <span className="text-xs text-muted-foreground px-2 py-1">
+                            +{permissionBadges.length - 2}
+                          </span>
+                        )}
                       </div>
-                    </div>
-
-                    {/* Stats and dates */}
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <BarChart3 className="h-4 w-4" />
-                        <span>{link.clickCount} clics</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          Compartido: {formatDate(sharedLink.sharedAt)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>Creado: {formatDate(link.createdAt)}</span>
-                      </div>
-                      {!link.isActive && (
-                        <div className="flex items-center gap-1 text-orange-600">
-                          <AlertCircle className="h-4 w-4" />
-                          <span>Inactivo</span>
-                        </div>
-                      )}
                     </div>
                   </div>
 
-                  {/* Actions */}
+                  {/* Right side - Actions */}
                   <div className="flex gap-2 ml-4">
                     {sharedLink.permissions.canViewStats && (
                       <Button
@@ -433,10 +735,10 @@ export default function SharedLinksPage() {
                         onClick={() =>
                           router.push(`/dashboard/links/${link.slug}/analytics`)
                         }
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-1 text-xs px-2 py-1 h-7"
                       >
-                        <BarChart3 className="h-4 w-4" />
-                        Ver Stats
+                        <BarChart3 className="h-3 w-3" />
+                        Stats
                       </Button>
                     )}
                     {sharedLink.permissions.canEdit && (
@@ -444,16 +746,16 @@ export default function SharedLinksPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditLink(sharedLink)}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-1 text-xs px-2 py-1 h-7"
                       >
-                        <Edit3 className="h-4 w-4" />
+                        <Edit3 className="h-3 w-3" />
                         Editar
                       </Button>
                     )}
-                  </div>
-                </div>
-              </Card>
-            );
+                   </div>
+                 </div>
+               </Card>
+             );
           })}
         </div>
       )}

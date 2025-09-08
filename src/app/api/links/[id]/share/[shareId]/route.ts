@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../../../lib/db-utils';
-import { withAuth, AuthContext, verifyLinkAccess } from '../../../../../../lib/auth-middleware';
+import { withAuth, AuthContext, verifyLinkAccessBySlug } from '../../../../../../lib/auth-middleware';
 import { createSuccessResponse } from '../../../../../../lib/api-response';
 import { AppError, ErrorCode } from '../../../../../../lib/api-errors';
 import SharedLink from '../../../../../../models/SharedLink';
@@ -24,7 +24,7 @@ export const PUT = withAuth(async (
   await connectDB();
 
   // Verificar que el usuario tenga permisos para gestionar el enlace
-  const { isOwner, sharedLink: userSharedLink } = await verifyLinkAccess(auth.userId, id, 'canShare');
+  const { isOwner, sharedLink: userSharedLink, link } = await verifyLinkAccessBySlug(auth.userId, id, 'canShare');
   
   // Solo el propietario o usuarios con permiso canShare pueden modificar permisos
   if (!isOwner && (!userSharedLink || !userSharedLink.permissions.canShare)) {
@@ -49,7 +49,7 @@ export const PUT = withAuth(async (
   }
 
   // Verificar que el enlace compartido corresponde al enlace correcto
-  if (sharedLink.linkId.toString() !== id) {
+  if (sharedLink.linkId.toString() !== link._id.toString()) {
     throw new AppError(
       ErrorCode.VALIDATION_ERROR,
       'Share ID does not match the provided link ID',
@@ -126,6 +126,18 @@ export const DELETE = withAuth(async (
 
   await connectDB();
 
+  // Verificar que el usuario tenga permisos para gestionar el enlace
+  const { isOwner, sharedLink: userSharedLink, link } = await verifyLinkAccessBySlug(auth.userId, id, 'canShare');
+  
+  // Solo el propietario o usuarios con permiso canShare pueden eliminar enlaces compartidos
+  if (!isOwner && (!userSharedLink || !userSharedLink.permissions.canShare)) {
+    throw new AppError(
+      ErrorCode.FORBIDDEN,
+      'Access denied: You do not have permission to remove shared links',
+      403
+    );
+  }
+
   // Buscar el enlace compartido específico
   const sharedLink = await SharedLink.findById(shareId);
   if (!sharedLink) {
@@ -137,24 +149,11 @@ export const DELETE = withAuth(async (
   }
 
   // Verificar que el enlace compartido corresponde al enlace correcto
-  if (sharedLink.linkId.toString() !== id) {
+  if (sharedLink.linkId.toString() !== link._id.toString()) {
     throw new AppError(
       ErrorCode.VALIDATION_ERROR,
       'Share ID does not match the provided link ID',
       400
-    );
-  }
-
-  // Verificar permisos: el propietario, el usuario con quien se compartió, o alguien con permisos de compartir
-  const { isOwner, sharedLink: userSharedLink } = await verifyLinkAccess(auth.userId, id);
-  const isSharedWithUser = sharedLink.sharedWithUserId.toString() === auth.userId;
-  const canManageSharing = userSharedLink && userSharedLink.permissions.canShare;
-
-  if (!isOwner && !isSharedWithUser && !canManageSharing) {
-    throw new AppError(
-      ErrorCode.FORBIDDEN,
-      'Access denied: You do not have permission to remove this shared link',
-      403
     );
   }
 
@@ -166,7 +165,7 @@ export const DELETE = withAuth(async (
   });
 });
 
-// GET /api/links/[id]/share/[shareId] - Obtener detalles de un enlace compartido específico
+// GET /api/links/[id]/share/[shareId] - Obtener información de un enlace compartido específico
 export const GET = withAuth(async (
   request: NextRequest,
   auth: AuthContext,
@@ -184,14 +183,11 @@ export const GET = withAuth(async (
 
   await connectDB();
 
-  // Verificar que el usuario tenga acceso al enlace
-  await verifyLinkAccess(auth.userId, id);
-
+  // Verificar que el usuario tenga permisos para ver el enlace
+  const { isOwner, sharedLink: userSharedLink, link } = await verifyLinkAccessBySlug(auth.userId, id, 'canView');
+  
   // Buscar el enlace compartido específico
-  const sharedLink = await SharedLink.findById(shareId)
-    .populate('sharedWithUserId', 'email name image')
-    .populate('ownerId', 'email name');
-
+  const sharedLink = await SharedLink.findById(shareId).populate('sharedWithUserId', 'email name');
   if (!sharedLink) {
     throw new AppError(
       ErrorCode.NOT_FOUND,
@@ -201,7 +197,7 @@ export const GET = withAuth(async (
   }
 
   // Verificar que el enlace compartido corresponde al enlace correcto
-  if (sharedLink.linkId.toString() !== id) {
+  if (sharedLink.linkId.toString() !== link._id.toString()) {
     throw new AppError(
       ErrorCode.VALIDATION_ERROR,
       'Share ID does not match the provided link ID',
@@ -209,21 +205,22 @@ export const GET = withAuth(async (
     );
   }
 
+  // Solo el propietario o el usuario con quien se compartió pueden ver los detalles
+  const isSharedWithUser = sharedLink.sharedWithUserId.toString() === auth.userId;
+  if (!isOwner && !isSharedWithUser) {
+    throw new AppError(
+      ErrorCode.FORBIDDEN,
+      'Access denied: You can only view your own shared links',
+      403
+    );
+  }
+
   return createSuccessResponse({
     sharedLink: {
       id: sharedLink._id.toString(),
       linkId: sharedLink.linkId.toString(),
-      sharedWithUser: {
-        id: sharedLink.sharedWithUserId._id.toString(),
-        email: sharedLink.sharedWithUserId.email,
-        name: sharedLink.sharedWithUserId.name,
-        image: sharedLink.sharedWithUserId.image,
-      },
-      owner: {
-        id: sharedLink.ownerId._id.toString(),
-        email: sharedLink.ownerId.email,
-        name: sharedLink.ownerId.name,
-      },
+      sharedWithEmail: sharedLink.sharedWithEmail,
+      sharedWithUser: sharedLink.sharedWithUserId,
       permissions: sharedLink.permissions,
       isActive: sharedLink.isActive,
       expiresAt: sharedLink.expiresAt,

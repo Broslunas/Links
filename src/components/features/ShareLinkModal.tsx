@@ -30,6 +30,7 @@ interface ShareLinkModalProps {
 
 interface SharedUser {
   _id: string;
+  shareId: string;
   email: string;
   permissions: {
     canView: boolean;
@@ -65,6 +66,16 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
     }
   });
   const [copiedStates, setCopiedStates] = useState<{ [key: string]: boolean }>({});
+  const [editingUser, setEditingUser] = useState<SharedUser | null>(null);
+  const [editForm, setEditForm] = useState<ShareFormData>({
+    email: '',
+    permissions: {
+      canView: true,
+      canEdit: false,
+      canViewStats: false,
+      canDelete: false
+    }
+  });
 
   // Cargar usuarios compartidos cuando se abre el modal
   useEffect(() => {
@@ -84,13 +95,17 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
       const response = await fetch(`/api/links/${linkSlug}/share`);
       if (response.ok) {
         const data = await response.json();
+        console.log('API Response:', data); // Debug log
         // Mapear la estructura del API a la que espera el componente
-        const mappedUsers = (data.shares || []).map((share: any) => ({
-          _id: share.id,
-          email: share.sharedWithUser.email,
+        const shares = data.data?.shares || data.shares || [];
+        const mappedUsers = shares.map((share: any) => ({
+          _id: share.sharedWithUser?.id || share.sharedWithUserId, // userId para eliminar
+          shareId: share.id, // shareId para editar permisos (viene del API como 'id')
+          email: share.sharedWithUser?.email || '',
           permissions: share.permissions,
           sharedAt: share.createdAt
         }));
+        console.log('Mapped users:', mappedUsers); // Debug log
         setSharedUsers(mappedUsers);
       } else {
         toast.error('Error al cargar usuarios compartidos');
@@ -165,6 +180,8 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
       return;
     }
 
+    console.log('Removing share for userId:', userId); // Debug log
+
     try {
       const response = await fetch(`/api/links/${linkSlug}/share`, {
         method: 'DELETE',
@@ -185,6 +202,71 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
       console.error('Error removing share:', error);
       toast.error('Error al remover acceso');
     }
+  };
+
+  const handleEditPermissions = (user: SharedUser) => {
+    setEditingUser(user);
+    setEditForm({
+      email: user.email,
+      permissions: { ...user.permissions }
+    });
+  };
+
+  const handleUpdatePermissions = async () => {
+    if (!linkSlug || !editingUser) {
+      toast.error('Datos no válidos');
+      return;
+    }
+
+    // Validar que al menos un permiso esté seleccionado
+    const hasPermissions = Object.values(editForm.permissions).some(p => p);
+    if (!hasPermissions) {
+      toast.error('Selecciona al menos un permiso');
+      return;
+    }
+
+    console.log('Updating permissions for shareId:', editingUser.shareId); // Debug log
+    console.log('URL:', `/api/links/${linkSlug}/share/${editingUser.shareId}`); // Debug log
+
+    setIsSharing(true);
+    try {
+      const response = await fetch(`/api/links/${linkSlug}/share/${editingUser.shareId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          permissions: editForm.permissions
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Permisos actualizados exitosamente');
+        setEditingUser(null);
+        await loadSharedUsers();
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Error al actualizar permisos');
+      }
+    } catch (error) {
+      console.error('Error updating permissions:', error);
+      toast.error('Error al actualizar permisos');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingUser(null);
+    setEditForm({
+      email: '',
+      permissions: {
+        canView: true,
+        canEdit: false,
+        canViewStats: false,
+        canDelete: false
+      }
+    });
   };
 
   const copyToClipboard = async (text: string, key: string) => {
@@ -260,8 +342,93 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
           </div>
         )}
 
+        {/* Formulario de editar permisos */}
+        {editingUser && (
+          <div className="bg-muted/50 rounded-lg p-4 space-y-4 border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Editar permisos para {editingUser.email}</h4>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={cancelEdit}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-3">
+                  Permisos
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(editForm.permissions).map(([permission, enabled]) => (
+                    <label
+                      key={permission}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                        enabled
+                          ? "bg-primary/10 border-primary/20"
+                          : "bg-background border-border hover:bg-muted/50"
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={enabled}
+                        onChange={(e) => setEditForm(prev => ({
+                          ...prev,
+                          permissions: {
+                            ...prev.permissions,
+                            [permission]: e.target.checked
+                          }
+                        }))}
+                        className="sr-only"
+                      />
+                      <div className={cn(
+                        "flex items-center justify-center w-5 h-5 rounded border-2 transition-colors",
+                        enabled
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-muted-foreground"
+                      )}>
+                        {enabled && <Check className="h-3 w-3" />}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getPermissionIcon(permission)}
+                        <span className="text-sm font-medium">
+                          {getPermissionLabel(permission)}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  onClick={handleUpdatePermissions}
+                  disabled={isSharing}
+                  className="flex items-center gap-2"
+                >
+                  {isSharing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                  {isSharing ? 'Actualizando...' : 'Actualizar permisos'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={cancelEdit}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Formulario de compartir */}
-        {showShareForm && (
+        {showShareForm && !editingUser && (
           <div className="bg-muted/50 rounded-lg p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Compartir con nuevo usuario</h4>
@@ -415,14 +582,26 @@ export function ShareLinkModal({ isOpen, onClose, linkId, linkTitle, linkSlug }:
                       })}
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveShare(user._id, user.email)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditPermissions(user)}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      title="Editar permisos"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveShare(user._id, user.email)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      title="Remover acceso"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               );
             })
