@@ -45,6 +45,7 @@ interface FormData {
   customDurationUnit: 'hours' | 'days';
   expirationDate: string;
   expirationTime: string;
+  customDomain: string;
 }
 
 interface FormErrors {
@@ -61,6 +62,12 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
   const [userPreferences, setUserPreferences] = useState<{
     defaultPublicStats: boolean;
   } | null>(null);
+  const [customDomains, setCustomDomains] = useState<Array<{
+    id: string;
+    domain: string;
+    isDefault: boolean;
+    isVerified: boolean;
+  }>>([]);
   const [formData, setFormData] = useState<FormData>({
     originalUrl: '',
     slug: '',
@@ -74,6 +81,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
     customDurationUnit: 'days',
     expirationDate: '',
     expirationTime: '23:59',
+    customDomain: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -91,13 +99,14 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
     { id: 'review', title: 'Revisar', icon: Eye },
   ];
 
-  // Cargar preferencias del usuario al montar el componente
+  // Cargar preferencias del usuario y dominios personalizados al montar el componente
   useEffect(() => {
-    const loadUserPreferences = async () => {
+    const loadUserData = async () => {
       try {
-        const response = await fetch('/api/user/preferences');
-        if (response.ok) {
-          const result = await response.json();
+        // Cargar preferencias del usuario
+        const preferencesResponse = await fetch('/api/user/preferences');
+        if (preferencesResponse.ok) {
+          const result = await preferencesResponse.json();
           const preferences = result.data || result;
           setUserPreferences(preferences);
           // Actualizar el formulario con las preferencias por defecto
@@ -108,14 +117,33 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
         } else {
           setUserPreferences({ defaultPublicStats: false });
         }
+
+        // Cargar dominios personalizados
+        const domainsResponse = await fetch('/api/domains');
+        if (domainsResponse.ok) {
+          const domainsResult = await domainsResponse.json();
+          if (domainsResult.success && domainsResult.data) {
+            const verifiedDomains = domainsResult.data.filter((domain: any) => domain.isVerified);
+            setCustomDomains(verifiedDomains);
+            
+            // Si hay un dominio por defecto, seleccionarlo automáticamente
+            const defaultDomain = verifiedDomains.find((domain: any) => domain.isDefault);
+            if (defaultDomain) {
+              setFormData(prev => ({
+                ...prev,
+                customDomain: defaultDomain.id,
+              }));
+            }
+          }
+        }
       } catch (error) {
-        console.error('Error loading user preferences:', error);
+        console.error('Error loading user data:', error);
         // Si hay error, usar valores por defecto
         setUserPreferences({ defaultPublicStats: false });
       }
     };
 
-    loadUserPreferences();
+    loadUserData();
   }, []);
 
   // Calcular la fecha mínima (hoy) y máxima (30 días desde hoy)
@@ -274,6 +302,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
         isPublicStats: formData.isPublicStats,
         isTemporary: formData.isTemporary,
         expiresAt: expiresAt,
+        customDomainId: formData.customDomain || undefined,
       };
 
       const response = await fetch('/api/links', {
@@ -343,6 +372,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
           customDurationUnit: 'days',
           expirationDate: '',
           expirationTime: '23:59',
+          customDomain: customDomains.find(d => d.isDefault)?.id || '',
         });
         setCurrentStep(0);
         setShowConfirm(false);
@@ -436,6 +466,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
       customDurationUnit: 'days',
       expirationDate: '',
       expirationTime: '23:59',
+      customDomain: '',
     });
     setErrors({});
     setCurrentStep(0);
@@ -914,6 +945,30 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                       rows={3}
                     />
                   </div>
+
+                  {/* Selector de dominio personalizado */}
+                  {customDomains.length > 0 && (
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-card-foreground mb-2">
+                        Dominio personalizado (opcional)
+                      </label>
+                      <select
+                        value={formData.customDomain}
+                        onChange={e => handleInputChange('customDomain', e.target.value)}
+                        className="w-full px-3 py-2 border border-border rounded-md bg-background text-card-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+                      >
+                        <option value="">Usar dominio por defecto (brl.ink)</option>
+                        {customDomains.map(domain => (
+                          <option key={domain.id} value={domain.id}>
+                            {domain.domain} {domain.isDefault ? '(Por defecto)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Selecciona un dominio personalizado para tu enlace corto
+                      </p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -1173,6 +1228,18 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                         </h4>
                         <p className="text-sm">
                           {formData.slug || 'Se generará automáticamente'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                          Dominio
+                        </h4>
+                        <p className="text-sm">
+                          {formData.customDomain 
+                            ? customDomains.find(d => d.id === formData.customDomain)?.domain || 'brl.ink'
+                            : 'brl.ink (por defecto)'
+                          }
                         </p>
                       </div>
 

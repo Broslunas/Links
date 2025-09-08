@@ -171,6 +171,38 @@ export const faqData: FAQItem[] = [
     category: 'account',
     tags: ['eliminar', 'cuenta', 'datos'],
   },
+  {
+    id: 'what-are-custom-domains',
+    question: '¿Qué son los dominios personalizados?',
+    answer:
+      'Los dominios personalizados te permiten usar tu propio dominio (como links.tuempresa.com) en lugar de broslunas.link para crear enlaces cortos con tu marca. Tu dominio apuntará directamente a la infraestructura de Vercel para máximo rendimiento.',
+    category: 'account',
+    tags: ['dominios', 'personalización', 'marca'],
+  },
+  {
+    id: 'how-to-add-custom-domain',
+    question: '¿Cómo agrego un dominio personalizado?',
+    answer:
+      'Ve a Configuración > Dominios personalizados, agrega tu dominio y configura un registro CNAME en tu proveedor DNS que apunte a cname.vercel-dns.com. El sistema se encarga automáticamente de la configuración en Vercel.',
+    category: 'account',
+    tags: ['dominios', 'configuración', 'DNS'],
+  },
+  {
+    id: 'custom-domain-verification',
+    question: '¿Por qué mi dominio personalizado no se verifica?',
+    answer:
+      'La verificación puede fallar si el registro CNAME no apunta a cname.vercel-dns.com o si los cambios DNS aún no se han propagado. Los cambios DNS pueden tardar hasta 24 horas.',
+    category: 'account',
+    tags: ['dominios', 'verificación', 'DNS'],
+  },
+  {
+    id: 'use-custom-domain-links',
+    question: '¿Cómo uso mi dominio personalizado para crear enlaces?',
+    answer:
+      'Al crear un enlace, selecciona tu dominio personalizado del menú desplegable "Dominio". También puedes configurarlo como predeterminado en la configuración.',
+    category: 'link-management',
+    tags: ['dominios', 'crear enlaces', 'personalización'],
+  },
 
   // Solución de Problemas
   {
@@ -348,13 +380,13 @@ export const guides: Guide[] = [
         title: 'Agrega el dominio en Broslunas Links',
         content:
           'Ve a Configuración > Dominios personalizados y agrega tu dominio.\n\nEl sistema te proporcionará los registros DNS que necesitas configurar.',
-        code: 'Tipo: CNAME\nNombre: links\nValor: custom.broslunas.link',
+        code: 'Tipo: CNAME\nNombre: links (o tu subdominio)\nValor: cname.vercel-dns.com',
         tip: 'Copia exactamente los valores proporcionados para evitar errores de configuración.',
       },
       {
         title: 'Configura los registros DNS',
         content:
-          'En tu proveedor de DNS, agrega los registros CNAME proporcionados por Broslunas Links.\n\nLos cambios DNS pueden tardar hasta 24 horas en propagarse completamente.',
+          'En tu proveedor de DNS, agrega el registro CNAME que apunte a cname.vercel-dns.com.\n\nLos cambios DNS pueden tardar hasta 24 horas en propagarse completamente.',
         tip: 'Usa herramientas como nslookup o dig para verificar que los cambios se hayan aplicado.',
       },
       {

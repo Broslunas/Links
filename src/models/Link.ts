@@ -15,6 +15,7 @@ export interface ILink extends Document {
   isTemporary: boolean;
   expiresAt?: Date;
   isExpired: boolean;
+  customDomain?: mongoose.Types.ObjectId; // Referencia al dominio personalizado
   createdAt: Date;
   updatedAt: Date;
 }
@@ -118,6 +119,11 @@ const LinkSchema = new Schema<ILink>(
       type: Boolean,
       default: false,
     },
+    customDomain: {
+      type: Schema.Types.ObjectId,
+      ref: 'CustomDomain',
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -132,6 +138,8 @@ LinkSchema.index({ isActive: 1 });
 LinkSchema.index({ isPublicStats: 1 });
 LinkSchema.index({ isTemporary: 1, expiresAt: 1 });
 LinkSchema.index({ expiresAt: 1 }, { sparse: true });
+LinkSchema.index({ customDomain: 1 }, { sparse: true });
+LinkSchema.index({ userId: 1, customDomain: 1 });
 
 export default mongoose.models.Link ||
   mongoose.model<ILink>('Link', LinkSchema);

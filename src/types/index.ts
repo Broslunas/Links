@@ -103,6 +103,7 @@ export interface CreateLinkData {
   isTemporary?: boolean;
   expiresAt?: Date;
   isExpired?: boolean;
+  customDomainId?: string;
 }
 
 export interface CreateLinkResponse extends Link {
@@ -119,6 +120,7 @@ export interface UpdateLinkData {
   isTemporary?: boolean;
   expiresAt?: Date;
   isExpired?: boolean;
+  customDomainId?: string;
 }
 
 export interface AnalyticsData {

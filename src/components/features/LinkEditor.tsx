@@ -29,9 +29,16 @@ export function LinkEditor({
     isActive: true,
     isTemporary: false,
     expiresAt: '',
+    customDomain: '',
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [customDomains, setCustomDomains] = useState<Array<{
+    id: string;
+    domain: string;
+    isDefault: boolean;
+    isVerified: boolean;
+  }>>([]);
 
   // Reset form when link changes or modal opens
   useEffect(() => {
@@ -47,10 +54,32 @@ export function LinkEditor({
         expiresAt: link.expiresAt
           ? new Date(link.expiresAt).toISOString().slice(0, 16)
           : '',
+        customDomain: (link as any).customDomainId || '',
       });
       setErrors({});
     }
   }, [link, isOpen]);
+
+  // Load custom domains when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const loadCustomDomains = async () => {
+        try {
+          const response = await fetch('/api/domains');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              const verifiedDomains = data.data.filter((domain: any) => domain.isVerified);
+              setCustomDomains(verifiedDomains);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading custom domains:', error);
+        }
+      };
+      loadCustomDomains();
+    }
+  }, [isOpen]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -129,6 +158,7 @@ export function LinkEditor({
           formData.isTemporary && formData.expiresAt
             ? new Date(formData.expiresAt)
             : undefined,
+        customDomainId: formData.customDomain || undefined,
       };
 
       const response = await fetch(`/api/links/${link.slug}`, {
@@ -266,6 +296,35 @@ export function LinkEditor({
               <p className="text-red-500 text-xs mt-1">{errors.description}</p>
             )}
           </div>
+
+          {customDomains.length > 0 && (
+            <div>
+              <label
+                htmlFor="customDomain"
+                className="block text-sm font-medium text-foreground mb-2"
+              >
+                Dominio personalizado
+              </label>
+              <select
+                id="customDomain"
+                value={formData.customDomain}
+                onChange={e => handleInputChange('customDomain', e.target.value)}
+                disabled={loading}
+                className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors border-input bg-background text-foreground"
+              >
+                <option value="">brl.ink (por defecto)</option>
+                {customDomains.map(domain => (
+                  <option key={domain.id} value={domain.id}>
+                    {domain.domain}
+                    {domain.isDefault ? ' (predeterminado)' : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Selecciona un dominio personalizado para este enlace
+              </p>
+            </div>
+          )}
 
           <div className="space-y-4">
             <div>
