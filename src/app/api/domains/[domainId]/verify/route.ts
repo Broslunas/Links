@@ -3,8 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 import { connectDB } from '@/lib/db-utils';
 import CustomDomain from '@/models/CustomDomain';
+import User from '@/models/User';
 import mongoose from 'mongoose';
+import { VercelIntegration } from '@/lib/vercel-integration';
 import { CustomDomainResponse } from '../../route';
+import { sendDomainNotification } from '@/lib/domain-notification-service';
 
 // Función para verificar DNS usando una API externa o método nativo
 async function verifyDNSRecord(domain: string, expectedValue: string): Promise<boolean> {
@@ -156,6 +159,18 @@ async function createVercelDomain(domain: string): Promise<{ success: boolean; d
 
     if (!createDomainResponse.ok) {
       const errorData = await createDomainResponse.json();
+      
+      // Si el dominio ya existe, no es un error fatal
+      if (errorData.error?.code === 'domain_already_in_use' || 
+          errorData.error?.message?.includes('already in use')) {
+        console.log(`Dominio ${domain} ya existe en Vercel, continuando con verificación`);
+        return {
+          success: true,
+          domainId: domain,
+          configId: undefined,
+        };
+      }
+      
       throw new Error(errorData.error?.message || 'Error creando dominio en Vercel');
     }
 
@@ -324,6 +339,32 @@ export async function POST(
     domain.sslStatus = 'pending'; // SSL se configurará automáticamente
     
     await domain.save();
+
+    // Obtener información del usuario para la notificación
+    try {
+      const user = await User.findById(session.user.id);
+      if (user && user.email && user.name) {
+        // Enviar notificación por email de dominio verificado
+        await sendDomainNotification({
+          userEmail: user.email,
+          userName: user.name,
+          domainId: domain._id.toString(),
+          domain: domain.fullDomain,
+          status: 'verified'
+        });
+        console.log('Domain verification notification sent successfully');
+      } else {
+        console.warn('User not found or missing email/name for notification:', {
+          userId: session.user.id,
+          userFound: !!user,
+          hasEmail: user?.email ? true : false,
+          hasName: user?.name ? true : false
+        });
+      }
+    } catch (notificationError) {
+      console.error('Error sending domain verification notification:', notificationError);
+      // No lanzamos el error para que no afecte el flujo principal
+    }
 
     const domainResponse: CustomDomainResponse = {
       _id: domain._id.toString(),

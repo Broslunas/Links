@@ -3,8 +3,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 import { connectDB } from '@/lib/db-utils';
 import CustomDomain from '@/models/CustomDomain';
+import User from '@/models/User';
 import { v4 as uuidv4 } from 'uuid';
 import { ApiResponse } from '@/types';
+import { sendDomainNotification } from '@/lib/domain-notification-service';
 
 // Función para crear dominio en Vercel
 async function createVercelDomain(domain: string): Promise<{ success: boolean; domainId?: string; configId?: string; error?: string }> {
@@ -201,6 +203,32 @@ export async function POST(request: NextRequest) {
     });
 
     await newDomain.save();
+
+    // Obtener información del usuario para la notificación
+    try {
+      const user = await User.findById(session.user.id);
+      if (user && user.email && user.name) {
+        // Enviar notificación por email de dominio añadido
+        await sendDomainNotification({
+          userEmail: user.email,
+          userName: user.name,
+          domainId: newDomain._id.toString(),
+          domain: newDomain.fullDomain,
+          status: 'added'
+        });
+        console.log('Domain creation notification sent successfully');
+      } else {
+        console.warn('User not found or missing email/name for notification:', {
+          userId: session.user.id,
+          userFound: !!user,
+          hasEmail: user?.email ? true : false,
+          hasName: user?.name ? true : false
+        });
+      }
+    } catch (notificationError) {
+      console.error('Error sending domain creation notification:', notificationError);
+      // No lanzamos el error para que no afecte el flujo principal
+    }
 
     const domainResponse: CustomDomainResponse = {
       _id: newDomain._id.toString(),
