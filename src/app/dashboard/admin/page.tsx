@@ -11,7 +11,7 @@ import {
   Shield,
   Activity,
   TrendingUp,
-  Database
+  Database,
 } from 'lucide-react';
 import UserManagement from '@/components/dashboard/UserManagement';
 import LinkManagement from '@/components/dashboard/LinkManagement';
@@ -42,13 +42,12 @@ export default function AdminPage() {
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showLinkManagement, setShowLinkManagement] = useState(false);
   const [showReportsAnalytics, setShowReportsAnalytics] = useState(false);
-  
+
   // Delete user confirmation states
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [deleteUserData, setDeleteUserData] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const searchParams = useSearchParams();
-
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -100,7 +99,7 @@ export default function AdminPage() {
     const deleteUserId = searchParams.get('deleteUser');
     const cancelDeletionUserId = searchParams.get('cancelDeletionUser');
     const token = searchParams.get('token');
-    
+
     if (deleteUserId && token && userRole === 'admin') {
       handleDeleteUserConfirmation(deleteUserId, token);
     } else if (cancelDeletionUserId && token && userRole === 'admin') {
@@ -119,7 +118,7 @@ export default function AdminPage() {
             totalUsers: data.data.totalUsers,
             totalLinks: data.data.totalLinks,
             totalClicks: data.data.totalClicks,
-            activeUsers: data.data.activeUsers
+            activeUsers: data.data.activeUsers,
           });
           setRecentActivity(data.data.recentActivity);
         } else {
@@ -129,7 +128,7 @@ export default function AdminPage() {
             totalUsers: 0,
             totalLinks: 0,
             totalClicks: 0,
-            activeUsers: 0
+            activeUsers: 0,
           });
           setRecentActivity([]);
         }
@@ -140,7 +139,7 @@ export default function AdminPage() {
           totalUsers: 0,
           totalLinks: 0,
           totalClicks: 0,
-          activeUsers: 0
+          activeUsers: 0,
         });
         setRecentActivity([]);
       }
@@ -151,7 +150,7 @@ export default function AdminPage() {
         totalUsers: 0,
         totalLinks: 0,
         totalClicks: 0,
-        activeUsers: 0
+        activeUsers: 0,
       });
       setRecentActivity([]);
     } finally {
@@ -159,17 +158,22 @@ export default function AdminPage() {
     }
   };
 
-  const handleDeleteUserConfirmation = async (userId: string, token: string) => {
+  const handleDeleteUserConfirmation = async (
+    userId: string,
+    token: string
+  ) => {
     try {
-      const response = await fetch(`/api/admin/users/delete?userId=${userId}&token=${token}`);
+      const response = await fetch(
+        `/api/admin/users/delete?userId=${userId}&token=${token}`
+      );
       const data = await response.json();
-      
+
       if (data.success) {
         setDeleteUserData({
           userId,
           token,
           user: data.user,
-          deleteRequest: data.deleteRequest
+          deleteRequest: data.deleteRequest,
         });
         setShowDeleteConfirmation(true);
       } else {
@@ -186,24 +190,24 @@ export default function AdminPage() {
 
   const handleConfirmDeletion = async () => {
     if (!deleteUserData) return;
-    
+
     setIsDeleting(true);
     try {
       const response = await fetch('/api/admin/users/delete', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userId: deleteUserData.userId,
-          token: deleteUserData.token
-        })
+          token: deleteUserData.token,
+        }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
-        alert('Usuario eliminado correctamente.');
+        alert('Solicitud confirmada.');
         setShowDeleteConfirmation(false);
         setDeleteUserData(null);
         router.replace('/dashboard/admin');
@@ -225,23 +229,25 @@ export default function AdminPage() {
       const response = await fetch('/api/admin/users/cancel-delete', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userId,
-          token
-        })
+          token,
+        }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         alert('Solicitud de eliminación cancelada correctamente.');
         router.replace('/dashboard/admin');
         // Recargar datos del admin
         await loadAdminData();
       } else {
-        alert(data.error?.message || 'Error al cancelar la solicitud de eliminación');
+        alert(
+          data.error?.message || 'Error al cancelar la solicitud de eliminación'
+        );
         router.replace('/dashboard/admin');
       }
     } catch (error) {
@@ -257,7 +263,7 @@ export default function AdminPage() {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -281,7 +287,9 @@ export default function AdminPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">
-            {status === 'loading' ? 'Verificando autenticación...' : 'Cargando panel de administración...'}
+            {status === 'loading'
+              ? 'Verificando autenticación...'
+              : 'Cargando panel de administración...'}
           </p>
         </div>
       </div>
@@ -314,7 +322,9 @@ export default function AdminPage() {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Usuarios</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Total Usuarios
+              </p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 {stats?.totalUsers.toLocaleString()}
               </p>
@@ -328,7 +338,9 @@ export default function AdminPage() {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Enlaces</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Total Enlaces
+              </p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 {stats?.totalLinks.toLocaleString()}
               </p>
@@ -342,7 +354,9 @@ export default function AdminPage() {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Clics</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Total Clics
+              </p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 {stats?.totalClicks.toLocaleString()}
               </p>
@@ -356,7 +370,9 @@ export default function AdminPage() {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Usuarios Activos</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Usuarios Activos
+              </p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 {stats?.activeUsers.toLocaleString()}
               </p>
@@ -367,8 +383,6 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-
-
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Admin Tools */}
@@ -386,8 +400,12 @@ export default function AdminPage() {
             >
               <Users className="h-5 w-5 text-blue-500" />
               <div>
-                <p className="font-medium text-gray-900 dark:text-white">Gestión de Usuarios</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Ver, editar y gestionar cuentas de usuario</p>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  Gestión de Usuarios
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Ver, editar y gestionar cuentas de usuario
+                </p>
               </div>
             </button>
 
@@ -397,8 +415,12 @@ export default function AdminPage() {
             >
               <Link className="h-5 w-5 text-green-500" />
               <div>
-                <p className="font-medium text-gray-900 dark:text-white">Gestión de Enlaces</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Supervisar y moderar enlaces del sistema</p>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  Gestión de Enlaces
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Supervisar y moderar enlaces del sistema
+                </p>
               </div>
             </button>
 
@@ -408,18 +430,24 @@ export default function AdminPage() {
             >
               <BarChart3 className="h-5 w-5 text-purple-500" />
               <div>
-                <p className="font-medium text-gray-900 dark:text-white">Reportes y Analíticas</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Generar reportes detallados del sistema</p>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  Reportes y Analíticas
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Generar reportes detallados del sistema
+                </p>
               </div>
             </button>
-
-
 
             <button className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               <Database className="h-5 w-5 text-red-500" />
               <div>
-                <p className="font-medium text-gray-900 dark:text-white">Configuración del Sistema</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Ajustar configuraciones globales</p>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  Configuración del Sistema
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Ajustar configuraciones globales
+                </p>
               </div>
             </button>
           </div>
@@ -435,8 +463,11 @@ export default function AdminPage() {
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+              {recentActivity.map(activity => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+                >
                   {getActivityIcon(activity.type)}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-900 dark:text-white">
@@ -460,9 +491,7 @@ export default function AdminPage() {
       {showUserManagement && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-7xl max-h-[90vh] overflow-auto">
-            <UserManagement
-              onClose={() => setShowUserManagement(false)}
-            />
+            <UserManagement onClose={() => setShowUserManagement(false)} />
           </div>
         </div>
       )}
@@ -471,9 +500,7 @@ export default function AdminPage() {
       {showLinkManagement && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-7xl max-h-[90vh] overflow-auto">
-            <LinkManagement
-              onClose={() => setShowLinkManagement(false)}
-            />
+            <LinkManagement onClose={() => setShowLinkManagement(false)} />
           </div>
         </div>
       )}
@@ -482,9 +509,7 @@ export default function AdminPage() {
       {showReportsAnalytics && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-7xl max-h-[90vh] overflow-auto">
-            <ReportsAnalytics
-              onClose={() => setShowReportsAnalytics(false)}
-            />
+            <ReportsAnalytics onClose={() => setShowReportsAnalytics(false)} />
           </div>
         </div>
       )}
@@ -496,7 +521,7 @@ export default function AdminPage() {
             <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
               ⚠️ Confirmación de Eliminación
             </h3>
-            
+
             <div className="mb-4">
               <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
                 Estás a punto de eliminar permanentemente al usuario:
@@ -509,20 +534,22 @@ export default function AdminPage() {
                   {deleteUserData.user.name}
                 </p>
               </div>
-              
+
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-3">
                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
                   <strong>Razón:</strong> {deleteUserData.deleteRequest.reason}
                 </p>
                 <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                  Solicitado el: {formatDate(deleteUserData.deleteRequest.createdAt)}
+                  Solicitado el:{' '}
+                  {formatDate(deleteUserData.deleteRequest.createdAt)}
                 </p>
               </div>
             </div>
 
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
               <p className="text-sm text-red-800 dark:text-red-200">
-                <strong>¡ATENCIÓN!</strong> Esta acción eliminará permanentemente:
+                <strong>¡ATENCIÓN!</strong> Esta acción eliminará
+                permanentemente:
               </p>
               <ul className="text-xs text-red-700 dark:text-red-300 mt-1 ml-4 list-disc">
                 <li>Todos los enlaces del usuario</li>
@@ -559,7 +586,6 @@ export default function AdminPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
