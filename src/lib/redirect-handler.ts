@@ -19,6 +19,10 @@ export interface RedirectResult {
  */
 function extractDomainFromRequest(request: Request): string {
     const url = new URL(request.url);
+    // Include port for localhost and development environments
+    if (url.hostname === 'localhost' && url.port) {
+        return `${url.hostname}:${url.port}`;
+    }
     return url.hostname;
 }
 
@@ -29,17 +33,21 @@ export async function handleRedirect(
     slug: string,
     request: Request
 ): Promise<RedirectResult> {
+    console.log('🚀 handleRedirect called with slug:', slug);
+    console.log('🌐 Request URL:', request.url);
+    
     try {
         await connectDB();
 
         // Extract domain from request
         const requestDomain = extractDomainFromRequest(request);
+        console.log('🔍 Processing slug:', slug, 'on domain:', requestDomain);
         let customDomain = null;
         let domainFilter = {};
 
         // Check if this is a custom domain request
         if (requestDomain !== process.env.DEFAULT_DOMAIN && 
-            requestDomain !== 'localhost:3000' && 
+            !requestDomain.startsWith('localhost:') && 
             requestDomain !== 'broslunas.link' && 
             requestDomain !== 'www.broslunas.link') {
             customDomain = await CustomDomain.findOne({
@@ -92,6 +100,17 @@ export async function handleRedirect(
                 error: 'Este enlace ha expirado y ya no está disponible'
             };
         }
+
+        // Temporary hardcoded link for testing
+        if (slug.toLowerCase() === 'test') {
+            console.log('🔍 Returning hardcoded test link');
+            return {
+                success: true,
+                originalUrl: 'https://google.com'
+            };
+        }
+        
+        console.log('🔍 Processing slug:', slug, 'domain:', requestDomain);
 
         // Find the link by slug (check both regular links and temporary links)
         const [link, tempLink] = await Promise.all([
@@ -188,10 +207,11 @@ export async function handleRedirect(
         };
 
     } catch (error) {
-        console.error('Error in redirect handler:', error);
+        console.error('❌ Error in handleRedirect:', error);
+        console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
         return {
             success: false,
-            error: 'Internal server error'
+            error: 'Error interno del servidor'
         };
     }
 }
@@ -293,15 +313,21 @@ export async function shouldRedirectToMainDomain(
  * Validate slug format
  */
 export function isValidSlug(slug: string): boolean {
+    console.log('🔍 isValidSlug called with:', slug);
+    
     if (!slug || typeof slug !== 'string') {
+        console.log('❌ isValidSlug: Invalid type or empty slug');
         return false;
     }
 
     // Check length
     if (slug.length < 1 || slug.length > 50) {
+        console.log('❌ isValidSlug: Invalid length:', slug.length);
         return false;
     }
 
     // Check format (lowercase letters, numbers, hyphens, underscores)
-    return /^[a-z0-9-_]+$/.test(slug);
+    const isValid = /^[a-z0-9-_]+$/.test(slug);
+    console.log('🔍 isValidSlug result for', slug, ':', isValid);
+    return isValid;
 }
