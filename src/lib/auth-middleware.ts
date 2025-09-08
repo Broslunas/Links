@@ -7,6 +7,7 @@ import { createErrorResponse } from './api-response';
 import { AppError, ErrorCode } from './api-errors';
 import Link from '../models/Link';
 import User, { IUser } from '../models/User';
+import SharedLink from '../models/SharedLink';
 
 export interface AuthContext {
   userId: string;
@@ -354,4 +355,142 @@ export function withPublicAccess<T extends any[]>(
       );
     }
   };
+}
+
+/**
+ * Verificar si el usuario tiene permisos para acceder a un enlace
+ * Verifica tanto ownership como permisos compartidos
+ */
+export async function verifyLinkAccess(
+  authUserId: string,
+  linkId: string,
+  requiredPermission?: 'canView' | 'canEdit' | 'canDelete' | 'canViewStats' | 'canShare'
+): Promise<{ isOwner: boolean; sharedLink?: any; link: any }> {
+  try {
+    const link = await Link.findById(linkId);
+
+    if (!link) {
+      throw new AppError(ErrorCode.LINK_NOT_FOUND, 'Link not found', 404);
+    }
+
+    // Si es el propietario, tiene todos los permisos
+    if (link.userId.toString() === authUserId) {
+      return { isOwner: true, link };
+    }
+
+    // Verificar si tiene permisos compartidos
+    const sharedLink = await SharedLink.findOne({
+      linkId: linkId,
+      sharedWithUserId: authUserId,
+      isActive: true,
+      $or: [
+        { expiresAt: null },
+        { expiresAt: { $gt: new Date() } }
+      ]
+    });
+
+    if (!sharedLink) {
+      throw new AppError(
+        ErrorCode.FORBIDDEN,
+        'Access denied: You do not have permission to access this link',
+        403
+      );
+    }
+
+    // Verificar permiso específico si se requiere
+    if (requiredPermission && !sharedLink.permissions[requiredPermission]) {
+      throw new AppError(
+        ErrorCode.FORBIDDEN,
+        `Access denied: You do not have ${requiredPermission} permission for this link`,
+        403
+      );
+    }
+
+    return { isOwner: false, sharedLink, link };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    // Handle invalid ObjectId format
+    if (error instanceof Error && error.name === 'CastError') {
+      throw new AppError(
+        ErrorCode.LINK_NOT_FOUND,
+        'Invalid link ID format',
+        404
+      );
+    }
+
+    throw new AppError(
+      ErrorCode.DATABASE_ERROR,
+      'Error verifying link access',
+      500
+    );
+  }
+}
+
+/**
+ * Verificar si el usuario tiene permisos para acceder a un enlace por slug
+ */
+export async function verifyLinkAccessBySlug(
+  authUserId: string,
+  slug: string,
+  requiredPermission?: 'canView' | 'canEdit' | 'canDelete' | 'canViewStats' | 'canShare'
+): Promise<{ isOwner: boolean; sharedLink?: any; link: any }> {
+  try {
+    const link = await Link.findOne({ slug });
+
+    if (!link) {
+      throw new AppError(
+        ErrorCode.LINK_NOT_FOUND,
+        `Link with slug '${slug}' not found`,
+        404
+      );
+    }
+
+    // Si es el propietario, tiene todos los permisos
+    if (link.userId.toString() === authUserId) {
+      return { isOwner: true, link };
+    }
+
+    // Verificar si tiene permisos compartidos
+    const sharedLink = await SharedLink.findOne({
+      linkId: link._id,
+      sharedWithUserId: authUserId,
+      isActive: true,
+      $or: [
+        { expiresAt: null },
+        { expiresAt: { $gt: new Date() } }
+      ]
+    });
+
+    if (!sharedLink) {
+      throw new AppError(
+        ErrorCode.FORBIDDEN,
+        'Access denied: You do not have permission to access this link',
+        403
+      );
+    }
+
+    // Verificar permiso específico si se requiere
+    if (requiredPermission && !sharedLink.permissions[requiredPermission]) {
+      throw new AppError(
+        ErrorCode.FORBIDDEN,
+        `Access denied: You do not have ${requiredPermission} permission for this link`,
+        403
+      );
+    }
+
+    return { isOwner: false, sharedLink, link };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError(
+      ErrorCode.DATABASE_ERROR,
+      'Error verifying link access',
+      500
+    );
+  }
 }

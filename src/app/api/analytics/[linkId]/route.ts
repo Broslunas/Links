@@ -3,7 +3,7 @@ import { connectDB } from '../../../../lib/db-utils';
 import { aggregateLinkStats } from '../../../../lib/analytics-aggregation';
 import Link from '../../../../models/Link';
 import { ApiResponse, LinkStats } from '../../../../types';
-import { authenticateRequest, AuthContext } from '../../../../lib/auth-middleware';
+import { authenticateRequest, AuthContext, verifyLinkAccessBySlug } from '../../../../lib/auth-middleware';
 import { createSuccessResponse, createErrorResponse } from '../../../../lib/api-response';
 import { AppError, ErrorCode } from '../../../../lib/api-errors';
 
@@ -44,9 +44,21 @@ export async function GET(
 
     const isOwner = auth?.userId === link.userId.toString();
     const isPublicStats = link.isPublicStats;
+    
+    // Verificar acceso: propietario, stats públicas, o permisos compartidos
+    let hasAccess = isOwner || isPublicStats;
+    
+    if (!hasAccess && auth?.userId) {
+      // Verificar si el usuario tiene permisos compartidos para ver estadísticas
+      try {
+        await verifyLinkAccessBySlug(auth.userId, linkId, 'canViewStats');
+        hasAccess = true;
+      } catch (error) {
+        // No tiene permisos compartidos, continuar con la verificación normal
+      }
+    }
 
-    // Allow access if user is owner OR if public stats are enabled
-    if (!isOwner && !isPublicStats) {
+    if (!hasAccess) {
       throw new AppError(
         ErrorCode.FORBIDDEN,
         'Access denied. Link statistics are private.',

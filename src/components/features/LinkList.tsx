@@ -7,7 +7,8 @@ import { Link, ApiResponse } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { QRCodeModal } from './QRCodeModal';
-import { Star, Clock } from 'lucide-react';
+import { ShareLinkModal } from './ShareLinkModal';
+import { Star, Clock, Users } from 'lucide-react';
 
 type FilterStatus = 'all' | 'active' | 'inactive';
 type FilterStats = 'all' | 'public' | 'private';
@@ -30,6 +31,8 @@ export function LinkList({
   const [error, setError] = useState<string | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedLinkUrl, setSelectedLinkUrl] = useState('');
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedLinkForShare, setSelectedLinkForShare] = useState<Link | null>(null);
 
   // Filter and search states
   const [searchTerm, setSearchTerm] = useState('');
@@ -734,10 +737,22 @@ export function LinkList({
                             </span>
                           )}
                         {link.isPublicStats && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-                            Estadísticas públicas
-                          </span>
-                        )}
+                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                             Estadísticas públicas
+                           </span>
+                         )}
+                         {link.isShared && (
+                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
+                             <Users className="h-3 w-3 mr-1" />
+                             Compartido ({link.sharedWith?.length || 0})
+                           </span>
+                         )}
+                         {link.sharedByUser && (
+                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                             <Users className="h-3 w-3 mr-1" />
+                             Compartido por {link.sharedByUser.name}
+                           </span>
+                         )}
                       </div>
 
                       <div className="space-y-1">
@@ -929,6 +944,20 @@ export function LinkList({
                         Compartir Stats
                       </Button>
                     )}
+
+                    <Button
+                      onClick={() => {
+                        setSelectedLinkForShare(link);
+                        setShareModalOpen(true);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                      disabled={link.isDisabledByAdmin}
+                    >
+                      <Users className="h-4 w-4" />
+                      Compartir Enlace
+                    </Button>
 
                     <Button
                       onClick={() => onEditLink(link)}
@@ -1253,6 +1282,19 @@ export function LinkList({
                   )}
 
                   <Button
+                    onClick={() => {
+                      setSelectedLinkForShare(link);
+                      setShareModalOpen(true);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                    disabled={link.isDisabledByAdmin}
+                  >
+                    <Users className="h-4 w-4" />
+                  </Button>
+
+                  <Button
                     onClick={() => onEditLink(link)}
                     variant="outline"
                     size="sm"
@@ -1305,6 +1347,16 @@ export function LinkList({
         onClose={() => setQrModalOpen(false)}
         url={selectedLinkUrl}
         title="Código QR del enlace"
+      />
+      <ShareLinkModal
+        isOpen={shareModalOpen}
+        onClose={() => {
+          setShareModalOpen(false);
+          setSelectedLinkForShare(null);
+        }}
+        linkId={selectedLinkForShare?.id || ''}
+        linkTitle={selectedLinkForShare?.title}
+        linkSlug={selectedLinkForShare?.slug}
       />
     </div>
   );
