@@ -75,6 +75,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Preparar datos para el webhook
+    const cancelUrl = `${process.env.NEXTAUTH_URL}/dashboard/admin?cancelDeletionUser=${userId}&token=${token}`;
+    
     const webhookData = {
       name: userToDelete.name || userToDelete.email,
       email: userToDelete.email,
@@ -82,7 +84,8 @@ export async function POST(request: NextRequest) {
       nameAdmin: adminUser.name || adminUser.email,
       link: `${process.env.NEXTAUTH_URL}/dashboard/admin/?deleteUser=${userId}&token=${token}`,
       reason: reason.trim(),
-      status: 'pendingConfirmation'
+      status: 'pendingConfirmation',
+      cancelUrl: cancelUrl
     };
 
     // Enviar datos al webhook de Make.com
