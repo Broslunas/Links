@@ -20,7 +20,8 @@ import {
   ExternalLink,
   RefreshCw,
   BarChart3,
-  Download
+  Download,
+  Trash2
 } from 'lucide-react';
 import UserProfileModal from './UserProfileModal';
 import ReportsAnalytics from './ReportsAnalytics';
@@ -91,6 +92,11 @@ export default function UserManagement({ onClose }: UserManagementProps) {
   // Reports and analytics states
   const [showReportsAnalytics, setShowReportsAnalytics] = useState(false);
   const [showUserReport, setShowUserReport] = useState<AdminUser | null>(null);
+  
+  // Delete user states
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<AdminUser | null>(null);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Debounce search term
   useEffect(() => {
@@ -193,6 +199,45 @@ export default function UserManagement({ onClose }: UserManagementProps) {
       }
     } catch (error) {
       console.error('Error updating user:', error);
+    }
+  };
+
+  const handleDeleteUserRequest = async (user: AdminUser) => {
+    if (!deleteReason.trim()) {
+      alert('Por favor, proporciona una razón para la eliminación.');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/admin/users/delete-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: user._id,
+          reason: deleteReason
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          alert('Se ha enviado un enlace de confirmación al email del administrador.');
+          setShowDeleteConfirmation(null);
+          setDeleteReason('');
+        } else {
+          alert(data.error?.message || 'Error al solicitar eliminación');
+        }
+      } else {
+        alert('Error al conectar con el servidor');
+      }
+    } catch (error) {
+      console.error('Error requesting user deletion:', error);
+      alert('Error inesperado al solicitar eliminación');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1014,6 +1059,13 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                         >
                           <Edit3 className="h-4 w-4" />
                         </button>
+                        <button
+                          onClick={() => setShowDeleteConfirmation(user)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                          title="Eliminar todos los datos del usuario"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1151,6 +1203,72 @@ export default function UserManagement({ onClose }: UserManagementProps) {
           isOpen={!!showUserReport}
           onClose={() => setShowUserReport(null)}
         />
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {showDeleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
+              ⚠️ Eliminar Usuario
+            </h3>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                Estás a punto de solicitar la eliminación completa de:
+              </p>
+              <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {showDeleteConfirmation.email}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {showDeleteConfirmation.name || 'Sin nombre'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Razón de la eliminación *
+              </label>
+              <textarea
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Describe la razón por la cual se eliminará este usuario..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                rows={3}
+                required
+              />
+            </div>
+
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Importante:</strong> Se enviará un enlace de confirmación al email del administrador. 
+                Esta acción eliminará permanentemente todos los datos del usuario.
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirmation(null);
+                  setDeleteReason('');
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+                disabled={isDeleting}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDeleteUserRequest(showDeleteConfirmation)}
+                disabled={isDeleting || !deleteReason.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? 'Enviando...' : 'Solicitar Eliminación'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

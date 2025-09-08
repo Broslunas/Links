@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Users,
   Link,
@@ -42,6 +42,12 @@ export default function AdminPage() {
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showLinkManagement, setShowLinkManagement] = useState(false);
   const [showReportsAnalytics, setShowReportsAnalytics] = useState(false);
+  
+  // Delete user confirmation states
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [deleteUserData, setDeleteUserData] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const searchParams = useSearchParams();
 
 
   useEffect(() => {
@@ -88,6 +94,16 @@ export default function AdminPage() {
 
     checkUserRole();
   }, [session, status, router]);
+
+  // Check for delete user parameters
+  useEffect(() => {
+    const deleteUserId = searchParams.get('deleteUser');
+    const token = searchParams.get('token');
+    
+    if (deleteUserId && token && userRole === 'admin') {
+      handleDeleteUserConfirmation(deleteUserId, token);
+    }
+  }, [searchParams, userRole]);
 
   const loadAdminData = async () => {
     try {
@@ -137,6 +153,67 @@ export default function AdminPage() {
       setRecentActivity([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteUserConfirmation = async (userId: string, token: string) => {
+    try {
+      const response = await fetch(`/api/admin/users/delete?userId=${userId}&token=${token}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setDeleteUserData({
+          userId,
+          token,
+          user: data.user,
+          deleteRequest: data.deleteRequest
+        });
+        setShowDeleteConfirmation(true);
+      } else {
+        alert('Enlace de eliminación no válido o expirado.');
+        // Limpiar parámetros de la URL
+        router.replace('/dashboard/admin');
+      }
+    } catch (error) {
+      console.error('Error verificando eliminación:', error);
+      alert('Error al verificar la solicitud de eliminación.');
+      router.replace('/dashboard/admin');
+    }
+  };
+
+  const handleConfirmDeletion = async () => {
+    if (!deleteUserData) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/admin/users/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: deleteUserData.userId,
+          token: deleteUserData.token
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('Usuario eliminado correctamente.');
+        setShowDeleteConfirmation(false);
+        setDeleteUserData(null);
+        router.replace('/dashboard/admin');
+        // Recargar datos del admin
+        await loadAdminData();
+      } else {
+        alert(data.error?.message || 'Error al eliminar usuario');
+      }
+    } catch (error) {
+      console.error('Error eliminando usuario:', error);
+      alert('Error inesperado al eliminar usuario');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -378,8 +455,76 @@ export default function AdminPage() {
         </div>
       )}
 
+      {/* Delete User Confirmation Modal */}
+      {showDeleteConfirmation && deleteUserData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
+              ⚠️ Confirmación de Eliminación
+            </h3>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                Estás a punto de eliminar permanentemente al usuario:
+              </p>
+              <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-3">
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {deleteUserData.user.email}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {deleteUserData.user.name}
+                </p>
+              </div>
+              
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-3">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Razón:</strong> {deleteUserData.deleteRequest.reason}
+                </p>
+                <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                  Solicitado el: {formatDate(deleteUserData.deleteRequest.createdAt)}
+                </p>
+              </div>
+            </div>
 
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+              <p className="text-sm text-red-800 dark:text-red-200">
+                <strong>¡ATENCIÓN!</strong> Esta acción eliminará permanentemente:
+              </p>
+              <ul className="text-xs text-red-700 dark:text-red-300 mt-1 ml-4 list-disc">
+                <li>Todos los enlaces del usuario</li>
+                <li>Todas las notas administrativas</li>
+                <li>Todas las advertencias</li>
+                <li>Sesiones y cuentas vinculadas</li>
+                <li>La cuenta del usuario</li>
+              </ul>
+              <p className="text-xs text-red-700 dark:text-red-300 mt-2 font-medium">
+                Esta acción NO se puede deshacer.
+              </p>
+            </div>
 
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirmation(false);
+                  setDeleteUserData(null);
+                  router.replace('/dashboard/admin');
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+                disabled={isDeleting}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDeletion}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? 'Eliminando...' : 'Confirmar Eliminación'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

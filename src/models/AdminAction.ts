@@ -6,7 +6,8 @@ export interface IAdminAction extends Document {
     targetId: mongoose.Types.ObjectId;
     actionType: 'disable_user' | 'enable_user' | 'disable_link' | 'enable_link' |
     'change_role' | 'add_note' | 'add_warning' | 'resolve_warning' |
-    'edit_note' | 'delete_note' | 'edit_warning' | 'delete_warning';
+    'edit_note' | 'delete_note' | 'edit_warning' | 'delete_warning' |
+    'delete_user_request' | 'delete_user' | 'delete_user_completed';
     reason?: string;
     duration?: number; // Duration in days for temporary suspensions
     previousState?: any;
@@ -52,7 +53,10 @@ const AdminActionSchema = new Schema<IAdminAction>({
             'edit_note',
             'delete_note',
             'edit_warning',
-            'delete_warning'
+            'delete_warning',
+            'delete_user_request',
+            'delete_user',
+            'delete_user_completed'
         ],
     },
     reason: {
