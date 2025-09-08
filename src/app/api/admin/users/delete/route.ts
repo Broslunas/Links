@@ -24,13 +24,13 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    // Buscar la solicitud de eliminación
+    // Buscar la solicitud de eliminación con información del admin
     const deleteRequest = await DeleteRequest.findOne({
       userId: userId,
       token,
       status: 'pending',
       expiresAt: { $gt: new Date() }
-    });
+    }).populate('adminId', 'name email');
 
     if (!deleteRequest) {
       return NextResponse.json(
@@ -86,13 +86,13 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // Buscar la solicitud de eliminación
+    // Buscar la solicitud de eliminación con información del admin
     const deleteRequest = await DeleteRequest.findOne({
       userId: userId,
       token,
       status: 'pending',
       expiresAt: { $gt: new Date() }
-    });
+    }).populate('adminId', 'name email');
 
     if (!deleteRequest) {
       return NextResponse.json(
@@ -159,6 +159,33 @@ export async function POST(request: NextRequest) {
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
         }], { session });
       });
+
+      // Enviar webhook de confirmación
+      try {
+        const adminUser = deleteRequest.adminId as any;
+        const webhookData = {
+          name: userToDelete.name || userToDelete.email,
+          email: userToDelete.email,
+          emailAdmin: adminUser?.email || 'admin',
+          nameAdmin: adminUser?.name || adminUser?.email || 'Admin',
+          reason: deleteRequest.reason,
+          status: 'confirmed'
+        };
+
+        const webhookResponse = await fetch('https://hook.eu2.make.com/e7mprt6w5vpm6bru3pgjde3pw6i0mxgq', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(webhookData)
+        });
+
+        if (!webhookResponse.ok) {
+          console.error('Error enviando webhook de confirmación:', await webhookResponse.text());
+        }
+      } catch (webhookError) {
+        console.error('Error enviando webhook de confirmación:', webhookError);
+      }
 
       return NextResponse.json({
         success: true,
