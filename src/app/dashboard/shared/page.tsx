@@ -208,11 +208,8 @@ export default function SharedLinksPage() {
   };
 
   const handleLinkClick = (link: SharedLink) => {
-    if (link.permissions.canViewStats) {
-      router.push(`/stats/${link.linkId.slug}`);
-    } else {
-      window.open(link.linkId.originalUrl, '_blank');
-    }
+    // Abrir el enlace acortado en una nueva pestaña
+    window.open(`${window.location.origin}/${link.linkId.slug}`, '_blank');
   };
 
   const handleEditLink = (sharedLink: SharedLink) => {
@@ -743,7 +740,7 @@ export default function SharedLinksPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 mt-auto">
+                <div className="flex flex-wrap gap-1 mt-auto">
                   {sharedLink.permissions.canViewStats && (
                     <Button
                       variant="outline"
@@ -751,7 +748,7 @@ export default function SharedLinksPage() {
                       onClick={() =>
                         router.push(`/dashboard/links/${link.slug}/analytics`)
                       }
-                      className="flex items-center gap-1 text-xs px-2 py-1 h-7"
+                      className="flex items-center gap-1 text-xs px-2 py-1 h-7 flex-shrink-0"
                     >
                       <BarChart3 className="h-3 w-3" />
                       Stats
@@ -762,7 +759,7 @@ export default function SharedLinksPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditLink(sharedLink)}
-                      className="flex items-center gap-1 text-xs px-2 py-1 h-7"
+                      className="flex items-center gap-1 text-xs px-2 py-1 h-7 flex-shrink-0"
                     >
                       <Edit3 className="h-3 w-3" />
                       Editar
@@ -773,7 +770,7 @@ export default function SharedLinksPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDeleteLink(sharedLink)}
-                      className="flex items-center gap-1 text-xs px-2 py-1 h-7 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
+                      className="flex items-center gap-1 text-xs px-2 py-1 h-7 flex-shrink-0 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
                     >
                       <Trash2 className="h-3 w-3" />
                       Eliminar
@@ -783,7 +780,7 @@ export default function SharedLinksPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleRevokeAccess(sharedLink)}
-                    className="flex items-center gap-1 text-xs px-2 py-1 h-7 text-orange-600 hover:text-orange-700 hover:border-orange-300 dark:text-orange-400 dark:hover:text-orange-300"
+                    className="flex items-center gap-1 text-xs px-2 py-1 h-7 flex-shrink-0 text-orange-600 hover:text-orange-700 hover:border-orange-300 dark:text-orange-400 dark:hover:text-orange-300"
                   >
                     <ExternalLink className="h-3 w-3" />
                     Revocar
@@ -881,7 +878,7 @@ export default function SharedLinksPage() {
                   </div>
 
                   {/* Right side - Actions */}
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex flex-wrap gap-1 ml-4">
                     {sharedLink.permissions.canViewStats && (
                       <Button
                         variant="outline"
@@ -889,7 +886,7 @@ export default function SharedLinksPage() {
                         onClick={() =>
                           router.push(`/dashboard/links/${link.slug}/analytics`)
                         }
-                        className="flex items-center gap-1 text-xs px-2 py-1 h-7"
+                        className="flex items-center gap-1 text-xs px-2 py-1 h-7 flex-shrink-0"
                       >
                         <BarChart3 className="h-3 w-3" />
                         Stats
@@ -900,7 +897,7 @@ export default function SharedLinksPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditLink(sharedLink)}
-                        className="flex items-center gap-1 text-xs px-2 py-1 h-7"
+                        className="flex items-center gap-1 text-xs px-2 py-1 h-7 flex-shrink-0"
                       >
                         <Edit3 className="h-3 w-3" />
                         Editar
@@ -911,7 +908,7 @@ export default function SharedLinksPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteLink(sharedLink)}
-                        className="flex items-center gap-1 text-xs px-2 py-1 h-7 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
+                        className="flex items-center gap-1 text-xs px-2 py-1 h-7 flex-shrink-0 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
                       >
                         <Trash2 className="h-3 w-3" />
                         Eliminar
@@ -921,7 +918,7 @@ export default function SharedLinksPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleRevokeAccess(sharedLink)}
-                      className="flex items-center gap-1 text-xs px-2 py-1 h-7 text-orange-600 hover:text-orange-700 hover:border-orange-300 dark:text-orange-400 dark:hover:text-orange-300"
+                      className="flex items-center gap-1 text-xs px-2 py-1 h-7 flex-shrink-0 text-orange-600 hover:text-orange-700 hover:border-orange-300 dark:text-orange-400 dark:hover:text-orange-300"
                     >
                       <ExternalLink className="h-3 w-3" />
                       Revocar
