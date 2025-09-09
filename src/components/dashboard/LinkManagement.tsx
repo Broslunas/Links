@@ -22,7 +22,7 @@ interface AdminLink {
     _id: string;
     email: string;
     name?: string;
-  };
+  } | null;
   originalUrl: string;
   slug: string;
   title?: string;
@@ -31,7 +31,7 @@ interface AdminLink {
   isActive: boolean;
   isDisabledByAdmin: boolean;
   disabledReason?: string;
-  clickCount: number;
+  clickCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -361,10 +361,10 @@ export default function LinkManagement({ onClose }: LinkManagementProps) {
                       <User className="h-4 w-4 text-gray-400" />
                       <div>
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {link.userId.name || 'Sin nombre'}
+                          {link.userId?.name || 'Sin nombre'}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {link.userId.email}
+                          {link.userId?.email || 'Sin email'}
                         </div>
                       </div>
                     </div>
@@ -376,7 +376,7 @@ export default function LinkManagement({ onClose }: LinkManagementProps) {
                     <div className="flex items-center space-x-1">
                       <MousePointer className="h-4 w-4 text-gray-400" />
                       <span className="text-sm text-gray-900 dark:text-white">
-                        {link.clickCount.toLocaleString()}
+                        {(link.clickCount || 0).toLocaleString()}
                       </span>
                     </div>
                   </td>
