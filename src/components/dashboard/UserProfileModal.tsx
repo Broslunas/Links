@@ -16,12 +16,14 @@ import {
     ExternalLink,
     Clock,
     Activity,
-    Trash2
+    Trash2,
+    Globe
 } from 'lucide-react';
 import NotesSection from './NotesSection';
 import WarningsSection from './WarningsSection';
 import AdminHistoryView from './AdminHistoryView';
 import DeleteRequestsSection from './DeleteRequestsSection';
+import CustomDomainsSection from './CustomDomainsSection';
 
 interface AdminUser {
     _id: string;
@@ -44,7 +46,7 @@ interface UserProfileModalProps {
     onClose: () => void;
 }
 
-type TabType = 'overview' | 'notes' | 'warnings' | 'history' | 'delete-requests';
+type TabType = 'overview' | 'notes' | 'warnings' | 'history' | 'delete-requests' | 'domains';
 
 export default function UserProfileModal({ user, onClose }: UserProfileModalProps) {
     const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -152,6 +154,12 @@ export default function UserProfileModal({ user, onClose }: UserProfileModalProp
             name: 'Warnings',
             icon: AlertTriangle,
             count: activeWarningsCount
+        },
+        {
+            id: 'domains' as TabType,
+            name: 'Dominios',
+            icon: Globe,
+            count: null
         },
         {
             id: 'delete-requests' as TabType,
@@ -365,6 +373,13 @@ export default function UserProfileModal({ user, onClose }: UserProfileModalProp
                                         Ver Solicitudes de Eliminación
                                     </button>
                                     <button
+                                        onClick={() => setActiveTab('domains')}
+                                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
+                                    >
+                                        <Globe className="w-4 h-4 mr-2" />
+                                        Ver Dominios
+                                    </button>
+                                    <button
                                         onClick={() => setActiveTab('history')}
                                         className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
                                     >
@@ -395,6 +410,10 @@ export default function UserProfileModal({ user, onClose }: UserProfileModalProp
 
                     {activeTab === 'delete-requests' && (
                         <DeleteRequestsSection userId={user._id} />
+                    )}
+
+                    {activeTab === 'domains' && (
+                        <CustomDomainsSection userId={user._id} />
                     )}
 
                     {activeTab === 'history' && (
