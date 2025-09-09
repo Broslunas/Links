@@ -22,6 +22,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
 import { LinkEditor } from '@/components/features/LinkEditor';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -68,14 +69,18 @@ export default function SharedLinksPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalLinks, setTotalLinks] = useState(0);
-  const [sortBy, setSortBy] = useState<'sharedAt' | 'title' | 'clickCount' | 'createdAt'>(
-    'sharedAt'
-  );
+  const [sortBy, setSortBy] = useState<
+    'sharedAt' | 'title' | 'clickCount' | 'createdAt'
+  >('sharedAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [permissionFilter, setPermissionFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'active' | 'inactive'
+  >('all');
+  const [dateFilter, setDateFilter] = useState<
+    'all' | 'today' | 'week' | 'month'
+  >('all');
   const [isMobile, setIsMobile] = useState(false);
   const [editingLink, setEditingLink] = useState<SharedLink | null>(null);
 
@@ -111,7 +116,16 @@ export default function SharedLinksPage() {
     if (session?.user?.id) {
       loadSharedLinks();
     }
-  }, [session, currentPage, searchTerm, sortBy, sortOrder, permissionFilter, statusFilter, dateFilter]);
+  }, [
+    session,
+    currentPage,
+    searchTerm,
+    sortBy,
+    sortOrder,
+    permissionFilter,
+    statusFilter,
+    dateFilter,
+  ]);
 
   const loadSharedLinks = async () => {
     setLoading(true);
@@ -215,6 +229,81 @@ export default function SharedLinksPage() {
     loadSharedLinks(); // Reload the shared links to reflect changes
   };
 
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [linkToDelete, setLinkToDelete] = useState<SharedLink | null>(null);
+  const [revokeConfirmOpen, setRevokeConfirmOpen] = useState(false);
+  const [linkToRevoke, setLinkToRevoke] = useState<SharedLink | null>(null);
+
+  const handleDeleteLink = async (sharedLink: SharedLink) => {
+    if (!sharedLink.permissions.canDelete) {
+      toast.error('No tienes permisos para eliminar este enlace');
+      return;
+    }
+
+    setLinkToDelete(sharedLink);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!linkToDelete) return;
+
+    try {
+      const response = await fetch(`/api/links/${linkToDelete.linkId.slug}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Enlace eliminado correctamente');
+        loadSharedLinks(); // Reload the shared links to reflect changes
+      } else {
+        const error = await response.json();
+        toast.error(error.error?.message || 'Error al eliminar el enlace');
+      }
+    } catch (error) {
+      console.error('Error deleting link:', error);
+      toast.error('Error al eliminar el enlace');
+    } finally {
+      setDeleteConfirmOpen(false);
+      setLinkToDelete(null);
+    }
+  };
+
+  const handleRevokeAccess = async (sharedLink: SharedLink) => {
+    setLinkToRevoke(sharedLink);
+    setRevokeConfirmOpen(true);
+  };
+
+  const confirmRevokeAccess = async () => {
+    if (!linkToRevoke || !session?.user?.id) return;
+
+    try {
+      const response = await fetch(
+        `/api/links/${linkToRevoke.linkId.slug}/share`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: session.user.id }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success('Acceso revocado correctamente');
+        loadSharedLinks(); // Reload the shared links to reflect changes
+      } else {
+        const error = await response.json();
+        toast.error(error.error?.message || 'Error al revocar el acceso');
+      }
+    } catch (error) {
+      console.error('Error revoking access:', error);
+      toast.error('Error al revocar el acceso');
+    } finally {
+      setRevokeConfirmOpen(false);
+      setLinkToRevoke(null);
+    }
+  };
+
   const handleError = (error: string) => {
     toast.error(error || 'Error al actualizar el enlace');
   };
@@ -223,7 +312,7 @@ export default function SharedLinksPage() {
   const filteredAndSortedLinks = useMemo(() => {
     let filtered = sharedLinks.filter(sharedLink => {
       const link = sharedLink.linkId;
-      
+
       // Search filter
       const matchesSearch =
         searchTerm === '' ||
@@ -276,15 +365,27 @@ export default function SharedLinksPage() {
 
     // Sort the filtered results
     filtered.sort((a, b) => {
-      const aValue = sortBy === 'sharedAt' ? new Date(a.sharedAt).getTime() : 
-                     sortBy === 'createdAt' ? new Date(a.linkId.createdAt).getTime() :
-                     sortBy === 'clickCount' ? a.linkId.clickCount :
-                     sortBy === 'title' ? (a.linkId.title || '').toLowerCase() : 0;
-      
-      const bValue = sortBy === 'sharedAt' ? new Date(b.sharedAt).getTime() : 
-                     sortBy === 'createdAt' ? new Date(b.linkId.createdAt).getTime() :
-                     sortBy === 'clickCount' ? b.linkId.clickCount :
-                     sortBy === 'title' ? (b.linkId.title || '').toLowerCase() : 0;
+      const aValue =
+        sortBy === 'sharedAt'
+          ? new Date(a.sharedAt).getTime()
+          : sortBy === 'createdAt'
+            ? new Date(a.linkId.createdAt).getTime()
+            : sortBy === 'clickCount'
+              ? a.linkId.clickCount
+              : sortBy === 'title'
+                ? (a.linkId.title || '').toLowerCase()
+                : 0;
+
+      const bValue =
+        sortBy === 'sharedAt'
+          ? new Date(b.sharedAt).getTime()
+          : sortBy === 'createdAt'
+            ? new Date(b.linkId.createdAt).getTime()
+            : sortBy === 'clickCount'
+              ? b.linkId.clickCount
+              : sortBy === 'title'
+                ? (b.linkId.title || '').toLowerCase()
+                : 0;
 
       if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1;
@@ -294,7 +395,15 @@ export default function SharedLinksPage() {
     });
 
     return filtered;
-  }, [sharedLinks, searchTerm, permissionFilter, sortBy, sortOrder, statusFilter, dateFilter]);
+  }, [
+    sharedLinks,
+    searchTerm,
+    permissionFilter,
+    sortBy,
+    sortOrder,
+    statusFilter,
+    dateFilter,
+  ]);
 
   // Loading state
   if (status === 'loading') {
@@ -397,7 +506,11 @@ export default function SharedLinksPage() {
                 </label>
                 <select
                   value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                  onChange={e =>
+                    setStatusFilter(
+                      e.target.value as 'all' | 'active' | 'inactive'
+                    )
+                  }
                   className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 >
                   <option value="all">Todos</option>
@@ -433,7 +546,11 @@ export default function SharedLinksPage() {
                 </label>
                 <select
                   value={dateFilter}
-                  onChange={e => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
+                  onChange={e =>
+                    setDateFilter(
+                      e.target.value as 'all' | 'today' | 'week' | 'month'
+                    )
+                  }
                   className="px-3 py-1 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 >
                   <option value="all">Todas</option>
@@ -481,14 +598,19 @@ export default function SharedLinksPage() {
         <Card className="p-12 text-center">
           <Share2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
           <h3 className="text-lg font-medium text-foreground mb-2">
-            {sharedLinks.length === 0 ? 'No tienes enlaces compartidos' : 'No se encontraron enlaces'}
+            {sharedLinks.length === 0
+              ? 'No tienes enlaces compartidos'
+              : 'No se encontraron enlaces'}
           </h3>
           <p className="text-muted-foreground mb-4">
             {sharedLinks.length === 0
               ? 'Aún no tienes enlaces compartidos contigo'
               : 'No se encontraron enlaces con los filtros aplicados'}
           </p>
-          {(searchTerm || permissionFilter !== 'all' || statusFilter !== 'all' || dateFilter !== 'all') && (
+          {(searchTerm ||
+            permissionFilter !== 'all' ||
+            statusFilter !== 'all' ||
+            dateFilter !== 'all') && (
             <Button
               variant="outline"
               onClick={() => {
@@ -504,7 +626,13 @@ export default function SharedLinksPage() {
           )}
         </Card>
       ) : (
-        <div className={viewMode === 'cards' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
+        <div
+          className={
+            viewMode === 'cards'
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+              : 'space-y-3'
+          }
+        >
           {filteredAndSortedLinks.map(sharedLink => {
             const link = sharedLink.linkId;
             const permissionBadges = getPermissionBadges(
@@ -640,11 +768,34 @@ export default function SharedLinksPage() {
                       Editar
                     </Button>
                   )}
+                  {sharedLink.permissions.canDelete && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteLink(sharedLink)}
+                      className="flex items-center gap-1 text-xs px-2 py-1 h-7 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Eliminar
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRevokeAccess(sharedLink)}
+                    className="flex items-center gap-1 text-xs px-2 py-1 h-7 text-orange-600 hover:text-orange-700 hover:border-orange-300 dark:text-orange-400 dark:hover:text-orange-300"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Revocar
+                  </Button>
                 </div>
               </Card>
             ) : (
               // List View
-              <Card key={sharedLink._id} className="p-4 hover:shadow-sm transition-all duration-200 hover:border-primary/20">
+              <Card
+                key={sharedLink._id}
+                className="p-4 hover:shadow-sm transition-all duration-200 hover:border-primary/20"
+              >
                 <div className="flex items-center justify-between">
                   {/* Left side - Link info */}
                   <div className="flex-1 min-w-0">
@@ -692,7 +843,10 @@ export default function SharedLinksPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          <span>{sharedLink.sharedBy.name || sharedLink.sharedBy.email}</span>
+                          <span>
+                            {sharedLink.sharedBy.name ||
+                              sharedLink.sharedBy.email}
+                          </span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
@@ -752,10 +906,30 @@ export default function SharedLinksPage() {
                         Editar
                       </Button>
                     )}
-                   </div>
-                 </div>
-               </Card>
-             );
+                    {sharedLink.permissions.canDelete && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteLink(sharedLink)}
+                        className="flex items-center gap-1 text-xs px-2 py-1 h-7 text-red-600 hover:text-red-700 hover:border-red-300 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Eliminar
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRevokeAccess(sharedLink)}
+                      className="flex items-center gap-1 text-xs px-2 py-1 h-7 text-orange-600 hover:text-orange-700 hover:border-orange-300 dark:text-orange-400 dark:hover:text-orange-300"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Revocar
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            );
           })}
         </div>
       )}
@@ -820,6 +994,44 @@ export default function SharedLinksPage() {
           onError={handleError}
         />
       )}
+
+      {/* Modal de confirmación de eliminación */}
+      <Modal
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        title="Confirmar eliminación"
+        description={`¿Estás seguro de que quieres eliminar el enlace "${linkToDelete?.linkId.title || linkToDelete?.linkId.slug}"? Esta acción no se puede deshacer.`}
+      >
+        <div className="flex justify-end gap-3 mt-6">
+          <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+            Cancelar
+          </Button>
+          <Button variant="destructive" onClick={confirmDelete}>
+            Eliminar
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Modal de confirmación de revocación de acceso */}
+      <Modal
+        isOpen={revokeConfirmOpen}
+        onClose={() => setRevokeConfirmOpen(false)}
+        title="Revocar acceso"
+        description={`¿Estás seguro de que quieres revocar tu acceso al enlace "${linkToRevoke?.linkId.title || linkToRevoke?.linkId.slug}"? Ya no podrás acceder a este enlace compartido.`}
+      >
+        <div className="flex justify-end gap-3 mt-6">
+          <Button variant="outline" onClick={() => setRevokeConfirmOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={confirmRevokeAccess}
+            className="bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            Revocar acceso
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
