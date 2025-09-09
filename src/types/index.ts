@@ -181,4 +181,4 @@ export * from './navigation';
 export * from './api-v1';
 
 // Re-export dashboard types
-export * from './dashboard';
+// Dashboard types will be added when needed

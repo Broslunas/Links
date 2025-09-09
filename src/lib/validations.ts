@@ -1,14 +1,4 @@
-import type {
-  CreateDashboardData,
-  UpdateDashboardData,
-  CreateWidgetData,
-  UpdateWidgetData,
-  WidgetType,
-  WidgetPosition,
-  WidgetSize,
-  WidgetFilter,
-  DashboardLayout
-} from '../types/dashboard';
+// Dashboard types will be imported when needed
 
 // Validation utilities will be added here
 export const isValidUrl = (url: string): boolean => {
@@ -35,6 +25,8 @@ export const isValidDashboardDescription = (description?: string): boolean => {
   return typeof description === 'string' && description.length <= 500;
 };
 
+// Dashboard widget validation functions will be added when dashboard types are implemented
+/*
 export const isValidWidgetType = (type: string): type is WidgetType => {
   const validTypes: WidgetType[] = [
     'link-stats',
@@ -46,7 +38,9 @@ export const isValidWidgetType = (type: string): type is WidgetType => {
   ];
   return validTypes.includes(type as WidgetType);
 };
+*/
 
+/*
 export const isValidWidgetPosition = (position: WidgetPosition): boolean => {
   return (
     typeof position.x === 'number' &&
@@ -105,7 +99,9 @@ export const isValidDashboardLayout = (layout: DashboardLayout): boolean => {
     Number.isInteger(layout.gap)
   );
 };
+*/
 
+/*
 export const validateCreateDashboardData = (data: CreateDashboardData): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
@@ -232,3 +228,4 @@ export const validateUpdateWidgetData = (data: UpdateWidgetData): { isValid: boo
     errors
   };
 };
+*/
