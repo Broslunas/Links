@@ -53,13 +53,14 @@ export async function handleRedirect(
             customDomain = await CustomDomain.findOne({
                 fullDomain: requestDomain,
                 isVerified: true,
-                isActive: true
+                isActive: true,
+                isBlocked: { $ne: true }
             });
 
             if (!customDomain) {
                 return {
                     success: false,
-                    error: 'Dominio personalizado no encontrado o no verificado'
+                    error: 'Dominio personalizado no encontrado, no verificado o bloqueado'
                 };
             }
 
@@ -243,13 +244,14 @@ export async function shouldRedirectToMainDomain(
         const customDomain = await CustomDomain.findOne({
             fullDomain: requestDomain,
             isVerified: true,
-            isActive: true
+            isActive: true,
+            isBlocked: { $ne: true }
         });
         
         if (!customDomain) {
             return {
                 success: false,
-                error: 'Dominio personalizado no encontrado o no verificado'
+                error: 'Dominio personalizado no encontrado, no verificado o bloqueado'
             };
         }
         
