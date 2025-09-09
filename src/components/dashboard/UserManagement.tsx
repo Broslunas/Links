@@ -329,6 +329,20 @@ export default function UserManagement({ onClose }: UserManagementProps) {
     );
   };
 
+  const getRoleIcon = (role: string) => {
+    return role === 'admin' ? (
+      <ShieldCheck
+        className="w-4 h-4 text-purple-600 dark:text-purple-400"
+        aria-label="Administrador"
+      />
+    ) : (
+      <Shield
+        className="w-4 h-4 text-gray-500 dark:text-gray-400"
+        aria-label="Usuario"
+      />
+    );
+  };
+
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -1066,9 +1080,6 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   Usuario
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Rol
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Estado
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1115,9 +1126,12 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {user.name || 'Sin nombre'}
+                        <div className="flex-1">
+                          <div className="flex items-center">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {user.name || 'Sin nombre'}
+                            </div>
+                            <div className="ml-2">{getRoleIcon(user.role)}</div>
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
                             {user.email}
@@ -1127,9 +1141,6 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                           <AlertTriangle className="ml-2 h-4 w-4 text-red-500 animate-pulse" />
                         )}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getRoleBadge(user.role)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(user.isActive)}
