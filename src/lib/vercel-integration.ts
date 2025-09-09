@@ -46,17 +46,21 @@ class VercelIntegration {
     this.projectId = process.env.VERCEL_PROJECT_ID || '';
 
     if (!this.token) {
-      throw new Error('VERCEL_TOKEN no está configurado en las variables de entorno');
+      throw new Error(
+        'VERCEL_TOKEN no está configurado en las variables de entorno'
+      );
     }
 
     if (!this.projectId) {
-      throw new Error('VERCEL_PROJECT_ID no está configurado en las variables de entorno');
+      throw new Error(
+        'VERCEL_PROJECT_ID no está configurado en las variables de entorno'
+      );
     }
   }
 
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
-      'Authorization': `Bearer ${this.token}`,
+      Authorization: `Bearer ${this.token}`,
       'Content-Type': 'application/json',
     };
 
@@ -105,7 +109,9 @@ class VercelIntegration {
   /**
    * Añadir un dominio al proyecto en Vercel
    */
-  async addDomain(domain: string): Promise<VercelApiResponse<VercelDomainResponse>> {
+  async addDomain(
+    domain: string
+  ): Promise<VercelApiResponse<VercelDomainResponse>> {
     return this.makeRequest<VercelDomainResponse>(
       `/v9/projects/${this.projectId}/domains`,
       {
@@ -118,7 +124,9 @@ class VercelIntegration {
   /**
    * Obtener información de un dominio específico
    */
-  async getDomain(domain: string): Promise<VercelApiResponse<VercelDomainResponse>> {
+  async getDomain(
+    domain: string
+  ): Promise<VercelApiResponse<VercelDomainResponse>> {
     return this.makeRequest<VercelDomainResponse>(
       `/v9/projects/${this.projectId}/domains/${domain}`
     );
@@ -127,7 +135,9 @@ class VercelIntegration {
   /**
    * Eliminar un dominio del proyecto
    */
-  async removeDomain(domain: string): Promise<VercelApiResponse<{ uid: string }>> {
+  async removeDomain(
+    domain: string
+  ): Promise<VercelApiResponse<{ uid: string }>> {
     return this.makeRequest<{ uid: string }>(
       `/v9/projects/${this.projectId}/domains/${domain}`,
       {
@@ -139,7 +149,9 @@ class VercelIntegration {
   /**
    * Listar todos los dominios del proyecto
    */
-  async listDomains(): Promise<VercelApiResponse<{ domains: VercelDomainResponse[] }>> {
+  async listDomains(): Promise<
+    VercelApiResponse<{ domains: VercelDomainResponse[] }>
+  > {
     return this.makeRequest<{ domains: VercelDomainResponse[] }>(
       `/v9/projects/${this.projectId}/domains`
     );
@@ -148,7 +160,9 @@ class VercelIntegration {
   /**
    * Verificar el estado de verificación de un dominio
    */
-  async verifyDomain(domain: string): Promise<VercelApiResponse<VercelDomainResponse>> {
+  async verifyDomain(
+    domain: string
+  ): Promise<VercelApiResponse<VercelDomainResponse>> {
     return this.makeRequest<VercelDomainResponse>(
       `/v9/projects/${this.projectId}/domains/${domain}/verify`,
       {
@@ -188,30 +202,35 @@ class VercelIntegration {
     try {
       // Primero intentar obtener el dominio existente
       const getDomainResult = await this.getDomain(customDomain.fullDomain);
-      
+
       if (getDomainResult.data) {
         // El dominio ya existe, actualizar información local
         const vercelDomain = getDomainResult.data;
-        
+
         customDomain.isVerified = vercelDomain.verified;
         customDomain.vercelDomainId = vercelDomain.name;
-        
+
         // Actualizar estado SSL basado en verificación
         if (vercelDomain.verified) {
           customDomain.sslStatus = 'active';
           customDomain.sslError = undefined;
-        } else if (vercelDomain.verification && vercelDomain.verification.length > 0) {
+        } else if (
+          vercelDomain.verification &&
+          vercelDomain.verification.length > 0
+        ) {
           const hasError = vercelDomain.verification.some(v => v.reason);
           if (hasError) {
             customDomain.sslStatus = 'error';
-            customDomain.sslError = vercelDomain.verification.find(v => v.reason)?.reason;
+            customDomain.sslError = vercelDomain.verification.find(
+              v => v.reason
+            )?.reason;
           } else {
             customDomain.sslStatus = 'pending';
           }
         }
-        
+
         await customDomain.save();
-        
+
         return {
           success: true,
           vercelData: vercelDomain,
@@ -219,21 +238,21 @@ class VercelIntegration {
       } else if (getDomainResult.error?.code === 'NOT_FOUND') {
         // El dominio no existe, crearlo
         const addDomainResult = await this.addDomain(customDomain.fullDomain);
-        
+
         if (addDomainResult.error) {
           return {
             success: false,
             error: addDomainResult.error.message,
           };
         }
-        
+
         const vercelDomain = addDomainResult.data!;
-        
+
         customDomain.vercelDomainId = vercelDomain.name;
         customDomain.sslStatus = 'pending';
-        
+
         await customDomain.save();
-        
+
         return {
           success: true,
           vercelData: vercelDomain,
@@ -255,20 +274,23 @@ class VercelIntegration {
   /**
    * Generar registros DNS requeridos para un dominio
    */
-  generateDNSRecords(domain: string, subdomain?: string): Array<{
+  generateDNSRecords(
+    domain: string,
+    subdomain?: string
+  ): Array<{
     type: string;
     name: string;
     value: string;
     ttl?: number;
   }> {
     const records = [];
-    
+
     if (subdomain) {
       // Para subdominios, usar CNAME
       records.push({
         type: 'CNAME',
         name: subdomain,
-        value: 'cname.vercel-dns.com',
+        value: 'dns.broslunas.link',
         ttl: 3600,
       });
     } else {
@@ -288,7 +310,7 @@ class VercelIntegration {
         }
       );
     }
-    
+
     return records;
   }
 }

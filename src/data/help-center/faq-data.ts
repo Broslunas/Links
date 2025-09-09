@@ -183,7 +183,7 @@ export const faqData: FAQItem[] = [
     id: 'how-to-add-custom-domain',
     question: '¿Cómo agrego un dominio personalizado?',
     answer:
-      'Ve a Configuración > Dominios personalizados, agrega tu dominio y configura un registro CNAME en tu proveedor DNS que apunte a cname.vercel-dns.com. El sistema se encarga automáticamente de la configuración en Vercel.',
+      'Ve a Configuración > Dominios personalizados, agrega tu dominio y configura un registro CNAME en tu proveedor DNS que apunte a dns.broslunas.link. El sistema se encarga automáticamente de la configuración en Vercel.',
     category: 'account',
     tags: ['dominios', 'configuración', 'DNS'],
   },
@@ -191,7 +191,7 @@ export const faqData: FAQItem[] = [
     id: 'custom-domain-verification',
     question: '¿Por qué mi dominio personalizado no se verifica?',
     answer:
-      'La verificación puede fallar si el registro CNAME no apunta a cname.vercel-dns.com o si los cambios DNS aún no se han propagado. Los cambios DNS pueden tardar hasta 24 horas.',
+      'La verificación puede fallar si el registro CNAME no apunta a dns.broslunas.link o si los cambios DNS aún no se han propagado. Los cambios DNS pueden tardar hasta 24 horas.',
     category: 'account',
     tags: ['dominios', 'verificación', 'DNS'],
   },
@@ -380,13 +380,13 @@ export const guides: Guide[] = [
         title: 'Agrega el dominio en Broslunas Links',
         content:
           'Ve a Configuración > Dominios personalizados y agrega tu dominio.\n\nEl sistema te proporcionará los registros DNS que necesitas configurar.',
-        code: 'Tipo: CNAME\nNombre: links (o tu subdominio)\nValor: cname.vercel-dns.com',
+        code: 'Tipo: CNAME\nNombre: links (o tu subdominio)\nValor: dns.broslunas.link',
         tip: 'Copia exactamente los valores proporcionados para evitar errores de configuración.',
       },
       {
         title: 'Configura los registros DNS',
         content:
-          'En tu proveedor de DNS, agrega el registro CNAME que apunte a cname.vercel-dns.com.\n\nLos cambios DNS pueden tardar hasta 24 horas en propagarse completamente.',
+          'En tu proveedor de DNS, agrega el registro CNAME que apunte a dns.broslunas.link.\n\nLos cambios DNS pueden tardar hasta 24 horas en propagarse completamente.',
         tip: 'Usa herramientas como nslookup o dig para verificar que los cambios se hayan aplicado.',
       },
       {

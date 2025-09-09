@@ -9,11 +9,18 @@ import { ApiResponse } from '@/types';
 import { sendDomainNotification } from '@/lib/domain-notification-service';
 
 // Función para crear dominio en Vercel
-async function createVercelDomain(domain: string): Promise<{ success: boolean; domainId?: string; configId?: string; error?: string }> {
+async function createVercelDomain(
+  domain: string
+): Promise<{
+  success: boolean;
+  domainId?: string;
+  configId?: string;
+  error?: string;
+}> {
   try {
     const vercelToken = process.env.VERCEL_TOKEN;
     const vercelTeamId = process.env.VERCEL_TEAM_ID;
-    
+
     if (!vercelToken) {
       throw new Error('VERCEL_TOKEN no está configurado');
     }
@@ -24,7 +31,7 @@ async function createVercelDomain(domain: string): Promise<{ success: boolean; d
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${vercelToken}`,
+          Authorization: `Bearer ${vercelToken}`,
           'Content-Type': 'application/json',
           ...(vercelTeamId && { 'X-Vercel-Team-Id': vercelTeamId }),
         },
@@ -36,7 +43,9 @@ async function createVercelDomain(domain: string): Promise<{ success: boolean; d
 
     if (!createDomainResponse.ok) {
       const errorData = await createDomainResponse.json();
-      throw new Error(errorData.error?.message || 'Error creando dominio en Vercel');
+      throw new Error(
+        errorData.error?.message || 'Error creando dominio en Vercel'
+      );
     }
 
     const domainData = await createDomainResponse.json();
@@ -94,8 +103,8 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const domains = await CustomDomain.find({ 
-      userId: session.user.id 
+    const domains = await CustomDomain.find({
+      userId: session.user.id,
     }).sort({ createdAt: -1 });
 
     const domainsResponse: CustomDomainResponse[] = domains.map(domain => ({
@@ -163,12 +172,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar límite de dominios por usuario (máximo 5)
-    const userDomainsCount = await CustomDomain.countDocuments({ 
-      userId: session.user.id 
+    const userDomainsCount = await CustomDomain.countDocuments({
+      userId: session.user.id,
     });
     if (userDomainsCount >= 5) {
       return NextResponse.json(
-        { error: { message: 'Has alcanzado el límite máximo de 5 dominios personalizados' } },
+        {
+          error: {
+            message:
+              'Has alcanzado el límite máximo de 5 dominios personalizados',
+          },
+        },
         { status: 400 }
       );
     }
@@ -181,14 +195,14 @@ export async function POST(request: NextRequest) {
       {
         type: 'CNAME' as const,
         name: subdomain || '@',
-        value: 'cname.vercel-dns.com',
+        value: 'dns.broslunas.link',
         ttl: 3600,
       },
     ];
 
     // Crear el dominio en Vercel inmediatamente
     const vercelResult = await createVercelDomain(fullDomain);
-    
+
     // Crear el dominio en la base de datos
     const newDomain = new CustomDomain({
       userId: session.user.id,
@@ -199,7 +213,9 @@ export async function POST(request: NextRequest) {
       dnsRecords,
       isDefault: userDomainsCount === 0, // Primer dominio es por defecto
       vercelDomainId: vercelResult.success ? vercelResult.domainId : undefined,
-      vercelConfigurationId: vercelResult.success ? vercelResult.configId : undefined,
+      vercelConfigurationId: vercelResult.success
+        ? vercelResult.configId
+        : undefined,
     });
 
     await newDomain.save();
@@ -214,7 +230,7 @@ export async function POST(request: NextRequest) {
           userName: user.name,
           domainId: newDomain._id.toString(),
           domain: newDomain.fullDomain,
-          status: 'added'
+          status: 'added',
         });
         console.log('Domain creation notification sent successfully');
       } else {
@@ -222,11 +238,14 @@ export async function POST(request: NextRequest) {
           userId: session.user.id,
           userFound: !!user,
           hasEmail: user?.email ? true : false,
-          hasName: user?.name ? true : false
+          hasName: user?.name ? true : false,
         });
       }
     } catch (notificationError) {
-      console.error('Error sending domain creation notification:', notificationError);
+      console.error(
+        'Error sending domain creation notification:',
+        notificationError
+      );
       // No lanzamos el error para que no afecte el flujo principal
     }
 
@@ -246,11 +265,15 @@ export async function POST(request: NextRequest) {
       updatedAt: newDomain.updatedAt.toISOString(),
     };
 
-    return NextResponse.json({
-      success: true,
-      data: domainResponse,
-      message: 'Dominio creado exitosamente. Configura los registros DNS para verificarlo.',
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        data: domainResponse,
+        message:
+          'Dominio creado exitosamente. Configura los registros DNS para verificarlo.',
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error creating domain:', error);
     return NextResponse.json(
