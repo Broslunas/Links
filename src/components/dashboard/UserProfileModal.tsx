@@ -15,11 +15,13 @@ import {
     UserX,
     ExternalLink,
     Clock,
-    Activity
+    Activity,
+    Trash2
 } from 'lucide-react';
 import NotesSection from './NotesSection';
 import WarningsSection from './WarningsSection';
 import AdminHistoryView from './AdminHistoryView';
+import DeleteRequestsSection from './DeleteRequestsSection';
 
 interface AdminUser {
     _id: string;
@@ -42,7 +44,7 @@ interface UserProfileModalProps {
     onClose: () => void;
 }
 
-type TabType = 'overview' | 'notes' | 'warnings' | 'history';
+type TabType = 'overview' | 'notes' | 'warnings' | 'history' | 'delete-requests';
 
 export default function UserProfileModal({ user, onClose }: UserProfileModalProps) {
     const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -150,6 +152,12 @@ export default function UserProfileModal({ user, onClose }: UserProfileModalProp
             name: 'Warnings',
             icon: AlertTriangle,
             count: activeWarningsCount
+        },
+        {
+            id: 'delete-requests' as TabType,
+            name: 'Eliminación',
+            icon: Trash2,
+            count: null
         },
         {
             id: 'history' as TabType,
@@ -350,6 +358,13 @@ export default function UserProfileModal({ user, onClose }: UserProfileModalProp
                                         Ver Warnings ({activeWarningsCount})
                                     </button>
                                     <button
+                                        onClick={() => setActiveTab('delete-requests')}
+                                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
+                                    >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Ver Solicitudes de Eliminación
+                                    </button>
+                                    <button
                                         onClick={() => setActiveTab('history')}
                                         className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
                                     >
@@ -376,6 +391,10 @@ export default function UserProfileModal({ user, onClose }: UserProfileModalProp
                                 setCriticalWarningsCount(criticalCount);
                             }}
                         />
+                    )}
+
+                    {activeTab === 'delete-requests' && (
+                        <DeleteRequestsSection userId={user._id} />
                     )}
 
                     {activeTab === 'history' && (

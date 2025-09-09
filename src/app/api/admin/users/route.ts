@@ -4,6 +4,7 @@ import User from '@/models/User';
 import UserNote from '@/models/UserNote';
 import UserWarning from '@/models/UserWarning';
 import AdminAction from '@/models/AdminAction';
+import DeleteRequest from '@/models/DeleteRequest';
 import { ApiResponse } from '@/types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
@@ -23,6 +24,8 @@ export interface AdminUser {
   criticalWarningsCount: number;
   highestWarningSeverity?: 'low' | 'medium' | 'high' | 'critical';
   riskScore: number;
+  hasPendingDeletionRequest?: boolean;
+  deletionRequestStatus?: 'pending' | 'scheduled' | 'cancelled' | 'completed';
 }
 
 export interface UsersListResponse {
@@ -198,6 +201,28 @@ export async function GET(request: NextRequest) {
         }
       },
       {
+        $lookup: {
+          from: 'deleterequests',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ['$userId', '$$userId']
+                }
+              }
+            },
+            {
+              $sort: { createdAt: -1 }
+            },
+            {
+              $limit: 1
+            }
+          ],
+          as: 'deleteRequests'
+        }
+      },
+      {
         $addFields: {
           activeWarnings: {
             $filter: {
@@ -300,6 +325,12 @@ export async function GET(request: NextRequest) {
           highestWarningSeverity: 1,
           notes: 1,
           warnings: 1,
+          hasPendingDeletionRequest: {
+            $gt: [{ $size: '$deleteRequests' }, 0]
+          },
+          deletionRequestStatus: {
+            $arrayElemAt: ['$deleteRequests.status', 0]
+          },
           riskScore: {
             $add: [
               // Base score from warning count (1 point per warning)
@@ -430,7 +461,9 @@ export async function GET(request: NextRequest) {
       activeWarningsCount: user.activeWarningsCount || 0,
       criticalWarningsCount: user.criticalWarningsCount || 0,
       highestWarningSeverity: user.highestWarningSeverity,
-      riskScore: user.riskScore || 0
+      riskScore: user.riskScore || 0,
+      hasPendingDeletionRequest: user.hasPendingDeletionRequest || false,
+      deletionRequestStatus: user.deletionRequestStatus
     }));
 
     const response: ApiResponse<UsersListResponse> = {

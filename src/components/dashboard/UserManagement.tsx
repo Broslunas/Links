@@ -21,7 +21,7 @@ import {
   RefreshCw,
   BarChart3,
   Download,
-  Trash2
+  Trash2,
 } from 'lucide-react';
 import UserProfileModal from './UserProfileModal';
 import ReportsAnalytics from './ReportsAnalytics';
@@ -42,6 +42,8 @@ interface AdminUser {
   criticalWarningsCount: number;
   highestWarningSeverity?: 'low' | 'medium' | 'high' | 'critical';
   riskScore: number;
+  hasPendingDeletionRequest?: boolean;
+  deletionRequestStatus?: 'pending' | 'scheduled' | 'cancelled' | 'completed';
 }
 
 interface UsersListResponse {
@@ -72,7 +74,9 @@ export default function UserManagement({ onClose }: UserManagementProps) {
   const [sortOrder, setSortOrder] = useState('desc');
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showUserProfile, setShowUserProfile] = useState<AdminUser | null>(null);
+  const [showUserProfile, setShowUserProfile] = useState<AdminUser | null>(
+    null
+  );
 
   // Enhanced filtering states
   const [searchInNotes, setSearchInNotes] = useState(false);
@@ -92,9 +96,10 @@ export default function UserManagement({ onClose }: UserManagementProps) {
   // Reports and analytics states
   const [showReportsAnalytics, setShowReportsAnalytics] = useState(false);
   const [showUserReport, setShowUserReport] = useState<AdminUser | null>(null);
-  
+
   // Delete user states
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<AdminUser | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] =
+    useState<AdminUser | null>(null);
   const [deleteReason, setDeleteReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -111,17 +116,46 @@ export default function UserManagement({ onClose }: UserManagementProps) {
   useEffect(() => {
     setCurrentPage(1);
   }, [
-    debouncedSearchTerm, roleFilter, hasNotesFilter, hasWarningsFilter, warningSeverityFilter,
-    sortBy, sortOrder, searchInNotes, searchInWarnings, registrationDateFrom, registrationDateTo,
-    lastActivityFrom, lastActivityTo, minRiskScore, maxRiskScore, warningCountMin, warningCountMax
+    debouncedSearchTerm,
+    roleFilter,
+    hasNotesFilter,
+    hasWarningsFilter,
+    warningSeverityFilter,
+    sortBy,
+    sortOrder,
+    searchInNotes,
+    searchInWarnings,
+    registrationDateFrom,
+    registrationDateTo,
+    lastActivityFrom,
+    lastActivityTo,
+    minRiskScore,
+    maxRiskScore,
+    warningCountMin,
+    warningCountMax,
   ]);
 
   useEffect(() => {
     fetchUsers();
   }, [
-    currentPage, debouncedSearchTerm, roleFilter, hasNotesFilter, hasWarningsFilter, warningSeverityFilter,
-    sortBy, sortOrder, searchInNotes, searchInWarnings, registrationDateFrom, registrationDateTo,
-    lastActivityFrom, lastActivityTo, minRiskScore, maxRiskScore, warningCountMin, warningCountMax
+    currentPage,
+    debouncedSearchTerm,
+    roleFilter,
+    hasNotesFilter,
+    hasWarningsFilter,
+    warningSeverityFilter,
+    sortBy,
+    sortOrder,
+    searchInNotes,
+    searchInWarnings,
+    registrationDateFrom,
+    registrationDateTo,
+    lastActivityFrom,
+    lastActivityTo,
+    minRiskScore,
+    maxRiskScore,
+    warningCountMin,
+    warningCountMax,
   ]);
 
   const fetchUsers = async () => {
@@ -135,7 +169,9 @@ export default function UserManagement({ onClose }: UserManagementProps) {
         ...(roleFilter && { role: roleFilter }),
         ...(hasNotesFilter && { hasNotes: 'true' }),
         ...(hasWarningsFilter && { hasWarnings: 'true' }),
-        ...(warningSeverityFilter && { warningSeverity: warningSeverityFilter }),
+        ...(warningSeverityFilter && {
+          warningSeverity: warningSeverityFilter,
+        }),
         ...(searchInNotes && { searchInNotes: 'true' }),
         ...(searchInWarnings && { searchInWarnings: 'true' }),
         ...(registrationDateFrom && { registrationDateFrom }),
@@ -147,14 +183,37 @@ export default function UserManagement({ onClose }: UserManagementProps) {
         ...(warningCountMin && { warningCountMin }),
         ...(warningCountMax && { warningCountMax }),
         sortBy,
-        sortOrder
+        sortOrder,
       });
 
       const response = await fetch(`/api/admin/users?${params}`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setUsers(data.data.users);
+          const users = data.data.users;
+          // Ordenar usuarios por estado de solicitud de eliminación: pending < confirmed < cancelled
+          const statusOrder: Record<string, number> = {
+            pending: 1,
+            confirmed: 2,
+            cancelled: 3,
+            completed: 4,
+          };
+          const sortedUsers = users.sort((a: AdminUser, b: AdminUser) => {
+            // Si ambos tienen solicitudes de eliminación, ordenar por estado
+            if (a.hasPendingDeletionRequest && b.hasPendingDeletionRequest) {
+              const aStatus = a.deletionRequestStatus || 'pending';
+              const bStatus = b.deletionRequestStatus || 'pending';
+              return statusOrder[aStatus] - statusOrder[bStatus];
+            }
+            // Los usuarios con solicitudes van primero
+            if (a.hasPendingDeletionRequest && !b.hasPendingDeletionRequest)
+              return -1;
+            if (!a.hasPendingDeletionRequest && b.hasPendingDeletionRequest)
+              return 1;
+            // Si ninguno tiene solicitudes, mantener orden original
+            return 0;
+          });
+          setUsers(sortedUsers);
           setTotalPages(data.data.totalPages);
           setTotalUsers(data.data.totalUsers);
         } else {
@@ -171,28 +230,33 @@ export default function UserManagement({ onClose }: UserManagementProps) {
     }
   };
 
-  const handleUpdateUser = async (userId: string, updates: { role?: string; isActive?: boolean }) => {
+  const handleUpdateUser = async (
+    userId: string,
+    updates: { role?: string; isActive?: boolean }
+  ) => {
     try {
       const response = await fetch('/api/admin/users', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userId,
-          ...updates
-        })
+          ...updates,
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
           // Update local state
-          setUsers(users.map(user =>
-            user._id === userId
-              ? { ...user, ...updates } as AdminUser
-              : user
-          ));
+          setUsers(
+            users.map(user =>
+              user._id === userId
+                ? ({ ...user, ...updates } as AdminUser)
+                : user
+            )
+          );
           setShowEditModal(false);
           setEditingUser(null);
         }
@@ -213,18 +277,20 @@ export default function UserManagement({ onClose }: UserManagementProps) {
       const response = await fetch('/api/admin/users/delete-request', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userId: user._id,
-          reason: deleteReason
-        })
+          reason: deleteReason,
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          alert('Se ha enviado un enlace de confirmación al email del administrador.');
+          alert(
+            'Se ha enviado un enlace de confirmación al email del administrador.'
+          );
           setShowDeleteConfirmation(null);
           setDeleteReason('');
         } else {
@@ -245,7 +311,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -277,35 +343,41 @@ export default function UserManagement({ onClose }: UserManagementProps) {
     );
   };
 
-  const getWarningSeverityBadge = (severity: 'low' | 'medium' | 'high' | 'critical') => {
+  const getWarningSeverityBadge = (
+    severity: 'low' | 'medium' | 'high' | 'critical'
+  ) => {
     const severityConfig = {
       low: {
-        color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+        color:
+          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
         icon: AlertCircle,
-        text: 'Bajo'
+        text: 'Bajo',
       },
       medium: {
-        color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+        color:
+          'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
         icon: AlertTriangle,
-        text: 'Medio'
+        text: 'Medio',
       },
       high: {
         color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
         icon: AlertTriangle,
-        text: 'Alto'
+        text: 'Alto',
       },
       critical: {
         color: 'bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100',
         icon: AlertTriangle,
-        text: 'Crítico'
-      }
+        text: 'Crítico',
+      },
     };
 
     const config = severityConfig[severity];
     const Icon = config.icon;
 
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
+      <span
+        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color}`}
+      >
         <Icon className="w-3 h-3 mr-1" />
         {config.text}
       </span>
@@ -317,7 +389,10 @@ export default function UserManagement({ onClose }: UserManagementProps) {
 
     if (user.notesCount > 0) {
       indicators.push(
-        <span key="notes" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+        <span
+          key="notes"
+          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+        >
           <FileText className="w-3 h-3 mr-1" />
           {user.notesCount} nota{user.notesCount !== 1 ? 's' : ''}
         </span>
@@ -326,18 +401,26 @@ export default function UserManagement({ onClose }: UserManagementProps) {
 
     if (user.activeWarningsCount > 0) {
       indicators.push(
-        <span key="warnings" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+        <span
+          key="warnings"
+          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
+        >
           <AlertTriangle className="w-3 h-3 mr-1" />
-          {user.activeWarningsCount} warning{user.activeWarningsCount !== 1 ? 's' : ''}
+          {user.activeWarningsCount} warning
+          {user.activeWarningsCount !== 1 ? 's' : ''}
         </span>
       );
     }
 
     if (user.criticalWarningsCount > 0) {
       indicators.push(
-        <span key="critical" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100 animate-pulse">
+        <span
+          key="critical"
+          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100 animate-pulse"
+        >
           <AlertTriangle className="w-3 h-3 mr-1" />
-          {user.criticalWarningsCount} crítico{user.criticalWarningsCount !== 1 ? 's' : ''}
+          {user.criticalWarningsCount} crítico
+          {user.criticalWarningsCount !== 1 ? 's' : ''}
         </span>
       );
     }
@@ -380,7 +463,9 @@ export default function UserManagement({ onClose }: UserManagementProps) {
               className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
               title="Actualizar lista"
             >
-              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`}
+              />
             </button>
             {onClose && (
               <button
@@ -395,73 +480,83 @@ export default function UserManagement({ onClose }: UserManagementProps) {
       </div>
 
       {/* Summary Stats */}
-      {(hasNotesFilter || hasWarningsFilter || warningSeverityFilter || searchTerm ||
-        searchInNotes || searchInWarnings || registrationDateFrom || registrationDateTo ||
-        lastActivityFrom || lastActivityTo || minRiskScore || maxRiskScore ||
-        warningCountMin || warningCountMax) && (
-          <div className="px-6 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center space-x-4">
-                <span className="text-blue-700 dark:text-blue-300 font-medium">
-                  Filtros activos:
-                </span>
-                {debouncedSearchTerm && (
-                  <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                    Búsqueda: "{debouncedSearchTerm}"
-                  </span>
-                )}
-                {hasNotesFilter && (
-                  <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                    Con notas
-                  </span>
-                )}
-                {hasWarningsFilter && (
-                  <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                    Con warnings
-                  </span>
-                )}
-                {warningSeverityFilter && (
-                  <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                    Severidad: {warningSeverityFilter}
-                  </span>
-                )}
-                {searchInNotes && (
-                  <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                    Buscar en notas
-                  </span>
-                )}
-                {searchInWarnings && (
-                  <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                    Buscar en warnings
-                  </span>
-                )}
-                {(registrationDateFrom || registrationDateTo) && (
-                  <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                    Fecha registro
-                  </span>
-                )}
-                {(lastActivityFrom || lastActivityTo) && (
-                  <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                    Última actividad
-                  </span>
-                )}
-                {(minRiskScore || maxRiskScore) && (
-                  <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                    Riesgo: {minRiskScore || '0'}-{maxRiskScore || '∞'}
-                  </span>
-                )}
-                {(warningCountMin || warningCountMax) && (
-                  <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                    Warnings: {warningCountMin || '0'}-{warningCountMax || '∞'}
-                  </span>
-                )}
-              </div>
-              <span className="text-blue-600 dark:text-blue-400 font-medium">
-                {users.length} de {totalUsers} usuarios
+      {(hasNotesFilter ||
+        hasWarningsFilter ||
+        warningSeverityFilter ||
+        searchTerm ||
+        searchInNotes ||
+        searchInWarnings ||
+        registrationDateFrom ||
+        registrationDateTo ||
+        lastActivityFrom ||
+        lastActivityTo ||
+        minRiskScore ||
+        maxRiskScore ||
+        warningCountMin ||
+        warningCountMax) && (
+        <div className="px-6 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center space-x-4">
+              <span className="text-blue-700 dark:text-blue-300 font-medium">
+                Filtros activos:
               </span>
+              {debouncedSearchTerm && (
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  Búsqueda: "{debouncedSearchTerm}"
+                </span>
+              )}
+              {hasNotesFilter && (
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  Con notas
+                </span>
+              )}
+              {hasWarningsFilter && (
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  Con warnings
+                </span>
+              )}
+              {warningSeverityFilter && (
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  Severidad: {warningSeverityFilter}
+                </span>
+              )}
+              {searchInNotes && (
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  Buscar en notas
+                </span>
+              )}
+              {searchInWarnings && (
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  Buscar en warnings
+                </span>
+              )}
+              {(registrationDateFrom || registrationDateTo) && (
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  Fecha registro
+                </span>
+              )}
+              {(lastActivityFrom || lastActivityTo) && (
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  Última actividad
+                </span>
+              )}
+              {(minRiskScore || maxRiskScore) && (
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  Riesgo: {minRiskScore || '0'}-{maxRiskScore || '∞'}
+                </span>
+              )}
+              {(warningCountMin || warningCountMax) && (
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  Warnings: {warningCountMin || '0'}-{warningCountMax || '∞'}
+                </span>
+              )}
             </div>
+            <span className="text-blue-600 dark:text-blue-400 font-medium">
+              {users.length} de {totalUsers} usuarios
+            </span>
           </div>
-        )}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -476,7 +571,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   type="text"
                   placeholder="Buscar por email o nombre..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
@@ -486,7 +581,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
             <div className="sm:w-48">
               <select
                 value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
+                onChange={e => setRoleFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">Todos los roles</option>
@@ -499,7 +594,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
             <div className="sm:w-48">
               <select
                 value={`${sortBy}-${sortOrder}`}
-                onChange={(e) => {
+                onChange={e => {
                   const [field, order] = e.target.value.split('-');
                   setSortBy(field);
                   setSortOrder(order);
@@ -530,7 +625,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                 <input
                   type="checkbox"
                   checked={hasNotesFilter}
-                  onChange={(e) => setHasNotesFilter(e.target.checked)}
+                  onChange={e => setHasNotesFilter(e.target.checked)}
                   className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
                 <span className="ml-2 text-sm text-gray-700 dark:text-gray-300 flex items-center">
@@ -546,7 +641,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                 <input
                   type="checkbox"
                   checked={hasWarningsFilter}
-                  onChange={(e) => setHasWarningsFilter(e.target.checked)}
+                  onChange={e => setHasWarningsFilter(e.target.checked)}
                   className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
                 <span className="ml-2 text-sm text-gray-700 dark:text-gray-300 flex items-center">
@@ -560,7 +655,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
             <div className="sm:w-48">
               <select
                 value={warningSeverityFilter}
-                onChange={(e) => setWarningSeverityFilter(e.target.value)}
+                onChange={e => setWarningSeverityFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">Todas las severidades</option>
@@ -581,37 +676,49 @@ export default function UserManagement({ onClose }: UserManagementProps) {
             </button>
 
             {/* Clear Filters */}
-            {(hasNotesFilter || hasWarningsFilter || warningSeverityFilter || searchInNotes || searchInWarnings ||
-              registrationDateFrom || registrationDateTo || lastActivityFrom || lastActivityTo ||
-              minRiskScore || maxRiskScore || warningCountMin || warningCountMax) && (
-                <button
-                  onClick={() => {
-                    setHasNotesFilter(false);
-                    setHasWarningsFilter(false);
-                    setWarningSeverityFilter('');
-                    setSearchInNotes(false);
-                    setSearchInWarnings(false);
-                    setRegistrationDateFrom('');
-                    setRegistrationDateTo('');
-                    setLastActivityFrom('');
-                    setLastActivityTo('');
-                    setMinRiskScore('');
-                    setMaxRiskScore('');
-                    setWarningCountMin('');
-                    setWarningCountMax('');
-                  }}
-                  className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  Limpiar filtros
-                </button>
-              )}
+            {(hasNotesFilter ||
+              hasWarningsFilter ||
+              warningSeverityFilter ||
+              searchInNotes ||
+              searchInWarnings ||
+              registrationDateFrom ||
+              registrationDateTo ||
+              lastActivityFrom ||
+              lastActivityTo ||
+              minRiskScore ||
+              maxRiskScore ||
+              warningCountMin ||
+              warningCountMax) && (
+              <button
+                onClick={() => {
+                  setHasNotesFilter(false);
+                  setHasWarningsFilter(false);
+                  setWarningSeverityFilter('');
+                  setSearchInNotes(false);
+                  setSearchInWarnings(false);
+                  setRegistrationDateFrom('');
+                  setRegistrationDateTo('');
+                  setLastActivityFrom('');
+                  setLastActivityTo('');
+                  setMinRiskScore('');
+                  setMaxRiskScore('');
+                  setWarningCountMin('');
+                  setWarningCountMax('');
+                }}
+                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                Limpiar filtros
+              </button>
+            )}
           </div>
         </div>
 
         {/* Advanced Filters Section */}
         {showAdvancedFilters && (
           <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Filtros Avanzados</h3>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Filtros Avanzados
+            </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Enhanced Search Options */}
@@ -624,19 +731,23 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                     <input
                       type="checkbox"
                       checked={searchInNotes}
-                      onChange={(e) => setSearchInNotes(e.target.checked)}
+                      onChange={e => setSearchInNotes(e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                     />
-                    <span className="ml-2 text-gray-700 dark:text-gray-300">Contenido de notas</span>
+                    <span className="ml-2 text-gray-700 dark:text-gray-300">
+                      Contenido de notas
+                    </span>
                   </label>
                   <label className="flex items-center text-sm">
                     <input
                       type="checkbox"
                       checked={searchInWarnings}
-                      onChange={(e) => setSearchInWarnings(e.target.checked)}
+                      onChange={e => setSearchInWarnings(e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                     />
-                    <span className="ml-2 text-gray-700 dark:text-gray-300">Razones de warnings</span>
+                    <span className="ml-2 text-gray-700 dark:text-gray-300">
+                      Razones de warnings
+                    </span>
                   </label>
                 </div>
               </div>
@@ -650,14 +761,14 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   <input
                     type="date"
                     value={registrationDateFrom}
-                    onChange={(e) => setRegistrationDateFrom(e.target.value)}
+                    onChange={e => setRegistrationDateFrom(e.target.value)}
                     placeholder="Desde"
                     className="w-full px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                   />
                   <input
                     type="date"
                     value={registrationDateTo}
-                    onChange={(e) => setRegistrationDateTo(e.target.value)}
+                    onChange={e => setRegistrationDateTo(e.target.value)}
                     placeholder="Hasta"
                     className="w-full px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                   />
@@ -673,14 +784,14 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   <input
                     type="date"
                     value={lastActivityFrom}
-                    onChange={(e) => setLastActivityFrom(e.target.value)}
+                    onChange={e => setLastActivityFrom(e.target.value)}
                     placeholder="Desde"
                     className="w-full px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                   />
                   <input
                     type="date"
                     value={lastActivityTo}
-                    onChange={(e) => setLastActivityTo(e.target.value)}
+                    onChange={e => setLastActivityTo(e.target.value)}
                     placeholder="Hasta"
                     className="w-full px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                   />
@@ -696,7 +807,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   <input
                     type="number"
                     value={minRiskScore}
-                    onChange={(e) => setMinRiskScore(e.target.value)}
+                    onChange={e => setMinRiskScore(e.target.value)}
                     placeholder="Mínimo"
                     min="0"
                     step="0.1"
@@ -705,7 +816,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   <input
                     type="number"
                     value={maxRiskScore}
-                    onChange={(e) => setMaxRiskScore(e.target.value)}
+                    onChange={e => setMaxRiskScore(e.target.value)}
                     placeholder="Máximo"
                     min="0"
                     step="0.1"
@@ -723,7 +834,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   <input
                     type="number"
                     value={warningCountMin}
-                    onChange={(e) => setWarningCountMin(e.target.value)}
+                    onChange={e => setWarningCountMin(e.target.value)}
                     placeholder="Mínimo"
                     min="0"
                     className="w-full px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-white"
@@ -731,7 +842,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   <input
                     type="number"
                     value={warningCountMax}
-                    onChange={(e) => setWarningCountMax(e.target.value)}
+                    onChange={e => setWarningCountMax(e.target.value)}
                     placeholder="Máximo"
                     min="0"
                     className="w-full px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-white"
@@ -746,7 +857,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                 </label>
                 <div className="space-y-2">
                   <select
-                    onChange={(e) => {
+                    onChange={e => {
                       if (e.target.value) {
                         // Apply predefined presets
                         switch (e.target.value) {
@@ -765,17 +876,25 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                           case 'recent-registrations':
                             const oneWeekAgo = new Date();
                             oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-                            setRegistrationDateFrom(oneWeekAgo.toISOString().split('T')[0]);
+                            setRegistrationDateFrom(
+                              oneWeekAgo.toISOString().split('T')[0]
+                            );
                             break;
                           default:
                             // Check saved filters
-                            const preset = savedFilters.find(f => f.name === e.target.value);
+                            const preset = savedFilters.find(
+                              f => f.name === e.target.value
+                            );
                             if (preset) {
                               setHasNotesFilter(preset.hasNotes || false);
                               setHasWarningsFilter(preset.hasWarnings || false);
-                              setWarningSeverityFilter(preset.warningSeverity || '');
+                              setWarningSeverityFilter(
+                                preset.warningSeverity || ''
+                              );
                               setSearchInNotes(preset.searchInNotes || false);
-                              setSearchInWarnings(preset.searchInWarnings || false);
+                              setSearchInWarnings(
+                                preset.searchInWarnings || false
+                              );
                               setMinRiskScore(preset.minRiskScore || '');
                               setMaxRiskScore(preset.maxRiskScore || '');
                               setWarningCountMin(preset.warningCountMin || '');
@@ -789,8 +908,12 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                     <option value="">Seleccionar preset</option>
                     <option value="high-risk">Usuarios de alto riesgo</option>
                     <option value="critical-warnings">Warnings críticos</option>
-                    <option value="inactive-with-warnings">Inactivos con warnings</option>
-                    <option value="recent-registrations">Registros recientes</option>
+                    <option value="inactive-with-warnings">
+                      Inactivos con warnings
+                    </option>
+                    <option value="recent-registrations">
+                      Registros recientes
+                    </option>
                     {savedFilters.map(filter => (
                       <option key={filter.name} value={filter.name}>
                         {filter.name}
@@ -801,7 +924,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                     <input
                       type="text"
                       value={filterPresetName}
-                      onChange={(e) => setFilterPresetName(e.target.value)}
+                      onChange={e => setFilterPresetName(e.target.value)}
                       placeholder="Nombre del preset"
                       className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                     />
@@ -819,7 +942,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                             minRiskScore,
                             maxRiskScore,
                             warningCountMin,
-                            warningCountMax
+                            warningCountMax,
                           };
                           setSavedFilters([...savedFilters, newPreset]);
                           setFilterPresetName('');
@@ -852,7 +975,9 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   ...(roleFilter && { role: roleFilter }),
                   ...(hasNotesFilter && { hasNotes: 'true' }),
                   ...(hasWarningsFilter && { hasWarnings: 'true' }),
-                  ...(warningSeverityFilter && { warningSeverity: warningSeverityFilter }),
+                  ...(warningSeverityFilter && {
+                    warningSeverity: warningSeverityFilter,
+                  }),
                   ...(searchInNotes && { searchInNotes: 'true' }),
                   ...(searchInWarnings && { searchInWarnings: 'true' }),
                   ...(registrationDateFrom && { registrationDateFrom }),
@@ -862,7 +987,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   ...(minRiskScore && { minRiskScore }),
                   ...(maxRiskScore && { maxRiskScore }),
                   ...(warningCountMin && { warningCountMin }),
-                  ...(warningCountMax && { warningCountMax })
+                  ...(warningCountMax && { warningCountMax }),
                 });
                 window.open(`/api/admin/users/export?${params}`, '_blank');
               }}
@@ -879,7 +1004,9 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   ...(roleFilter && { role: roleFilter }),
                   ...(hasNotesFilter && { hasNotes: 'true' }),
                   ...(hasWarningsFilter && { hasWarnings: 'true' }),
-                  ...(warningSeverityFilter && { warningSeverity: warningSeverityFilter }),
+                  ...(warningSeverityFilter && {
+                    warningSeverity: warningSeverityFilter,
+                  }),
                   ...(searchInNotes && { searchInNotes: 'true' }),
                   ...(searchInWarnings && { searchInWarnings: 'true' }),
                   ...(registrationDateFrom && { registrationDateFrom }),
@@ -889,7 +1016,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   ...(minRiskScore && { minRiskScore }),
                   ...(maxRiskScore && { maxRiskScore }),
                   ...(warningCountMin && { warningCountMin }),
-                  ...(warningCountMax && { warningCountMax })
+                  ...(warningCountMax && { warningCountMax }),
                 });
                 window.open(`/api/admin/users/export?${params}`, '_blank');
               }}
@@ -923,10 +1050,12 @@ export default function UserManagement({ onClose }: UserManagementProps) {
           <div className="flex flex-col items-center justify-center py-12">
             <Users className="w-12 h-12 text-gray-400 mb-4" />
             <p className="text-gray-500 dark:text-gray-400">
-              {debouncedSearchTerm || hasNotesFilter || hasWarningsFilter || warningSeverityFilter
+              {debouncedSearchTerm ||
+              hasNotesFilter ||
+              hasWarningsFilter ||
+              warningSeverityFilter
                 ? 'No se encontraron usuarios con los filtros aplicados'
-                : 'No hay usuarios registrados'
-              }
+                : 'No hay usuarios registrados'}
             </p>
           </div>
         ) : (
@@ -946,6 +1075,9 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   Alertas
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Eliminación
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Riesgo
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -963,20 +1095,23 @@ export default function UserManagement({ onClose }: UserManagementProps) {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {users.map((user) => {
+              {users.map(user => {
                 const warningIndicators = getWarningIndicators(user);
-                const hasHighPriorityWarnings = user.criticalWarningsCount > 0 || user.highestWarningSeverity === 'high';
+                const hasHighPriorityWarnings =
+                  user.criticalWarningsCount > 0 ||
+                  user.highestWarningSeverity === 'high';
                 const hasCriticalWarnings = user.criticalWarningsCount > 0;
 
                 return (
                   <tr
                     key={user._id}
-                    className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${hasCriticalWarnings
-                      ? 'bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500'
-                      : hasHighPriorityWarnings
-                        ? 'bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500'
-                        : ''
-                      }`}
+                    className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                      hasCriticalWarnings
+                        ? 'bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500'
+                        : hasHighPriorityWarnings
+                          ? 'bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500'
+                          : ''
+                    }`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -1011,12 +1146,48 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      {user.hasPendingDeletionRequest ? (
+                        <div className="flex items-center">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              user.deletionRequestStatus === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                : user.deletionRequestStatus === 'scheduled'
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                  : user.deletionRequestStatus === 'cancelled'
+                                    ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            }`}
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            {user.deletionRequestStatus === 'pending'
+                              ? 'Pendiente'
+                              : user.deletionRequestStatus === 'scheduled'
+                                ? 'Programada'
+                                : user.deletionRequestStatus === 'cancelled'
+                                  ? 'Cancelada'
+                                  : 'Programado'}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400 dark:text-gray-500">
+                          Sin solicitudes
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <span className={`text-sm font-medium ${user.riskScore >= 15 ? 'text-red-600 dark:text-red-400' :
-                          user.riskScore >= 7 ? 'text-orange-600 dark:text-orange-400' :
-                            user.riskScore >= 3 ? 'text-yellow-600 dark:text-yellow-400' :
-                              'text-green-600 dark:text-green-400'
-                          }`}>
+                        <span
+                          className={`text-sm font-medium ${
+                            user.riskScore >= 15
+                              ? 'text-red-600 dark:text-red-400'
+                              : user.riskScore >= 7
+                                ? 'text-orange-600 dark:text-orange-400'
+                                : user.riskScore >= 3
+                                  ? 'text-yellow-600 dark:text-yellow-400'
+                                  : 'text-green-600 dark:text-green-400'
+                          }`}
+                        >
                           {user.riskScore.toFixed(1)}
                         </span>
                         {user.riskScore >= 15 && (
@@ -1092,7 +1263,9 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                onClick={() =>
+                  setCurrentPage(Math.min(totalPages, currentPage + 1))
+                }
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
               >
@@ -1130,7 +1303,12 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                 </label>
                 <select
                   value={editingUser.role}
-                  onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as 'user' | 'admin' })}
+                  onChange={e =>
+                    setEditingUser({
+                      ...editingUser,
+                      role: e.target.value as 'user' | 'admin',
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
                   <option value="user">Usuario</option>
@@ -1143,7 +1321,12 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                   <input
                     type="checkbox"
                     checked={editingUser.isActive}
-                    onChange={(e) => setEditingUser({ ...editingUser, isActive: e.target.checked })}
+                    onChange={e =>
+                      setEditingUser({
+                        ...editingUser,
+                        isActive: e.target.checked,
+                      })
+                    }
                     className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                   />
                   <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
@@ -1164,10 +1347,12 @@ export default function UserManagement({ onClose }: UserManagementProps) {
                 Cancelar
               </button>
               <button
-                onClick={() => handleUpdateUser(editingUser._id, {
-                  role: editingUser.role,
-                  isActive: editingUser.isActive
-                })}
+                onClick={() =>
+                  handleUpdateUser(editingUser._id, {
+                    role: editingUser.role,
+                    isActive: editingUser.isActive,
+                  })
+                }
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
               >
                 Guardar
@@ -1212,7 +1397,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
             <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
               ⚠️ Eliminar Usuario
             </h3>
-            
+
             <div className="mb-4">
               <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                 Estás a punto de solicitar la eliminación completa de:
@@ -1233,7 +1418,7 @@ export default function UserManagement({ onClose }: UserManagementProps) {
               </label>
               <textarea
                 value={deleteReason}
-                onChange={(e) => setDeleteReason(e.target.value)}
+                onChange={e => setDeleteReason(e.target.value)}
                 placeholder="Describe la razón por la cual se eliminará este usuario..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 rows={3}
@@ -1243,8 +1428,9 @@ export default function UserManagement({ onClose }: UserManagementProps) {
 
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>Importante:</strong> Se enviará un enlace de confirmación al email del administrador. 
-                Esta acción eliminará permanentemente todos los datos del usuario.
+                <strong>Importante:</strong> Se enviará un enlace de
+                confirmación al email del administrador. Esta acción eliminará
+                permanentemente todos los datos del usuario.
               </p>
             </div>
 
