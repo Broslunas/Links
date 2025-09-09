@@ -12,10 +12,12 @@ import {
   Activity,
   TrendingUp,
   Database,
+  Globe,
 } from 'lucide-react';
 import UserManagement from '@/components/dashboard/UserManagement';
 import LinkManagement from '@/components/dashboard/LinkManagement';
 import ReportsAnalytics from '@/components/dashboard/ReportsAnalytics';
+import DomainManagement from '@/components/admin/DomainManagement';
 
 interface AdminStats {
   totalUsers: number;
@@ -40,6 +42,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [showUserManagement, setShowUserManagement] = useState(false);
+  const [showDomainManagement, setShowDomainManagement] = useState(false);
   const [showLinkManagement, setShowLinkManagement] = useState(false);
   const [showReportsAnalytics, setShowReportsAnalytics] = useState(false);
 
@@ -410,6 +413,21 @@ export default function AdminPage() {
             </button>
 
             <button
+              onClick={() => setShowDomainManagement(true)}
+              className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <Globe className="h-5 w-5 text-indigo-500" />
+              <div>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  Gestión de Dominios
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Ver, bloquear y gestionar dominios personalizados
+                </p>
+              </div>
+            </button>
+
+            <button
               onClick={() => setShowLinkManagement(true)}
               className="w-full flex items-center gap-3 p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
@@ -494,6 +512,11 @@ export default function AdminPage() {
             <UserManagement onClose={() => setShowUserManagement(false)} />
           </div>
         </div>
+      )}
+
+      {/* Domain Management Modal */}
+      {showDomainManagement && (
+        <DomainManagement onClose={() => setShowDomainManagement(false)} />
       )}
 
       {/* Link Management Modal */}
