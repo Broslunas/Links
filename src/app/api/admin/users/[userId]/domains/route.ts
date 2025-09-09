@@ -53,6 +53,8 @@ export async function GET(
       fullDomain: domain.fullDomain,
       isVerified: domain.isVerified,
       isActive: domain.isActive,
+      isBlocked: domain.isBlocked,
+      blockedReason: domain.blockedReason,
       sslStatus: domain.sslStatus,
       sslError: domain.sslError,
       isDefault: domain.isDefault,

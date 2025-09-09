@@ -7,6 +7,8 @@ export interface ICustomDomain extends Document {
   fullDomain: string; // El dominio completo (subdomain + domain o solo domain)
   isVerified: boolean;
   isActive: boolean;
+  isBlocked: boolean; // Si el dominio está bloqueado por administradores
+  blockedReason?: string; // Razón del bloqueo
   verificationToken: string;
   dnsRecords: {
     type: 'CNAME' | 'A';
@@ -75,6 +77,14 @@ const CustomDomainSchema = new Schema<ICustomDomain>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+    blockedReason: {
+      type: String,
+      trim: true,
     },
     verificationToken: {
       type: String,
