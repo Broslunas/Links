@@ -15,7 +15,10 @@ import {
   Copy,
   Star,
   Clock,
-  Shield
+  Shield,
+  Ban,
+  XCircle,
+  MessageCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -29,6 +32,8 @@ interface CustomDomain {
   fullDomain: string;
   isVerified: boolean;
   isActive: boolean;
+  isBlocked?: boolean;
+  blockedReason?: string;
   verificationToken: string;
   dnsRecords: Array<{
     type: string;
@@ -233,8 +238,14 @@ export default function CustomDomainManager() {
   };
 
   const getStatusIcon = (domain: CustomDomain) => {
+    if (domain.isBlocked) {
+      return <Ban className="h-4 w-4 text-red-600" />;
+    }
     if (!domain.isVerified) {
       return <Clock className="h-4 w-4 text-yellow-500" />;
+    }
+    if (!domain.isActive) {
+      return <XCircle className="h-4 w-4 text-red-500" />;
     }
     if (domain.sslStatus === 'active') {
       return <Check className="h-4 w-4 text-green-500" />;
@@ -246,8 +257,14 @@ export default function CustomDomainManager() {
   };
 
   const getStatusText = (domain: CustomDomain) => {
+    if (domain.isBlocked) {
+      return `Dominio bloqueado${domain.blockedReason ? `: ${domain.blockedReason}` : ''}`;
+    }
     if (!domain.isVerified) {
       return 'Pendiente verificación';
+    }
+    if (!domain.isActive) {
+      return 'Dominio inactivo';
     }
     if (domain.sslStatus === 'active') {
       return 'Activo';
@@ -287,13 +304,23 @@ export default function CustomDomainManager() {
               {domains.length} dominios
             </span>
           </div>
-          <Button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Agregar Dominio</span>
-          </Button>
+          <div className="flex items-center space-x-3">
+            <Button
+              onClick={() => window.open('/contacto', '_blank')}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>Contactar Soporte</span>
+            </Button>
+            <Button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center space-x-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Agregar Dominio</span>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -318,39 +345,71 @@ export default function CustomDomainManager() {
             {domains.map((domain) => (
               <div
                 key={domain._id}
-                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
+                className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                  domain.isBlocked 
+                    ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20' 
+                    : 'border-gray-200 dark:border-gray-700'
+                }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     {getStatusIcon(domain)}
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        <h3 className={`text-lg font-medium ${
+                          domain.isBlocked 
+                            ? 'text-red-900 dark:text-red-200' 
+                            : 'text-gray-900 dark:text-white'
+                        }`}>
                           {domain.fullDomain}
                         </h3>
                         {domain.isDefault && (
                           <Star className="h-4 w-4 text-yellow-500 fill-current" />
                         )}
+                        {domain.isBlocked && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                            <Ban className="w-3 h-3 mr-1" />
+                            Bloqueado
+                          </span>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className={`text-sm ${
+                        domain.isBlocked 
+                          ? 'text-red-700 dark:text-red-300' 
+                          : 'text-gray-500 dark:text-gray-400'
+                      }`}>
                         {getStatusText(domain)}
                       </p>
                     </div>
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    {domain.isVerified && (
+                    {domain.isVerified && !domain.isBlocked && (
                       <a
                         href={`https://${domain.fullDomain}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                        title="Visitar dominio"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </a>
                     )}
                     
-                    {!domain.isVerified && (
+                    {domain.isBlocked && (
+                      <Button
+                        size="sm"
+                        onClick={() => window.open('/contacto', '_blank')}
+                        variant="outline"
+                        className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-600 dark:text-red-200 dark:hover:bg-red-800"
+                        title="Contactar soporte sobre dominio bloqueado"
+                      >
+                        <MessageCircle className="h-4 w-4 mr-1" />
+                        Contactar Soporte
+                      </Button>
+                    )}
+                    
+                    {!domain.isVerified && !domain.isBlocked && (
                       <Button
                         size="sm"
                         onClick={() => {
@@ -364,7 +423,7 @@ export default function CustomDomainManager() {
                       </Button>
                     )}
                     
-                    {!domain.isVerified && (
+                    {!domain.isVerified && !domain.isBlocked && (
                       <Button
                         size="sm"
                         onClick={() => handleVerifyDomain(domain._id)}
@@ -379,7 +438,7 @@ export default function CustomDomainManager() {
                       </Button>
                     )}
                     
-                    {domain.isVerified && domain.sslStatus === 'pending' && (
+                    {domain.isVerified && domain.sslStatus === 'pending' && !domain.isBlocked && (
                       <Button
                         size="sm"
                         onClick={() => handleCheckSSL(domain._id)}
@@ -395,7 +454,7 @@ export default function CustomDomainManager() {
                       </Button>
                     )}
                     
-                    {domain.isVerified && !domain.isDefault && (
+                    {domain.isVerified && !domain.isDefault && !domain.isBlocked && (
                       <Button
                         size="sm"
                         onClick={() => handleSetDefault(domain._id)}
@@ -410,7 +469,9 @@ export default function CustomDomainManager() {
                       size="sm"
                       onClick={() => handleDeleteDomain(domain._id)}
                       variant="outline"
-                      className="text-red-600 hover:text-red-800"
+                      className={domain.isBlocked ? "text-gray-400 cursor-not-allowed" : "text-red-600 hover:text-red-800"}
+                      disabled={domain.isBlocked}
+                      title={domain.isBlocked ? "No se puede eliminar un dominio bloqueado" : "Eliminar dominio"}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
