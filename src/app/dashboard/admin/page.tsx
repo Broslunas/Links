@@ -46,6 +46,16 @@ export default function AdminPage() {
   const [showLinkManagement, setShowLinkManagement] = useState(false);
   const [showReportsAnalytics, setShowReportsAnalytics] = useState(false);
 
+  // Admin password authentication states
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [hasAdminPassword, setHasAdminPassword] = useState<boolean | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showSetPasswordModal, setShowSetPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+
   // Delete user confirmation states
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [deleteUserData, setDeleteUserData] = useState<any>(null);
@@ -87,7 +97,8 @@ export default function AdminPage() {
         }
 
         // Si llegamos aquí, el usuario es admin
-        await loadAdminData();
+        // Verificar estado de la contraseña admin en lugar de cargar datos directamente
+        await checkAdminPasswordStatus();
       } catch (error) {
         console.error('Error checking user role:', error);
         router.push('/dashboard');
@@ -103,12 +114,127 @@ export default function AdminPage() {
     const cancelDeletionUserId = searchParams.get('cancelDeletionUser');
     const token = searchParams.get('token');
 
-    if (deleteUserId && token && userRole === 'admin') {
+    if (deleteUserId && token && userRole === 'admin' && isAdminAuthenticated) {
       handleDeleteUserConfirmation(deleteUserId, token);
-    } else if (cancelDeletionUserId && token && userRole === 'admin') {
+    } else if (cancelDeletionUserId && token && userRole === 'admin' && isAdminAuthenticated) {
       handleCancelDeletion(cancelDeletionUserId, token);
     }
-  }, [searchParams, userRole]);
+  }, [searchParams, userRole, isAdminAuthenticated]);
+
+  // Check admin password status
+  const checkAdminPasswordStatus = async () => {
+    try {
+      console.log('Checking admin password status...');
+      const response = await fetch('/api/admin/password/verify');
+      console.log('Response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Password status data:', data);
+        setHasAdminPassword(data.hasPassword);
+        
+        if (!data.hasPassword) {
+          console.log('No password set, showing set password modal');
+          setShowSetPasswordModal(true);
+        } else {
+          console.log('Password exists, showing verify password modal');
+          setShowPasswordModal(true);
+        }
+      } else {
+        console.error('Failed to check password status:', response.status);
+        const errorData = await response.json();
+        console.error('Error data:', errorData);
+      }
+    } catch (error) {
+      console.error('Error checking admin password status:', error);
+    }
+  };
+
+  // Verify admin password
+  const verifyAdminPassword = async () => {
+    if (!passwordInput.trim()) {
+      setPasswordError('La contraseña es requerida');
+      return;
+    }
+
+    setIsPasswordLoading(true);
+    setPasswordError('');
+
+    try {
+      const response = await fetch('/api/admin/password/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: passwordInput }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsAdminAuthenticated(true);
+        setShowPasswordModal(false);
+        setPasswordInput('');
+        loadAdminData();
+      } else {
+        setPasswordError('Contraseña incorrecta');
+      }
+    } catch (error) {
+      console.error('Error verifying password:', error);
+      setPasswordError('Error al verificar la contraseña');
+    } finally {
+      setIsPasswordLoading(false);
+    }
+  };
+
+  // Set admin password
+  const setAdminPassword = async () => {
+    if (!passwordInput.trim() || !confirmPasswordInput.trim()) {
+      setPasswordError('Ambas contraseñas son requeridas');
+      return;
+    }
+
+    if (passwordInput !== confirmPasswordInput) {
+      setPasswordError('Las contraseñas no coinciden');
+      return;
+    }
+
+    if (passwordInput.length < 6) {
+      setPasswordError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    setIsPasswordLoading(true);
+    setPasswordError('');
+
+    try {
+      const response = await fetch('/api/admin/password/set', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: passwordInput }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setHasAdminPassword(true);
+        setIsAdminAuthenticated(true);
+        setShowSetPasswordModal(false);
+        setPasswordInput('');
+        setConfirmPasswordInput('');
+        loadAdminData();
+      } else {
+        setPasswordError(data.error?.message || 'Error al establecer la contraseña');
+      }
+    } catch (error) {
+      console.error('Error setting password:', error);
+      setPasswordError('Error al establecer la contraseña');
+    } finally {
+      setIsPasswordLoading(false);
+    }
+  };
 
   const loadAdminData = async () => {
     try {
@@ -284,7 +410,7 @@ export default function AdminPage() {
   };
 
   // Loading state
-  if (status === 'loading' || loading || userRole !== 'admin') {
+  if (status === 'loading' || loading || userRole !== 'admin' || !isAdminAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
@@ -295,6 +421,106 @@ export default function AdminPage() {
               : 'Cargando panel de administración...'}
           </p>
         </div>
+        
+        {/* Admin Password Modal */}
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                🔐 Autenticación de Administrador
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Ingresa la contraseña de administrador para continuar.
+              </p>
+              
+              <div className="mb-4">
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && verifyAdminPassword()}
+                  placeholder="Contraseña de administrador"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  disabled={isPasswordLoading}
+                />
+                {passwordError && (
+                  <p className="text-red-500 text-sm mt-2">{passwordError}</p>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+                  disabled={isPasswordLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={verifyAdminPassword}
+                  disabled={isPasswordLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isPasswordLoading ? 'Verificando...' : 'Verificar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Set Admin Password Modal */}
+        {showSetPasswordModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                🔐 Establecer Contraseña de Administrador
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Es la primera vez que accedes al panel de administración. Establece una contraseña segura.
+              </p>
+              
+              <div className="mb-4">
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Nueva contraseña (mín. 6 caracteres)"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white mb-3"
+                  disabled={isPasswordLoading}
+                />
+                <input
+                  type="password"
+                  value={confirmPasswordInput}
+                  onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && setAdminPassword()}
+                  placeholder="Confirmar contraseña"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  disabled={isPasswordLoading}
+                />
+                {passwordError && (
+                  <p className="text-red-500 text-sm mt-2">{passwordError}</p>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+                  disabled={isPasswordLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={setAdminPassword}
+                  disabled={isPasswordLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isPasswordLoading ? 'Estableciendo...' : 'Establecer Contraseña'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

@@ -8,6 +8,9 @@ export interface IUser extends Document {
     providerId: string;
     role: 'user' | 'admin';
     isActive?: boolean;
+    // Admin password for additional security
+    adminPassword?: string;
+    adminPasswordCreatedAt?: Date;
     // Discord-specific fields
     discordUsername?: string;
     discordDiscriminator?: string;
@@ -88,6 +91,14 @@ const UserSchema = new Schema<IUser>({
     providerData: {
         type: Schema.Types.Mixed,
         default: {},
+    },
+    // Admin password for additional security
+    adminPassword: {
+        type: String,
+        trim: true,
+    },
+    adminPasswordCreatedAt: {
+        type: Date,
     },
     // API token for public API access
     apiToken: {
