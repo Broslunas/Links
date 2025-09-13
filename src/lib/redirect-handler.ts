@@ -4,6 +4,7 @@ import Link from '../models/Link';
 import TempLink from '../models/TempLink';
 import AnalyticsEvent from '../models/AnalyticsEvent';
 import CustomDomain from '../models/CustomDomain';
+import User from '../models/User';
 
 export interface RedirectResult {
     success: boolean;
@@ -35,7 +36,7 @@ export async function handleRedirect(
 ): Promise<RedirectResult> {
     console.log('🚀 handleRedirect called with slug:', slug);
     console.log('🌐 Request URL:', request.url);
-    
+
     try {
         await connectDB();
 
@@ -46,9 +47,9 @@ export async function handleRedirect(
         let domainFilter = {};
 
         // Check if this is a custom domain request
-        if (requestDomain !== process.env.DEFAULT_DOMAIN && 
-            !requestDomain.startsWith('localhost:') && 
-            requestDomain !== 'broslunas.link' && 
+        if (requestDomain !== process.env.DEFAULT_DOMAIN &&
+            !requestDomain.startsWith('localhost:') &&
+            requestDomain !== 'broslunas.link' &&
             requestDomain !== 'www.broslunas.link') {
             customDomain = await CustomDomain.findOne({
                 fullDomain: requestDomain,
@@ -83,7 +84,7 @@ export async function handleRedirect(
                 ...domainFilter,
                 $or: [
                     { isExpired: true },
-                    { 
+                    {
                         isTemporary: true,
                         expiresAt: { $lte: new Date() }
                     }
@@ -110,7 +111,7 @@ export async function handleRedirect(
                 originalUrl: 'https://google.com'
             };
         }
-        
+
         console.log('🔍 Processing slug:', slug, 'domain:', requestDomain);
 
         // Find the link by slug (check both regular links and temporary links)
@@ -123,17 +124,17 @@ export async function handleRedirect(
                 isExpired: { $ne: true }, // Exclude expired links
                 $or: [
                     { isTemporary: { $ne: true } }, // Non-temporary links
-                    { 
+                    {
                         isTemporary: true,
                         expiresAt: { $gt: new Date() } // Only non-expired temporary links
                     }
                 ]
-            }),
+            }).populate('userId', 'isActive'), // Populate user data to check if user is blocked
             // Note: TempLink doesn't support custom domains yet
             TempLink.findOne({
                 slug: slug.toLowerCase(),
                 expiresAt: { $gt: new Date() } // Only non-expired temp links
-            })
+            }).populate('userId', 'isActive') // Populate user data for temp links too
         ]);
 
         // Determine which link to use (regular links take precedence)
@@ -145,6 +146,26 @@ export async function handleRedirect(
                 success: false,
                 error: 'Link not found, inactive, or disabled'
             };
+        }
+
+        // Check if the user who owns this link is blocked/inactive
+        if (targetLink.userId && typeof targetLink.userId === 'object' && 'isActive' in targetLink.userId) {
+            const user = targetLink.userId as any;
+            if (!user.isActive) {
+                return {
+                    success: false,
+                    error: 'Este enlace no está disponible porque la cuenta del usuario está inactiva'
+                };
+            }
+        } else if (targetLink.userId) {
+            // If userId is not populated, fetch the user separately
+            const user = await User.findById(targetLink.userId).select('isActive');
+            if (!user || !user.isActive) {
+                return {
+                    success: false,
+                    error: 'Este enlace no está disponible porque la cuenta del usuario está inactiva'
+                };
+            }
         }
 
         // Extract analytics data
@@ -227,9 +248,9 @@ export async function shouldRedirectToMainDomain(
     try {
         const requestDomain = extractDomainFromRequest(request);
         const mainDomain = process.env.NEXT_PUBLIC_APP_URL || 'https://broslunas.link';
-        
+
         // If it's the main domain or localhost, no redirect needed
-        if (requestDomain === process.env.DEFAULT_DOMAIN || 
+        if (requestDomain === process.env.DEFAULT_DOMAIN ||
             requestDomain === 'localhost:3000' ||
             requestDomain === 'localhost' ||
             requestDomain === '127.0.0.1' ||
@@ -238,7 +259,7 @@ export async function shouldRedirectToMainDomain(
             requestDomain.includes('vercel.app')) {
             return { success: true };
         }
-        
+
         // Check if this is a custom domain request
         await connectDB();
         const customDomain = await CustomDomain.findOne({
@@ -247,14 +268,14 @@ export async function shouldRedirectToMainDomain(
             isActive: true,
             isBlocked: { $ne: true }
         });
-        
+
         if (!customDomain) {
             return {
                 success: false,
                 error: 'Dominio personalizado no encontrado, no verificado o bloqueado'
             };
         }
-        
+
         // If it's root path, redirect to main domain
         if (pathname === '/') {
             return {
@@ -263,7 +284,7 @@ export async function shouldRedirectToMainDomain(
                 mainDomainUrl: mainDomain
             };
         }
-        
+
         // If it's not a valid slug format, redirect to main domain with same path
         const slug = pathname.slice(1);
         if (!isValidSlug(slug)) {
@@ -273,7 +294,7 @@ export async function shouldRedirectToMainDomain(
                 mainDomainUrl: `${mainDomain}${pathname}`
             };
         }
-        
+
         // Check if the slug exists as a valid link (available on all domains)
         const link = await Link.findOne({
             slug: slug.toLowerCase(),
@@ -282,13 +303,13 @@ export async function shouldRedirectToMainDomain(
             isExpired: { $ne: true },
             $or: [
                 { isTemporary: { $ne: true } },
-                { 
+                {
                     isTemporary: true,
                     expiresAt: { $gt: new Date() }
                 }
             ]
-        });
-        
+        }).populate('userId', 'isActive');
+
         // If no link found, redirect to main domain with same path
         if (!link) {
             return {
@@ -297,10 +318,34 @@ export async function shouldRedirectToMainDomain(
                 mainDomainUrl: `${mainDomain}${pathname}`
             };
         }
-        
-        // Link exists, allow normal processing
+
+        // Check if the user who owns this link is blocked/inactive
+        if (link.userId && typeof link.userId === 'object' && 'isActive' in link.userId) {
+            const user = link.userId as any;
+            if (!user.isActive) {
+                // If user is blocked, redirect to main domain
+                return {
+                    success: true,
+                    shouldRedirectToMain: true,
+                    mainDomainUrl: `${mainDomain}${pathname}`
+                };
+            }
+        } else if (link.userId) {
+            // If userId is not populated, fetch the user separately
+            const user = await User.findById(link.userId).select('isActive');
+            if (!user || !user.isActive) {
+                // If user is blocked, redirect to main domain
+                return {
+                    success: true,
+                    shouldRedirectToMain: true,
+                    mainDomainUrl: `${mainDomain}${pathname}`
+                };
+            }
+        }
+
+        // Link exists and user is active, allow normal processing
         return { success: true };
-        
+
     } catch (error) {
         console.error('Error checking redirect to main domain:', error);
         return {
@@ -315,7 +360,7 @@ export async function shouldRedirectToMainDomain(
  */
 export function isValidSlug(slug: string): boolean {
     console.log('🔍 isValidSlug called with:', slug);
-    
+
     if (!slug || typeof slug !== 'string') {
         console.log('❌ isValidSlug: Invalid type or empty slug');
         return false;
