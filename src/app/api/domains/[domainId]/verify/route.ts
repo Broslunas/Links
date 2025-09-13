@@ -5,95 +5,13 @@ import { connectDB } from '@/lib/db-utils';
 import CustomDomain from '@/models/CustomDomain';
 import User from '@/models/User';
 import mongoose from 'mongoose';
-import { VercelIntegration } from '@/lib/vercel-integration';
 import { CustomDomainResponse } from '../../route';
 import { sendDomainNotification } from '@/lib/domain-notification-service';
 
-// Función para verificar DNS usando una API externa o método nativo
-async function verifyDNSRecord(
-  domain: string,
-  expectedValue: string
-): Promise<boolean> {
-  try {
-    console.log(
-      `Verificando DNS para dominio: ${domain}, valor esperado: ${expectedValue}`
-    );
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
 
-    // Ejemplo usando fetch a una API de DNS pública
-    const response = await fetch(
-      `https://dns.google/resolve?name=${domain}&type=CNAME`,
-      {
-        headers: {
-          Accept: 'application/dns-json',
-        },
-      }
-    );
 
-    if (!response.ok) {
-      console.log(
-        `Error en respuesta DNS: ${response.status} ${response.statusText}`
-      );
-      return false;
-    }
-
-    const data = await response.json();
-    console.log('Respuesta DNS:', JSON.stringify(data, null, 2));
-
-    // Verificar si alguna respuesta coincide con el valor esperado
-    if (data.Answer) {
-      const found = data.Answer.some((answer: any) => {
-        const answerData = answer.data;
-        console.log(`Comparando: ${answerData} con ${expectedValue}`);
-        return (
-          answerData &&
-          answerData.toLowerCase().includes(expectedValue.toLowerCase())
-        );
-      });
-      console.log(`DNS verificado: ${found}`);
-      return found;
-    }
-
-    // Si no hay respuestas CNAME, verificar si el dominio apunta directamente a Vercel
-    if (data.Status === 0 && !data.Answer) {
-      console.log(
-        'No se encontraron registros CNAME, verificando registros A...'
-      );
-
-      // Intentar verificar registros A
-      const aResponse = await fetch(
-        `https://dns.google/resolve?name=${domain}&type=A`,
-        {
-          headers: {
-            Accept: 'application/dns-json',
-          },
-        }
-      );
-
-      if (aResponse.ok) {
-        const aData = await aResponse.json();
-        console.log('Respuesta DNS A:', JSON.stringify(aData, null, 2));
-
-        // Vercel IPs conocidas (esto puede cambiar, es mejor usar CNAME)
-        const vercelIPs = ['76.76.19.61', '76.76.19.62'];
-        if (aData.Answer) {
-          const hasVercelIP = aData.Answer.some((answer: any) =>
-            vercelIPs.includes(answer.data)
-          );
-          if (hasVercelIP) {
-            console.log('Dominio apunta a IP de Vercel');
-            return true;
-          }
-        }
-      }
-    }
-
-    console.log('DNS no verificado - no se encontraron registros válidos');
-    return false;
-  } catch (error) {
-    console.error('Error verifying DNS:', error);
-    return false;
-  }
-}
 
 // Función para verificar dominio en Vercel
 async function verifyVercelDomain(
@@ -220,7 +138,7 @@ async function createVercelDomain(
 
 // POST /api/domains/[domainId]/verify - Verificar dominio
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { domainId: string } }
 ) {
   try {
@@ -437,7 +355,7 @@ export async function POST(
 
 // GET /api/domains/[domainId]/verify - Verificar estado SSL
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { domainId: string } }
 ) {
   try {

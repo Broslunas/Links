@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleRedirect, isValidSlug } from '../../../../lib/redirect-handler';
 import { ApiResponse } from '../../../../types';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export async function GET(
     request: NextRequest,
     { params }: { params: { slug: string } }

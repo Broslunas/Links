@@ -8,6 +8,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { ApiResponse } from '@/types';
 import { sendDomainNotification } from '@/lib/domain-notification-service';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // Función para crear dominio en Vercel
 async function createVercelDomain(
   domain: string

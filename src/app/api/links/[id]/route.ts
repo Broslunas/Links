@@ -6,6 +6,10 @@ import { withAuth, AuthContext, verifyResourceOwnership, verifyLinkAccessBySlug 
 import { createSuccessResponse, createErrorResponse } from '../../../../lib/api-response';
 import { AppError, ErrorCode } from '../../../../lib/api-errors';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export const GET = withAuth(async (
   request: NextRequest,
   auth: AuthContext,

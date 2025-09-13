@@ -7,6 +7,10 @@ import { ApiResponse } from '@/types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export interface AdminStats {
   totalUsers: number;
   totalLinks: number;
@@ -57,7 +61,7 @@ export async function GET(request: NextRequest) {
     // Get active users (users who have created at least one link in the last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
+
     const activeUsers = await User.countDocuments({
       createdAt: { $gte: thirtyDaysAgo }
     });
@@ -73,7 +77,7 @@ export async function GET(request: NextRequest) {
 
     for (const user of recentUsers) {
       recentActivity.push({
-        id: user._id.toString(),
+        id: user._id?.toString() || '',
         type: 'user_registered' as const,
         description: `Nuevo usuario registrado: ${user.email}`,
         timestamp: user.createdAt.toISOString(),
@@ -144,7 +148,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching admin stats:', error);
-    
+
     const response: ApiResponse<null> = {
       success: false,
       error: {

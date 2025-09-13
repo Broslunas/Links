@@ -7,6 +7,10 @@ import { createSuccessResponse, createErrorResponse, withErrorHandler, validateR
 import { createError, AppError, ErrorCode } from '../../../lib/api-errors';
 import { withAuth, AuthContext } from '../../../lib/auth-middleware';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // GET /api/links - Get user's links
 export const GET = withAuth(async (request: NextRequest, auth: AuthContext) => {
     await connectDB();

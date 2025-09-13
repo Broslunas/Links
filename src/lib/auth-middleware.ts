@@ -40,12 +40,12 @@ export async function authenticateRequest(
     }
 
     // Update lastUsedAt timestamp for the API token
-    await updateTokenLastUsed(user._id.toString());
+    await updateTokenLastUsed(user._id?.toString() || '');
 
     return {
-      userId: user._id.toString(),
+      userId: user._id?.toString() || '',
       user: {
-        id: user._id.toString(),
+        id: user._id?.toString() || '',
         email: user.email,
         name: user.name,
         provider: user.provider,

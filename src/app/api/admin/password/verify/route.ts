@@ -5,6 +5,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 import bcrypt from 'bcryptjs';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // POST /api/admin/password/verify - Verificar contraseña de administrador
 export async function POST(request: NextRequest) {
   try {

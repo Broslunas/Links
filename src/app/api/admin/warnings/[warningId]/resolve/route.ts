@@ -8,6 +8,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 import mongoose from 'mongoose';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export interface ResolveWarningRequest {
     resolutionNotes: string;
 }

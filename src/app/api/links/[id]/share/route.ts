@@ -6,6 +6,10 @@ import { AppError, ErrorCode } from '../../../../../lib/api-errors';
 import SharedLink from '../../../../../models/SharedLink';
 import User from '../../../../../models/User';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // POST /api/links/[id]/share - Compartir enlace con otro usuario (usando slug)
 export const POST = withAuth(async (
   request: NextRequest,
@@ -26,7 +30,7 @@ export const POST = withAuth(async (
 
   // Verificar que el usuario tenga permisos para compartir el enlace
   const { isOwner, sharedLink, link } = await verifyLinkAccessBySlug(auth.userId, slug, 'canShare');
-  
+
   // Solo el propietario o usuarios con permiso canShare pueden compartir
   if (!isOwner && (!sharedLink || !sharedLink.permissions.canShare)) {
     throw new AppError(
@@ -59,7 +63,7 @@ export const POST = withAuth(async (
   const validPermissions = ['canView', 'canEdit', 'canDelete', 'canViewStats', 'canShare'];
   const providedPermissions = Object.keys(permissions);
   const invalidPermissions = providedPermissions.filter(p => !validPermissions.includes(p));
-  
+
   if (invalidPermissions.length > 0) {
     throw new AppError(
       ErrorCode.VALIDATION_ERROR,
@@ -79,7 +83,7 @@ export const POST = withAuth(async (
   }
 
   // Verificar que no se esté compartiendo consigo mismo
-  if (targetUser._id.toString() === auth.userId) {
+  if (targetUser._id?.toString() === auth.userId) {
     throw new AppError(
       ErrorCode.VALIDATION_ERROR,
       'Cannot share link with yourself',
@@ -105,7 +109,7 @@ export const POST = withAuth(async (
     existingShare.isActive = true;
     existingShare.expiresAt = expiresAt ? new Date(expiresAt) : null;
     existingShare.updatedAt = new Date();
-    
+
     await existingShare.save();
 
     return createSuccessResponse({
@@ -182,9 +186,9 @@ export const GET = withAuth(async (
     linkId: link._id,
     isActive: true
   })
-  .populate('sharedWithUserId', 'email name image')
-  .populate('ownerId', 'email name')
-  .sort({ createdAt: -1 });
+    .populate('sharedWithUserId', 'email name image')
+    .populate('ownerId', 'email name')
+    .sort({ createdAt: -1 });
 
   const formattedShares = sharedLinks.map(share => ({
     id: share._id.toString(),

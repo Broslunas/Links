@@ -8,6 +8,10 @@ import { AppError, ErrorCode } from '../../../../../lib/api-errors';
 import { AnalyticsSummaryV1Response } from '../../../../../types/api-v1';
 import mongoose from 'mongoose';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 /**
  * GET /api/v1/analytics/summary
  * Get summary analytics for all user's links

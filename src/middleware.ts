@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { connectDB } from './lib/db-utils';
-import User from './models/User';
 
 // Lista de rutas que no deben ser procesadas por el middleware de dominios personalizados
 const EXCLUDED_PATHS = [
@@ -51,27 +49,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Para rutas del dashboard, verificar si el usuario está bloqueado
-  if (pathname.startsWith('/dashboard')) {
-    try {
-      const token = await getToken({
-        req: request,
-        secret: process.env.NEXTAUTH_SECRET
-      });
-
-      if (token && token.email) {
-        await connectDB();
-        const user = await User.findOne({ email: token.email }).select('isActive');
-
-        if (user && !user.isActive) {
-          // Redirigir a la página de cuenta inactiva
-          return NextResponse.redirect(new URL('/account-inactive', request.url));
-        }
-      }
-    } catch (error) {
-      console.error('Error checking user status in middleware:', error);
-      // En caso de error, permitir continuar para no bloquear el acceso
-    }
-  }
+  // Nota: La verificación de usuario bloqueado se hace ahora en las páginas del dashboard
+  // ya que el middleware no puede usar Mongoose en Edge Runtime
 
   // Para el dominio principal, continuar normalmente
   return NextResponse.next();

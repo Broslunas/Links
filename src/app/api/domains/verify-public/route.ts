@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db-utils';
 import CustomDomain from '@/models/CustomDomain';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // POST /api/domains/verify-public - Verificar dominio público (sin autenticación)
 export async function POST(request: NextRequest) {
   try {

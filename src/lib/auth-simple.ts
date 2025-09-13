@@ -104,7 +104,7 @@ export const authOptions: NextAuthOptions = {
           userData.defaultPublicStats = false; // Default to private stats
           userData.emailNotifications = true; // Subscribe to newsletter by default
           existingUser = await User.create(userData);
-          
+
           // Send newsletter subscription webhook for new users
           try {
             await sendSubscriptionWebhook(userData.name || 'Usuario', userData.email);
@@ -125,9 +125,14 @@ export const authOptions: NextAuthOptions = {
           }
 
           if (account.provider === 'twitch' && profile) {
+            // Twitch-specific data can be stored in providerData if needed
             const twitchProfile = profile as any;
-            existingUser.twitchUsername = twitchProfile.login;
-            existingUser.twitchDisplayName = twitchProfile.display_name;
+            existingUser.providerData = {
+              ...existingUser.providerData,
+              username: twitchProfile.login,
+              // Store display_name in a compatible field or extend the type
+              ...(twitchProfile.display_name && { avatar: twitchProfile.display_name })
+            } as any;
           }
         }
 
@@ -157,7 +162,7 @@ export const authOptions: NextAuthOptions = {
 
           if (dbUser) {
             // Store only essential data to minimize cookie size
-            token.id = dbUser._id.toString();
+            token.id = dbUser._id?.toString() || '';
             token.email = dbUser.email;
             token.role = dbUser.role || 'user';
             token.lastUpdated = Date.now();
@@ -171,7 +176,7 @@ export const authOptions: NextAuthOptions = {
           token.lastUpdated = Date.now();
         }
       }
-      
+
       // Only refresh role on explicit update trigger
       if (trigger === 'update' && token.email && !user) {
         try {
@@ -185,7 +190,7 @@ export const authOptions: NextAuthOptions = {
           console.error('Error refreshing user data in JWT callback:', error);
         }
       }
-      
+
       return token;
     },
     async session({ session, token }) {
@@ -194,7 +199,7 @@ export const authOptions: NextAuthOptions = {
         try {
           await connectDB();
           const dbUser = await User.findById(token.id);
-          
+
           if (dbUser) {
             session.user.id = token.id as string;
             session.user.email = token.email as string;

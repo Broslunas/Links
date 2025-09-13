@@ -8,6 +8,10 @@ import {
     revokeApiToken,
 } from '../../../../lib/api-token';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 /**
  * GET /api/user/token
  * Get information about the user's API token (without showing the full token value)
@@ -82,7 +86,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate new token (this will replace any existing token)
-        const newToken = await generateUserApiToken(user._id.toString());
+        const newToken = await generateUserApiToken(user._id?.toString() || '');
 
         return NextResponse.json({
             success: true,
@@ -143,7 +147,7 @@ export async function DELETE(request: NextRequest) {
         }
 
         // Revoke the token
-        await revokeApiToken(user._id.toString());
+        await revokeApiToken(user._id?.toString() || '');
 
         return NextResponse.json({
             success: true,

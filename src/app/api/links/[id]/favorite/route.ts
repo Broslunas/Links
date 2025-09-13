@@ -5,6 +5,10 @@ import { withAuth, AuthContext, verifyResourceOwnership } from '../../../../../l
 import { createSuccessResponse } from '../../../../../lib/api-response';
 import { AppError, ErrorCode } from '../../../../../lib/api-errors';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // PATCH /api/links/[id]/favorite - Toggle favorite status
 export const PATCH = withAuth(async (
   request: NextRequest,

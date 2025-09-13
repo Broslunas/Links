@@ -18,6 +18,10 @@ import {
 import { createError, AppError, ErrorCode } from '../../../lib/api-errors';
 import { checkTempLinkRateLimit } from '../../../lib/rate-limiter';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // POST /api/temp-links - Create temporary link without authentication
 export const POST = withErrorHandler(async (request: NextRequest) => {
     const clientIP = getClientIP(request);

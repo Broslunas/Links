@@ -6,6 +6,10 @@ import { AppError, ErrorCode } from '../../../../lib/api-errors';
 import SharedLink from '../../../../models/SharedLink';
 import Link from '../../../../models/Link';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // GET /api/links/shared-by-me - Obtener enlaces que he compartido
 export const GET = withAuth(async (
   request: NextRequest,

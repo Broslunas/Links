@@ -8,6 +8,10 @@ import { AppError, ErrorCode } from '../../../../../../lib/api-errors';
 import { LinkAnalyticsV1Response, LinkAnalyticsV1Params } from '../../../../../../types/api-v1';
 import mongoose from 'mongoose';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 interface RouteParams {
     params: {
         id: string;

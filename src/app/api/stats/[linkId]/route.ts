@@ -4,6 +4,10 @@ import { aggregateLinkStats } from '../../../../lib/analytics-aggregation';
 import Link from '../../../../models/Link';
 import { ApiResponse, LinkStats } from '../../../../types';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { linkId: string } }

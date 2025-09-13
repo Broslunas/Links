@@ -5,6 +5,10 @@ import { connectDB } from '../../../../lib/db-utils';
 import User from '../../../../models/User';
 import { ApiResponse } from '../../../../types';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

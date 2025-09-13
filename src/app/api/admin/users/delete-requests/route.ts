@@ -3,6 +3,10 @@ import connectDB from '@/lib/mongodb';
 import DeleteRequest from '@/models/DeleteRequest';
 import User from '@/models/User';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB();

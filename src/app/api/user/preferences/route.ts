@@ -4,6 +4,10 @@ import { authOptions } from '../../../../lib/auth-simple';
 import connectDB from '../../../../lib/mongodb';
 import User from '../../../../models/User';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // GET /api/user/preferences - Get user preferences
 export async function GET(request: NextRequest) {
   try {

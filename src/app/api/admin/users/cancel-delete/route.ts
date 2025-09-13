@@ -4,6 +4,10 @@ import User from '@/models/User';
 import DeleteRequest from '@/models/DeleteRequest';
 import AdminAction from '@/models/AdminAction';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export async function POST(request: NextRequest) {
   try {
     console.log('Iniciando proceso de cancelación de eliminación');

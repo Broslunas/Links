@@ -174,10 +174,10 @@ class ActivityMonitor {
                 const user = await User.findOne({ email: session.user.email });
 
                 if (user) {
-                    context.userId = user._id.toString();
+                    context.userId = user._id?.toString() || '';
                     context.userEmail = user.email;
                     context.isAdmin = user.role === 'admin';
-                    context.isActive = user.isActive;
+                    context.isActive = user.isActive ?? true;
                 }
             }
 

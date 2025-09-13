@@ -10,7 +10,7 @@ export async function isUserActive(userId: string): Promise<boolean> {
     try {
         await connectDB();
         const user = await User.findById(userId).select('isActive');
-        return user ? user.isActive : false;
+        return user ? (user.isActive ?? true) : false;
     } catch (error) {
         console.error('Error checking user status:', error);
         return false; // Fail safely by considering user as inactive
@@ -26,7 +26,7 @@ export async function isUserActiveByEmail(email: string): Promise<boolean> {
     try {
         await connectDB();
         const user = await User.findOne({ email }).select('isActive');
-        return user ? user.isActive : false;
+        return user ? (user.isActive ?? true) : false;
     } catch (error) {
         console.error('Error checking user status by email:', error);
         return false; // Fail safely by considering user as inactive
@@ -66,12 +66,12 @@ export async function getUserStatus(userId: string): Promise<{ isActive: boolean
         if (!user) return null;
 
         return {
-            isActive: user.isActive,
+            isActive: user.isActive ?? true,
             user: {
-                id: user._id,
+                id: user._id?.toString() || '',
                 email: user.email,
                 name: user.name,
-                isActive: user.isActive
+                isActive: user.isActive ?? true
             }
         };
     } catch (error) {

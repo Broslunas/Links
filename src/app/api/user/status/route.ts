@@ -4,6 +4,10 @@ import { authOptions } from '@/lib/auth-simple';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export async function GET(request: NextRequest) {
   try {
     // Verificar autenticación

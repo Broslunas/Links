@@ -8,6 +8,10 @@ import mongoose from 'mongoose';
 import { CustomDomainResponse } from '../route';
 import { VercelIntegration } from '@/lib/vercel-integration';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export interface UpdateDomainRequest {
   isActive?: boolean;
   isDefault?: boolean;

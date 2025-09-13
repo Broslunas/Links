@@ -8,6 +8,10 @@ import UserNote from '@/models/UserNote';
 import UserWarning from '@/models/UserWarning';
 import mongoose from 'mongoose';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export async function POST(request: NextRequest) {
   try {
     // Verificar que la solicitud viene del cron job de Vercel o tiene autorización

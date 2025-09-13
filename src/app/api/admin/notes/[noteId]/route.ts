@@ -8,6 +8,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 import mongoose from 'mongoose';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
 export interface UpdateNoteRequest {
     content?: string;
     category?: 'behavior' | 'technical' | 'legal' | 'other';
@@ -83,7 +86,7 @@ export async function PUT(
         }
 
         // Check permissions - only the author or another admin can edit
-        const isAuthor = note.authorId._id.toString() === adminUser._id.toString();
+        const isAuthor = note.authorId._id.toString() === adminUser._id?.toString();
         if (!isAuthor) {
             // For now, allow any admin to edit any note
             // In the future, this could be restricted based on additional permissions
@@ -285,7 +288,7 @@ export async function DELETE(
         }
 
         // Check permissions - only the author or another admin can delete
-        const isAuthor = note.authorId._id.toString() === adminUser._id.toString();
+        const isAuthor = note.authorId._id.toString() === adminUser._id?.toString();
         if (!isAuthor) {
             // For now, allow any admin to delete any note
             // In the future, this could be restricted based on additional permissions

@@ -7,6 +7,10 @@ import SharedLink from '../../../../models/SharedLink';
 import Link from '../../../../models/Link';
 import mongoose from 'mongoose';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // GET /api/links/shared-with-me - Obtener enlaces compartidos conmigo
 export const GET = withAuth(async (
   request: NextRequest,

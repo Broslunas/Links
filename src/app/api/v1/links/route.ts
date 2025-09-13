@@ -8,6 +8,10 @@ import { LinkV1Response, GetLinksV1Params, CreateLinkV1Request } from '../../../
 import { generateSlug, isValidUrl } from '../../../../lib/db-utils';
 import mongoose from 'mongoose';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 /**
  * GET /api/v1/links - Get user's links with pagination and filters
  */

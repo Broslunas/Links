@@ -5,6 +5,10 @@ import User from '@/models/User';
 import AnalyticsEvent from '@/models/AnalyticsEvent';
 import { ApiResponse } from '@/types';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export interface GlobalStats {
   totalLinks: number;
   totalClicks: number;

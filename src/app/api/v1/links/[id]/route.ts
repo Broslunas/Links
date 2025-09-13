@@ -7,6 +7,10 @@ import { AppError, ErrorCode } from '../../../../../lib/api-errors';
 import { LinkV1Response, UpdateLinkV1Request } from '../../../../../types/api-v1';
 import mongoose from 'mongoose';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 interface RouteParams {
     params: {
         id: string;

@@ -5,6 +5,10 @@ import { createSuccessResponse } from '../../../../../../lib/api-response';
 import { AppError, ErrorCode } from '../../../../../../lib/api-errors';
 import SharedLink from '../../../../../../models/SharedLink';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // PUT /api/links/[id]/share/[shareId] - Actualizar permisos de un enlace compartido
 export const PUT = withAuth(async (
   request: NextRequest,

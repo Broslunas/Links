@@ -7,10 +7,14 @@ import AnalyticsEvent from '../../../models/AnalyticsEvent';
 import User from '../../../models/User';
 import TempExport from '../../../models/TempExport';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'No autorizado' },
@@ -20,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Connect to database and fetch user data
     await connectDB();
-    
+
     // Find user in database
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
@@ -32,10 +36,10 @@ export async function POST(request: NextRequest) {
 
     // Fetch user's links
     const links = await Link.find({ userId: user._id }).lean();
-    
+
     // Fetch user's analytics
-    const analytics = await AnalyticsEvent.find({ 
-      linkId: { $in: links.map(link => link._id) } 
+    const analytics = await AnalyticsEvent.find({
+      linkId: { $in: links.map(link => link._id) }
     }).lean();
 
     // Prepare export data with real user data
@@ -81,35 +85,35 @@ export async function POST(request: NextRequest) {
         exportDate: new Date().toISOString()
       }
     };
-    
+
     // Generate a unique ID for this export
     const exportId = `export_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Store export data in database with 1 hour expiration
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
-    
+
     await TempExport.create({
       exportId,
-      userId: user._id.toString(),
+      userId: user._id?.toString() || '',
       email: session.user.email,
       data: exportData,
       expiresAt
     });
-    
+
     // Clean up old exports (older than 1 hour) - optional manual cleanup
     await TempExport.deleteMany({
       expiresAt: { $lt: new Date() }
     });
-    
+
     const downloadUrl = `${request.nextUrl.origin}/api/export/${exportId}`;
-    
+
     return NextResponse.json({
       success: true,
       downloadUrl,
       exportId,
       summary: exportData.summary
     });
-    
+
   } catch (error) {
     console.error('Error creating export:', error);
     return NextResponse.json(

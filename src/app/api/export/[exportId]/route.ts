@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/db-utils';
 import TempExport from '../../../../models/TempExport';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { exportId: string } }

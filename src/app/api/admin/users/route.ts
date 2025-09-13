@@ -9,6 +9,10 @@ import { ApiResponse } from '@/types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export interface AdminUser {
   _id: string;
   email: string;
@@ -527,7 +531,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Prevent admin from changing their own role
-    if (userId === adminUser._id.toString() && role && role !== adminUser.role) {
+    if (userId === adminUser._id?.toString() && role && role !== adminUser.role) {
       return NextResponse.json(
         { success: false, error: { code: 'FORBIDDEN', message: 'Cannot change your own role' } },
         { status: 403 }
@@ -633,7 +637,7 @@ export async function PUT(request: NextRequest) {
     const response: ApiResponse<AdminUser> = {
       success: true,
       data: {
-        _id: updatedUser._id.toString(),
+        _id: updatedUser._id?.toString() || '',
         email: updatedUser.email,
         name: updatedUser.name,
         role: updatedUser.role || 'user',

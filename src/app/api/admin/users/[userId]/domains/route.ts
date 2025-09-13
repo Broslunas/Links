@@ -5,6 +5,10 @@ import { connectDB } from '@/lib/mongodb';
 import CustomDomain from '@/models/CustomDomain';
 import { isValidObjectId } from 'mongoose';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { userId: string } }

@@ -7,6 +7,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 import { AdminActionResponse, ActionsListResponse } from '../../../actions/route';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // GET - Obtener historial de acciones administrativas para un usuario específico
 export async function GET(
     request: NextRequest,

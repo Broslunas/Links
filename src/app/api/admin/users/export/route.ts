@@ -4,6 +4,10 @@ import User from '@/models/User';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 // GET - Export filtered users list
 export async function GET(request: NextRequest) {
     try {

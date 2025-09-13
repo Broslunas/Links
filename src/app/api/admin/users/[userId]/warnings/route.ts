@@ -9,6 +9,10 @@ import { authOptions } from '@/lib/auth-simple';
 import { notificationService } from '@/lib/notification-service';
 import mongoose from 'mongoose';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 export interface CreateWarningRequest {
     title: string;
     description: string;

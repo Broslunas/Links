@@ -8,6 +8,10 @@ import AdminAction from '@/models/AdminAction';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
 
+// Force Node.js runtime for Mongoose compatibility
+export const runtime = 'nodejs';
+
+
 interface DeleteRequestBody {
   userId: string;
   reason: string;
