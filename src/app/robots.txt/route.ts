@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
 export function GET() {
@@ -10,15 +11,19 @@ Allow: /
 Disallow: /api/
 Disallow: /dashboard/
 Disallow: /auth/
+Disallow: /stats/
 
 # Allow public pages
 Allow: /
 Allow: /features
-Allow: /pricing
+Allow: /contacto
 Allow: /help
 Allow: /status
 Allow: /privacy-policy
 Allow: /terms-and-services
+Allow: /gpdr
+Allow: /cookies
+Allow: /status
 
 # Sitemap location
 Sitemap: ${baseUrl}/sitemap.xml
