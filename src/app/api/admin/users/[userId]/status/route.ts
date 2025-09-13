@@ -1,3 +1,5 @@
+// Ensure this route runs in Node.js, not Edge Runtime
+// export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { connectDB } from '../../../../../../lib/db-utils';
