@@ -94,14 +94,6 @@ export default function RootLayout({
           data-key="eWu3qIhBOnwujRqteUvklA"
           async
         ></script>
-        <script>
-          var ahrefs_analytics_script = document.createElement('script');
-          ahrefs_analytics_script.async = true; ahrefs_analytics_script.src =
-          'https://analytics.ahrefs.com/analytics.js';
-          ahrefs_analytics_script.setAttribute('data-key',
-          'eWu3qIhBOnwujRqteUvklA');
-          document.getElementsByTagName('head')[0].appendChild(ahrefs_analytics_script);
-        </script>
         <link rel="canonical" href={baseUrl} />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
