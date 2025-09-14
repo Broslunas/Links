@@ -46,7 +46,7 @@ export const PATCH = withAuth(async (
   await link.save();
 
   const linkData = {
-    id: link._id.toString(),
+    id: (link._id as any).toString(),
     userId: link.userId.toString(),
     originalUrl: link.originalUrl,
     slug: link.slug,

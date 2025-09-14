@@ -120,12 +120,12 @@ export async function GET(request: NextRequest) {
     const linkDetails = await Link.find({ _id: { $in: topLinkIds } });
     
     const formattedTopLinks = topLinksAggregation.map(item => {
-      const link = linkDetails.find(l => l._id.toString() === item._id.toString());
+      const link = linkDetails.find(l => (l._id as any).toString() === item._id.toString());
       return {
         id: item._id,
         slug: link?.slug || '',
         title: link?.title || link?.slug || '',
-        url: link?.url || '',
+        url: link?.originalUrl || '',
         clicks: item.clicks
       };
     });

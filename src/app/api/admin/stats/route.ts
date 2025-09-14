@@ -94,11 +94,11 @@ export async function GET(request: NextRequest) {
 
     for (const link of recentLinks) {
       recentActivity.push({
-        id: link._id.toString(),
+        id: (link._id as any).toString(),
         type: 'link_created' as const,
         description: `Nuevo enlace creado: ${link.title || link.slug}`,
         timestamp: link.createdAt.toISOString(),
-        user: link.userId?.email || 'Usuario desconocido'
+        user: (link.userId as any)?.email || 'Usuario desconocido'
       });
     }
 

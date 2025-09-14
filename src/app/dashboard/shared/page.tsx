@@ -984,6 +984,8 @@ export default function SharedLinksPage() {
             isTemporary: false, // Default value
             expiresAt: undefined, // Default value
             isFavorite: false, // Default value
+            isClickLimited: false, // Default value
+            isTimeRestricted: false // Default value
           }}
           isOpen={!!editingLink}
           onClose={() => setEditingLink(null)}

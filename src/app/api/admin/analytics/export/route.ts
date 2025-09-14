@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
 
     // Obtener detalles de los enlaces más populares
     const topLinkIds = topLinksAggregation.map(item => item._id);
-    const linkDetails = await Link.find({ _id: { $in: topLinkIds } }).lean();
+    const linkDetails = await Link.find({ _id: { $in: topLinkIds } }).populate('userId', 'name email').lean();
     
     const links = topLinksAggregation.map(item => {
       const link = linkDetails.find(l => (l._id as any).toString() === item._id.toString());
@@ -109,8 +109,8 @@ export async function GET(request: NextRequest) {
         isActive: link?.isActive || false,
         isDisabledByAdmin: link?.isDisabledByAdmin || false,
         user: {
-          name: link?.userId?.name || '',
-          email: link?.userId?.email || ''
+          name: (link?.userId as any)?.name || '',
+          email: (link?.userId as any)?.email || ''
         },
         _count: {
           clicks: item.clicks

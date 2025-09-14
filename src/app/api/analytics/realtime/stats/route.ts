@@ -47,10 +47,7 @@ export async function GET(request: NextRequest) {
         const allLinks = [...userLinks];
         sharedLinks.forEach(sharedLink => {
             if (sharedLink.linkId) {
-                allLinks.push({
-                    _id: sharedLink.linkId._id,
-                    title: sharedLink.linkId.title
-                });
+                allLinks.push(sharedLink.linkId);
             }
         });
         

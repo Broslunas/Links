@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get aggregated stats
-    const stats = await aggregateLinkStats(link._id.toString(), {
+    const stats = await aggregateLinkStats((link._id as any).toString(), {
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
     });

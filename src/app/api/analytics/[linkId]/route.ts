@@ -72,7 +72,7 @@ export async function GET(
     const endDate = url.searchParams.get('endDate');
 
     // Aggregate statistics usando el _id (ObjectId)
-    const stats = await aggregateLinkStats(link._id.toString(), {
+    const stats = await aggregateLinkStats((link._id as any).toString(), {
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
     });

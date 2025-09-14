@@ -537,7 +537,7 @@ export function LinkEditor({
                   min="1"
                   max="1000000"
                   value={formData.maxClicks.toString()}
-                  OnChange={e => handleInputChange('maxClicks', e.target.value)}
+                  onChange={e => handleInputChange('maxClicks', e.target.value)}
                   placeholder="Ej: 100"
                   error={errors.maxClicks}
                   disabled={loading}

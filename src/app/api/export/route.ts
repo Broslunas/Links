@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         createdAt: link.createdAt,
         updatedAt: link.updatedAt,
         expiresAt: link.expiresAt,
-        tags: link.tags || []
+        tags: []
       })),
       analytics: analytics.map(event => ({
         id: event._id,

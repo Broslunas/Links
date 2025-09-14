@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     // Fetch analytics for all links
     const analyticsPromises = links.map(async (link) => {
       try {
-        const stats = await aggregateLinkStats(link._id.toString(), {
+        const stats = await aggregateLinkStats((link._id as any).toString(), {
           startDate,
           endDate,
         });

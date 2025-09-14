@@ -443,6 +443,12 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
           expirationDate: '',
           expirationTime: '23:59',
           customDomain: customDomains.find(d => d.isDefault)?.id || '',
+          isClickLimited: false,
+          maxClicks: 100,
+          isTimeRestricted: false,
+          timeRestrictionStart: '09:00',
+          timeRestrictionEnd: '17:00',
+          timeRestrictionTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         });
         setCurrentStep(0);
         setShowConfirm(false);
