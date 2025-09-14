@@ -336,8 +336,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         )}
                         aria-current={
                           pathname === adminNavigation.href ||
-                          pathname?.startsWith(adminNavigation.href + '/') ||
-                          false
+                            pathname?.startsWith(adminNavigation.href + '/') ||
+                            false
                             ? 'page'
                             : undefined
                         }
@@ -417,35 +417,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </Link>
                   </li>
                 </ul>
-              </li>
-
-              {/* Sign out button */}
-              <li className="mt-auto" role="listitem">
-                <h2 className="sr-only">Acciones de cuenta</h2>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                  onClick={handleSignOut}
-                  aria-label="Cerrar sesión y salir del dashboard"
-                >
-                  <svg
-                    className={`h-5 w-5 ${isCollapsed ? 'mx-auto' : 'mr-3'}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                    />
-                  </svg>
-                  <span className={isCollapsed ? 'hidden' : 'block'}>
-                    Cerrar Sesión
-                  </span>
-                </Button>
               </li>
             </ul>
           </nav>
@@ -565,8 +536,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         )}
                         aria-current={
                           pathname === adminNavigation.href ||
-                          pathname?.startsWith(adminNavigation.href + '/') ||
-                          false
+                            pathname?.startsWith(adminNavigation.href + '/') ||
+                            false
                             ? 'page'
                             : undefined
                         }
