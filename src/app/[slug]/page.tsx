@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
-import { handleRedirect, isValidSlug } from '../../lib/redirect-handler';
+import { handleRedirect, isValidSlug, type ErrorType } from '../../lib/redirect-handler';
 import { headers } from 'next/headers';
 import { RedirectPage } from '../../components/ui/RedirectPage';
+import { ErrorPage } from '../../components/ui/ErrorPage';
 
 interface SlugPageProps {
   params: {
@@ -22,7 +23,7 @@ export default async function SlugPage({ params }: SlugPageProps) {
 
   // Validate slug format
   if (!isValidSlug(slug)) {
-    notFound();
+    return <ErrorPage type="404" />;
   }
 
   try {
@@ -41,10 +42,13 @@ export default async function SlugPage({ params }: SlugPageProps) {
     const result = await handleRedirect(slug, mockRequest);
     console.log('🔍 SlugPage: handleRedirect result:', result);
 
-    // If there's an error (including expired links), show 404
+    // If there's an error, show the appropriate error page
     if (!result.success) {
-      console.log('❌ SlugPage: Redirect failed, showing 404');
-      notFound();
+      console.log('❌ SlugPage: Redirect failed:', result.error);
+      return <ErrorPage 
+        type={result.errorType || '404'}
+        message={result.error}
+      />;
     }
     
     console.log('✅ SlugPage: Redirect successful, showing redirect page');
@@ -58,6 +62,6 @@ export default async function SlugPage({ params }: SlugPageProps) {
     );
   } catch (error) {
     console.error('Error in slug page:', error);
-    notFound();
+    return <ErrorPage type="404" />;
   }
 }

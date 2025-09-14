@@ -6,10 +6,13 @@ import AnalyticsEvent from '../models/AnalyticsEvent';
 import CustomDomain from '../models/CustomDomain';
 import User from '../models/User';
 
+export type ErrorType = '404' | 'click-limit' | 'time-restriction' | 'admin-disabled' | 'user-inactive' | 'custom-domain-error';
+
 export interface RedirectResult {
     success: boolean;
     originalUrl?: string;
     error?: string;
+    errorType?: ErrorType;
     customDomain?: string;
     shouldRedirectToMain?: boolean;
     mainDomainUrl?: string;
@@ -99,7 +102,8 @@ export async function handleRedirect(
         if (expiredLink || expiredTempLink) {
             return {
                 success: false,
-                error: 'Este enlace ha expirado y ya no está disponible'
+                error: 'Este enlace ha expirado y ya no está disponible',
+                errorType: '404'
             };
         }
 
@@ -159,7 +163,8 @@ export async function handleRedirect(
         if (!targetLink) {
             return {
                 success: false,
-                error: 'Link not found, inactive, or disabled'
+                error: 'Link not found, inactive, or disabled',
+                errorType: '404'
             };
         }
 
@@ -169,7 +174,8 @@ export async function handleRedirect(
             if (!user.isActive) {
                 return {
                     success: false,
-                    error: 'Este enlace no está disponible porque la cuenta del usuario está inactiva'
+                    error: 'Este enlace no está disponible porque la cuenta del usuario está inactiva',
+                    errorType: 'user-inactive'
                 };
             }
         } else if (targetLink.userId) {
@@ -188,7 +194,8 @@ export async function handleRedirect(
             if (targetLink.clickCount >= targetLink.maxClicks) {
                 return {
                     success: false,
-                    error: 'Este enlace ha alcanzado su límite máximo de clicks y ya no está disponible'
+                    error: 'Este enlace ha alcanzado su límite máximo de clicks y ya no está disponible',
+                    errorType: 'click-limit'
                 };
             }
         }
@@ -204,7 +211,8 @@ export async function handleRedirect(
             if (!isWithinTimeRestriction) {
                 return {
                     success: false,
-                    error: `Este enlace solo está disponible entre las ${targetLink.timeRestrictionStart} y ${targetLink.timeRestrictionEnd} (${targetLink.timeRestrictionTimezone})`
+                    error: `Este enlace solo está disponible entre las ${targetLink.timeRestrictionStart} y ${targetLink.timeRestrictionEnd} (${targetLink.timeRestrictionTimezone})`,
+                    errorType: 'time-restriction'
                 };
             }
         }
@@ -313,7 +321,8 @@ export async function shouldRedirectToMainDomain(
         if (!customDomain) {
             return {
                 success: false,
-                error: 'Dominio personalizado no encontrado, no verificado o bloqueado'
+                error: 'Dominio personalizado no encontrado, no verificado o bloqueado',
+                errorType: 'custom-domain-error'
             };
         }
 
