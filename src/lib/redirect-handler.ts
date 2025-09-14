@@ -193,6 +193,22 @@ export async function handleRedirect(
             }
         }
 
+        // Check if the link is within allowed time restriction (only for regular links, not temp links)
+        if (!isTemporary && targetLink.isTimeRestricted && targetLink.timeRestrictionStart && targetLink.timeRestrictionEnd && targetLink.timeRestrictionTimezone) {
+            const isWithinTimeRestriction = checkTimeRestriction(
+                targetLink.timeRestrictionStart,
+                targetLink.timeRestrictionEnd,
+                targetLink.timeRestrictionTimezone
+            );
+
+            if (!isWithinTimeRestriction) {
+                return {
+                    success: false,
+                    error: `Este enlace solo está disponible entre las ${targetLink.timeRestrictionStart} y ${targetLink.timeRestrictionEnd} (${targetLink.timeRestrictionTimezone})`
+                };
+            }
+        }
+
         // Extract analytics data
         const analyticsData = await extractAnalyticsData(request);
 
@@ -392,6 +408,49 @@ export async function shouldRedirectToMainDomain(
             success: false,
             error: 'Error interno del servidor'
         };
+    }
+}
+
+/**
+ * Check if current time is within the allowed time restriction
+ */
+function checkTimeRestriction(
+    startTime: string,
+    endTime: string,
+    timezone: string
+): boolean {
+    try {
+        // Get current time in the specified timezone
+        const now = new Date();
+        const currentTimeInTimezone = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(now);
+
+        // Parse times
+        const [currentHour, currentMinute] = currentTimeInTimezone.split(':').map(Number);
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const [endHour, endMinute] = endTime.split(':').map(Number);
+
+        // Convert to minutes for easier comparison
+        const currentMinutes = currentHour * 60 + currentMinute;
+        const startMinutes = startHour * 60 + startMinute;
+        const endMinutes = endHour * 60 + endMinute;
+
+        // Handle cases where the time range crosses midnight
+        if (startMinutes <= endMinutes) {
+            // Normal case: start time is before end time (e.g., 09:00 - 17:00)
+            return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+        } else {
+            // Time range crosses midnight (e.g., 22:00 - 06:00)
+            return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+        }
+    } catch (error) {
+        console.error('Error checking time restriction:', error);
+        // If there's an error, allow access (fail open)
+        return true;
     }
 }
 

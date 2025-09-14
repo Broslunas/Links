@@ -147,6 +147,20 @@ const LinkSchema = new Schema<ILink>(
         message: 'Max clicks is required when click limit is enabled',
       },
     },
+    isTimeRestricted: {
+      type: Boolean,
+      default: false,
+    },
+    timeRestrictionStart: {
+      type: String,
+    },
+    timeRestrictionEnd: {
+      type: String,
+    },
+    timeRestrictionTimezone: {
+      type: String,
+      default: 'UTC',
+    },
     customDomain: {
       type: Schema.Types.ObjectId,
       ref: 'CustomDomain',
@@ -169,5 +183,9 @@ LinkSchema.index({ expiresAt: 1 }, { sparse: true });
 LinkSchema.index({ customDomain: 1 }, { sparse: true });
 LinkSchema.index({ userId: 1, customDomain: 1 });
 
-export default mongoose.models.Link ||
-  mongoose.model<ILink>('Link', LinkSchema);
+// Force model recreation in development
+if (mongoose.models.Link) {
+  delete mongoose.models.Link;
+}
+
+export default mongoose.model<ILink>('Link', LinkSchema);

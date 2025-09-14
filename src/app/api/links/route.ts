@@ -38,6 +38,10 @@ export const GET = withAuth(async (request: NextRequest, auth: AuthContext) => {
         isExpired: link.isExpired,
         isClickLimited: link.isClickLimited,
         maxClicks: link.maxClicks,
+        isTimeRestricted: link.isTimeRestricted,
+        timeRestrictionStart: link.timeRestrictionStart,
+        timeRestrictionEnd: link.timeRestrictionEnd,
+        timeRestrictionTimezone: link.timeRestrictionTimezone,
         createdAt: link.createdAt,
         updatedAt: link.updatedAt,
     }));
@@ -48,10 +52,17 @@ export const GET = withAuth(async (request: NextRequest, auth: AuthContext) => {
 // POST /api/links - Create new link
 export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => {
     const body: CreateLinkData = await parseRequestBody<CreateLinkData>(request);
-    const { originalUrl, slug, title, description, isPublicStats = false, isTemporary = false, expiresAt, isClickLimited = false, maxClicks } = body;
+    const { originalUrl, slug, title, description, isPublicStats = false, isTemporary = false, expiresAt, isClickLimited = false, maxClicks, isTimeRestricted = false, timeRestrictionStart, timeRestrictionEnd, timeRestrictionTimezone } = body;
+
+    console.log('🔍 POST /api/links - Received data:', {
+        isTimeRestricted,
+        timeRestrictionStart,
+        timeRestrictionEnd,
+        timeRestrictionTimezone
+    });
 
     // Validate required fields
-    validateRequest(body, ['originalUrl'], ['slug', 'title', 'description', 'isPublicStats', 'isTemporary', 'expiresAt', 'isClickLimited', 'maxClicks']);
+    validateRequest(body, ['originalUrl'], ['slug', 'title', 'description', 'isPublicStats', 'isTemporary', 'expiresAt', 'isClickLimited', 'maxClicks', 'isTimeRestricted', 'timeRestrictionStart', 'timeRestrictionEnd', 'timeRestrictionTimezone']);
 
     // Validate temporary link fields
     if (isTemporary) {
@@ -115,6 +126,50 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
         );
     }
 
+    // Validate time restriction fields
+    if (isTimeRestricted) {
+        if (!timeRestrictionStart || !timeRestrictionEnd || !timeRestrictionTimezone) {
+            throw new AppError(
+                ErrorCode.VALIDATION_ERROR,
+                'timeRestrictionStart, timeRestrictionEnd, and timeRestrictionTimezone are required for time-restricted links',
+                400
+            );
+        }
+
+        // Validate time format (HH:MM)
+        const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (!timeRegex.test(timeRestrictionStart)) {
+            throw new AppError(
+                ErrorCode.VALIDATION_ERROR,
+                'timeRestrictionStart must be in HH:MM format',
+                400
+            );
+        }
+
+        if (!timeRegex.test(timeRestrictionEnd)) {
+            throw new AppError(
+                ErrorCode.VALIDATION_ERROR,
+                'timeRestrictionEnd must be in HH:MM format',
+                400
+            );
+        }
+
+        // Validate that start and end times are different
+        if (timeRestrictionStart === timeRestrictionEnd) {
+            throw new AppError(
+                ErrorCode.VALIDATION_ERROR,
+                'timeRestrictionStart and timeRestrictionEnd must be different',
+                400
+            );
+        }
+    } else if (timeRestrictionStart || timeRestrictionEnd || timeRestrictionTimezone) {
+        throw new AppError(
+            ErrorCode.VALIDATION_ERROR,
+            'Time restriction fields can only be set for time-restricted links',
+            400
+        );
+    }
+
     // Validate and sanitize URL
     let sanitizedUrl = originalUrl.trim();
     if (!sanitizedUrl.startsWith('http://') && !sanitizedUrl.startsWith('https://')) {
@@ -147,7 +202,7 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
     }
 
     // Create the link
-    const newLink = new Link({
+    const linkData = {
         userId: auth.userId,
         originalUrl: sanitizedUrl,
         slug: finalSlug,
@@ -158,9 +213,32 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
         expiresAt: isTemporary ? new Date(expiresAt!) : undefined,
         isClickLimited,
         maxClicks: isClickLimited ? maxClicks : undefined,
-    });
+        isTimeRestricted,
+        timeRestrictionStart: isTimeRestricted ? timeRestrictionStart : undefined,
+        timeRestrictionEnd: isTimeRestricted ? timeRestrictionEnd : undefined,
+        timeRestrictionTimezone: isTimeRestricted ? timeRestrictionTimezone : undefined,
+    };
+
+    console.log('🔍 Creating link with data:', linkData);
+
+    const newLink = new Link(linkData);
+
+    // Explicitly set time restriction fields if they exist
+    if (isTimeRestricted) {
+        newLink.set('isTimeRestricted', true);
+        newLink.set('timeRestrictionStart', timeRestrictionStart);
+        newLink.set('timeRestrictionEnd', timeRestrictionEnd);
+        newLink.set('timeRestrictionTimezone', timeRestrictionTimezone);
+    }
 
     await newLink.save();
+
+    console.log('🔍 Saved link:', {
+        isTimeRestricted: newLink.isTimeRestricted,
+        timeRestrictionStart: newLink.timeRestrictionStart,
+        timeRestrictionEnd: newLink.timeRestrictionEnd,
+        timeRestrictionTimezone: newLink.timeRestrictionTimezone
+    });
 
     const responseData = {
         id: newLink._id,
@@ -177,6 +255,10 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
         expiresAt: newLink.expiresAt?.toISOString(),
         isClickLimited: newLink.isClickLimited,
         maxClicks: newLink.maxClicks,
+        isTimeRestricted: newLink.isTimeRestricted,
+        timeRestrictionStart: newLink.timeRestrictionStart,
+        timeRestrictionEnd: newLink.timeRestrictionEnd,
+        timeRestrictionTimezone: newLink.timeRestrictionTimezone,
         createdAt: newLink.createdAt,
         updatedAt: newLink.updatedAt,
         shortUrl: `${process.env.NEXTAUTH_URL}/${newLink.slug}`,

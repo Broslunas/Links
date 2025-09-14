@@ -48,6 +48,10 @@ export interface Link {
   isExpired?: boolean;
   isClickLimited: boolean;
   maxClicks?: number;
+  isTimeRestricted: boolean;
+  timeRestrictionStart?: string;
+  timeRestrictionEnd?: string;
+  timeRestrictionTimezone?: string;
   createdAt: string;
   updatedAt: string;
   // Shared link properties
@@ -107,6 +111,10 @@ export interface CreateLinkData {
   isExpired?: boolean;
   isClickLimited?: boolean;
   maxClicks?: number;
+  isTimeRestricted?: boolean;
+  timeRestrictionStart?: string;
+  timeRestrictionEnd?: string;
+  timeRestrictionTimezone?: string;
   customDomainId?: string;
 }
 
@@ -126,6 +134,10 @@ export interface UpdateLinkData {
   isExpired?: boolean;
   isClickLimited?: boolean;
   maxClicks?: number;
+  isTimeRestricted?: boolean;
+  timeRestrictionStart?: string;
+  timeRestrictionEnd?: string;
+  timeRestrictionTimezone?: string;
   customDomainId?: string;
 }
 

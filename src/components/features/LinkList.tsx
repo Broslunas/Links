@@ -130,6 +130,43 @@ export function LinkList({
     return link.clickCount >= link.maxClicks;
   };
 
+  const isOutsideTimeRestriction = (link: Link) => {
+    if (!link.isTimeRestricted || !link.timeRestrictionStart || !link.timeRestrictionEnd || !link.timeRestrictionTimezone) return false;
+
+    try {
+      // Get current time in the specified timezone
+      const now = new Date();
+      const currentTimeInTimezone = new Intl.DateTimeFormat('en-US', {
+        timeZone: link.timeRestrictionTimezone,
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(now);
+
+      // Parse times
+      const [currentHour, currentMinute] = currentTimeInTimezone.split(':').map(Number);
+      const [startHour, startMinute] = link.timeRestrictionStart.split(':').map(Number);
+      const [endHour, endMinute] = link.timeRestrictionEnd.split(':').map(Number);
+
+      // Convert to minutes for easier comparison
+      const currentMinutes = currentHour * 60 + currentMinute;
+      const startMinutes = startHour * 60 + startMinute;
+      const endMinutes = endHour * 60 + endMinute;
+
+      // Handle cases where the time range crosses midnight
+      if (startMinutes <= endMinutes) {
+        // Normal case: start time is before end time (e.g., 09:00 - 17:00)
+        return !(currentMinutes >= startMinutes && currentMinutes <= endMinutes);
+      } else {
+        // Time range crosses midnight (e.g., 22:00 - 06:00)
+        return !(currentMinutes >= startMinutes || currentMinutes <= endMinutes);
+      }
+    } catch (error) {
+      console.error('Error checking time restriction:', error);
+      return false; // If there's an error, assume it's within time
+    }
+  };
+
   const isTemporaryAndActive = (link: Link) => {
     return link.isTemporary && link.expiresAt && !isLinkExpired(link);
   };
@@ -738,10 +775,16 @@ export function LinkList({
                             Límite alcanzado ({link.clickCount}/{link.maxClicks})
                           </span>
                         )}
+                        {isOutsideTimeRestriction(link) && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                            Fuera de horario ({link.timeRestrictionStart}-{link.timeRestrictionEnd})
+                          </span>
+                        )}
                         {!link.isActive &&
                           !link.isDisabledByAdmin &&
                           !isLinkExpired(link) &&
-                          !isClickLimitReached(link) && (
+                          !isClickLimitReached(link) &&
+                          !isOutsideTimeRestriction(link) && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
                               Inactivo
                             </span>
@@ -1063,9 +1106,11 @@ export function LinkList({
                           ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                           : isClickLimitReached(link)
                             ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                            : link.isActive
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                            : isOutsideTimeRestriction(link)
+                              ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                              : link.isActive
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                         }`}
                     >
                       {link.isDisabledByAdmin
@@ -1074,9 +1119,11 @@ export function LinkList({
                           ? 'Expirado'
                           : isClickLimitReached(link)
                             ? 'Límite alcanzado'
-                            : link.isActive
-                              ? 'Activo'
-                              : 'Inactivo'}
+                            : isOutsideTimeRestriction(link)
+                              ? 'Fuera de horario'
+                              : link.isActive
+                                ? 'Activo'
+                                : 'Inactivo'}
                     </span>
                   </div>
                   {link.isDisabledByAdmin && (
@@ -1220,6 +1267,15 @@ export function LinkList({
                           addSuffix: true,
                           locale: es,
                         })}
+                      </span>
+                    </div>
+                  )}
+                  {link.isTimeRestricted && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span>🕒</span>
+                      <span>
+                        Horario: {link.timeRestrictionStart}-{link.timeRestrictionEnd} ({link.timeRestrictionTimezone})
+                        {isOutsideTimeRestriction(link) && ' (fuera de horario)'}
                       </span>
                     </div>
                   )}

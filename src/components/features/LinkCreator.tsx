@@ -47,6 +47,10 @@ interface FormData {
   expirationTime: string;
   isClickLimited: boolean;
   maxClicks: number;
+  isTimeRestricted: boolean;
+  timeRestrictionStart: string;
+  timeRestrictionEnd: string;
+  timeRestrictionTimezone: string;
   customDomain: string;
 }
 
@@ -59,6 +63,8 @@ interface FormErrors {
   expirationDate?: string;
   expirationTime?: string;
   maxClicks?: string;
+  timeRestrictionStart?: string;
+  timeRestrictionEnd?: string;
 }
 
 export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
@@ -88,6 +94,10 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
     expirationTime: '23:59',
     isClickLimited: false,
     maxClicks: 100,
+    isTimeRestricted: false,
+    timeRestrictionStart: '09:00',
+    timeRestrictionEnd: '17:00',
+    timeRestrictionTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     customDomain: '',
   });
 
@@ -263,6 +273,33 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
       }
     }
 
+    // Validate time restriction if enabled
+    if (formData.isTimeRestricted) {
+      if (!formData.timeRestrictionStart) {
+        newErrors.timeRestrictionStart = 'La hora de inicio es obligatoria';
+      } else if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(formData.timeRestrictionStart)) {
+        newErrors.timeRestrictionStart = 'Formato de hora inválido (use HH:MM)';
+      }
+
+      if (!formData.timeRestrictionEnd) {
+        newErrors.timeRestrictionEnd = 'La hora de fin es obligatoria';
+      } else if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(formData.timeRestrictionEnd)) {
+        newErrors.timeRestrictionEnd = 'Formato de hora inválido (use HH:MM)';
+      }
+
+      // Validate that end time is after start time (considering it might cross midnight)
+      if (formData.timeRestrictionStart && formData.timeRestrictionEnd) {
+        const [startHour, startMin] = formData.timeRestrictionStart.split(':').map(Number);
+        const [endHour, endMin] = formData.timeRestrictionEnd.split(':').map(Number);
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
+
+        if (startMinutes === endMinutes) {
+          newErrors.timeRestrictionEnd = 'La hora de fin debe ser diferente a la hora de inicio';
+        }
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -324,8 +361,19 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
         expiresAt: expiresAt,
         isClickLimited: formData.isClickLimited,
         maxClicks: formData.isClickLimited ? formData.maxClicks : undefined,
+        isTimeRestricted: formData.isTimeRestricted,
+        timeRestrictionStart: formData.isTimeRestricted ? formData.timeRestrictionStart : undefined,
+        timeRestrictionEnd: formData.isTimeRestricted ? formData.timeRestrictionEnd : undefined,
+        timeRestrictionTimezone: formData.isTimeRestricted ? formData.timeRestrictionTimezone : undefined,
         customDomainId: formData.customDomain || undefined,
       };
+
+      console.log('🔍 Frontend - Sending data:', {
+        isTimeRestricted: createData.isTimeRestricted,
+        timeRestrictionStart: createData.timeRestrictionStart,
+        timeRestrictionEnd: createData.timeRestrictionEnd,
+        timeRestrictionTimezone: createData.timeRestrictionTimezone
+      });
 
       const response = await fetch('/api/links', {
         method: 'POST',
@@ -490,6 +538,10 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
       expirationTime: '23:59',
       isClickLimited: false,
       maxClicks: 100,
+      isTimeRestricted: false,
+      timeRestrictionStart: '09:00',
+      timeRestrictionEnd: '17:00',
+      timeRestrictionTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       customDomain: '',
     });
     setErrors({});
@@ -769,6 +821,32 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                   </h4>
                   <p className="text-sm">{formData.maxClicks.toLocaleString()}</p>
                 </div>
+              )}
+
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                  Restricción Horaria
+                </h4>
+                <p className="text-sm">{formData.isTimeRestricted ? 'Sí' : 'No'}</p>
+              </div>
+
+              {formData.isTimeRestricted && (
+                <>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                      Horario Permitido
+                    </h4>
+                    <p className="text-sm">
+                      {formData.timeRestrictionStart} - {formData.timeRestrictionEnd}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                      Zona Horaria
+                    </h4>
+                    <p className="text-sm">{formData.timeRestrictionTimezone}</p>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -1265,6 +1343,91 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                             💡 El enlace se bloqueará automáticamente cuando se alcance este número de clicks.
                           </p>
                         </div>
+                      </motion.div>
+                    )}
+
+                    <ToggleSwitch
+                      id="timeRestricted"
+                      checked={formData.isTimeRestricted}
+                      onChange={checked =>
+                        handleInputChange('isTimeRestricted', checked)
+                      }
+                      label="Restricción horaria"
+                      description="Solo funcionará durante ciertos horarios del día"
+                    />
+
+                    {formData.isTimeRestricted && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="ml-9 space-y-3 p-3 bg-muted/30 rounded-lg"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-sm font-medium text-card-foreground mb-2 block">
+                              Hora de inicio
+                            </label>
+                            <input
+                              type="time"
+                              value={formData.timeRestrictionStart}
+                              onChange={e =>
+                                handleInputChange('timeRestrictionStart', e.target.value)
+                              }
+                              className="w-full px-3 py-2 border border-border rounded-md bg-background text-card-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+                            />
+                            {errors.timeRestrictionStart && (
+                              <p className="text-xs text-destructive mt-1">
+                                {errors.timeRestrictionStart}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-card-foreground mb-2 block">
+                              Hora de fin
+                            </label>
+                            <input
+                              type="time"
+                              value={formData.timeRestrictionEnd}
+                              onChange={e =>
+                                handleInputChange('timeRestrictionEnd', e.target.value)
+                              }
+                              className="w-full px-3 py-2 border border-border rounded-md bg-background text-card-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+                            />
+                            {errors.timeRestrictionEnd && (
+                              <p className="text-xs text-destructive mt-1">
+                                {errors.timeRestrictionEnd}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-card-foreground mb-2 block">
+                            Zona horaria
+                          </label>
+                          <select
+                            value={formData.timeRestrictionTimezone}
+                            onChange={e =>
+                              handleInputChange('timeRestrictionTimezone', e.target.value)
+                            }
+                            className="w-full px-3 py-2 border border-border rounded-md bg-background text-card-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+                          >
+                            <option value="UTC">UTC</option>
+                            <option value="Europe/Madrid">Europa/Madrid (CET/CEST)</option>
+                            <option value="America/New_York">América/Nueva York (EST/EDT)</option>
+                            <option value="America/Los_Angeles">América/Los Ángeles (PST/PDT)</option>
+                            <option value="America/Mexico_City">América/Ciudad de México (CST/CDT)</option>
+                            <option value="America/Argentina/Buenos_Aires">América/Buenos Aires (ART)</option>
+                            <option value="America/Sao_Paulo">América/São Paulo (BRT)</option>
+                            <option value="Asia/Tokyo">Asia/Tokio (JST)</option>
+                            <option value="Asia/Shanghai">Asia/Shanghái (CST)</option>
+                            <option value="Australia/Sydney">Australia/Sídney (AEST/AEDT)</option>
+                          </select>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          🕒 El enlace solo funcionará entre las horas especificadas en la zona horaria seleccionada. Fuera de este horario mostrará un mensaje de no disponible.
+                        </p>
                       </motion.div>
                     )}
                   </div>

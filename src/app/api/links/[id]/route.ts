@@ -50,6 +50,10 @@ export const GET = withAuth(async (
     isExpired: link.isExpired,
     isClickLimited: link.isClickLimited,
     maxClicks: link.maxClicks,
+    isTimeRestricted: link.isTimeRestricted,
+    timeRestrictionStart: link.timeRestrictionStart,
+    timeRestrictionEnd: link.timeRestrictionEnd,
+    timeRestrictionTimezone: link.timeRestrictionTimezone,
     createdAt: link.createdAt,
     updatedAt: link.updatedAt,
     clickCount: link.clickCount,
@@ -97,6 +101,10 @@ export const PUT = withAuth(async (
     'isExpired',
     'isClickLimited',
     'maxClicks',
+    'isTimeRestricted',
+    'timeRestrictionStart',
+    'timeRestrictionEnd',
+    'timeRestrictionTimezone',
     'slug',
   ];
   updatableFields.forEach(field => {
@@ -177,6 +185,49 @@ export const PUT = withAuth(async (
     }
   }
 
+  // Special handling for time restriction fields
+  if (Object.prototype.hasOwnProperty.call(body, 'isTimeRestricted')) {
+    if (!body.isTimeRestricted) {
+      // Si se desactiva la restricción, limpiar campos relacionados
+      link.timeRestrictionStart = null;
+      link.timeRestrictionEnd = null;
+      link.timeRestrictionTimezone = null;
+    } else if (body.isTimeRestricted && (!body.timeRestrictionStart || !body.timeRestrictionEnd || !body.timeRestrictionTimezone)) {
+      // Si se activa la restricción pero faltan campos
+      throw new AppError(
+        ErrorCode.VALIDATION_ERROR,
+        'timeRestrictionStart, timeRestrictionEnd, and timeRestrictionTimezone are required for time-restricted links',
+        400
+      );
+    } else if (body.isTimeRestricted) {
+      // Validar formato de tiempo
+      const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!timeRegex.test(body.timeRestrictionStart)) {
+        throw new AppError(
+          ErrorCode.VALIDATION_ERROR,
+          'timeRestrictionStart must be in HH:MM format',
+          400
+        );
+      }
+
+      if (!timeRegex.test(body.timeRestrictionEnd)) {
+        throw new AppError(
+          ErrorCode.VALIDATION_ERROR,
+          'timeRestrictionEnd must be in HH:MM format',
+          400
+        );
+      }
+
+      if (body.timeRestrictionStart === body.timeRestrictionEnd) {
+        throw new AppError(
+          ErrorCode.VALIDATION_ERROR,
+          'timeRestrictionStart and timeRestrictionEnd must be different',
+          400
+        );
+      }
+    }
+  }
+
   // Special handling for extending expired links
   if (body.extendTime && link.isTemporary) {
     const now = new Date();
@@ -206,6 +257,10 @@ export const PUT = withAuth(async (
     isExpired: link.isExpired,
     isClickLimited: link.isClickLimited,
     maxClicks: link.maxClicks,
+    isTimeRestricted: link.isTimeRestricted,
+    timeRestrictionStart: link.timeRestrictionStart,
+    timeRestrictionEnd: link.timeRestrictionEnd,
+    timeRestrictionTimezone: link.timeRestrictionTimezone,
     createdAt: link.createdAt,
     updatedAt: link.updatedAt,
     clickCount: link.clickCount,
