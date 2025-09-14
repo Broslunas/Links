@@ -19,16 +19,39 @@ export const GET = withAuth(async (request: NextRequest, auth: AuthContext) => {
         .sort({ createdAt: -1 })
         .lean();
 
-    return createSuccessResponse(links);
+    // Transform the links to include all necessary fields
+    const transformedLinks = links.map(link => ({
+        id: link._id.toString(),
+        userId: link.userId.toString(),
+        originalUrl: link.originalUrl,
+        slug: link.slug,
+        title: link.title,
+        description: link.description,
+        isPublicStats: link.isPublicStats,
+        isActive: link.isActive,
+        isDisabledByAdmin: link.isDisabledByAdmin,
+        disabledReason: link.disabledReason,
+        isFavorite: link.isFavorite,
+        clickCount: link.clickCount,
+        isTemporary: link.isTemporary,
+        expiresAt: link.expiresAt?.toISOString(),
+        isExpired: link.isExpired,
+        isClickLimited: link.isClickLimited,
+        maxClicks: link.maxClicks,
+        createdAt: link.createdAt,
+        updatedAt: link.updatedAt,
+    }));
+
+    return createSuccessResponse(transformedLinks);
 });
 
 // POST /api/links - Create new link
 export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => {
     const body: CreateLinkData = await parseRequestBody<CreateLinkData>(request);
-    const { originalUrl, slug, title, description, isPublicStats = false, isTemporary = false, expiresAt } = body;
+    const { originalUrl, slug, title, description, isPublicStats = false, isTemporary = false, expiresAt, isClickLimited = false, maxClicks } = body;
 
     // Validate required fields
-    validateRequest(body, ['originalUrl'], ['slug', 'title', 'description', 'isPublicStats', 'isTemporary', 'expiresAt']);
+    validateRequest(body, ['originalUrl'], ['slug', 'title', 'description', 'isPublicStats', 'isTemporary', 'expiresAt', 'isClickLimited', 'maxClicks']);
 
     // Validate temporary link fields
     if (isTemporary) {
@@ -39,11 +62,11 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
                 400
             );
         }
-        
+
         const expirationDate = new Date(expiresAt);
         const now = new Date();
         const maxExpirationDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 días
-        
+
         if (expirationDate <= now) {
             throw new AppError(
                 ErrorCode.VALIDATION_ERROR,
@@ -51,7 +74,7 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
                 400
             );
         }
-        
+
         if (expirationDate > maxExpirationDate) {
             throw new AppError(
                 ErrorCode.VALIDATION_ERROR,
@@ -63,6 +86,31 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
         throw new AppError(
             ErrorCode.VALIDATION_ERROR,
             'expiresAt can only be set for temporary links',
+            400
+        );
+    }
+
+    // Validate click limit fields
+    if (isClickLimited) {
+        if (!maxClicks || maxClicks < 1) {
+            throw new AppError(
+                ErrorCode.VALIDATION_ERROR,
+                'maxClicks is required and must be greater than 0 for click-limited links',
+                400
+            );
+        }
+
+        if (maxClicks > 1000000) {
+            throw new AppError(
+                ErrorCode.VALIDATION_ERROR,
+                'maxClicks cannot be greater than 1,000,000',
+                400
+            );
+        }
+    } else if (maxClicks) {
+        throw new AppError(
+            ErrorCode.VALIDATION_ERROR,
+            'maxClicks can only be set for click-limited links',
             400
         );
     }
@@ -81,7 +129,7 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
 
     if (finalSlug) {
         validateSlug(finalSlug);
-        
+
         // Check if custom slug already exists
         const existingLink = await Link.findOne({ slug: finalSlug });
         if (existingLink) {
@@ -108,6 +156,8 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
         isPublicStats,
         isTemporary,
         expiresAt: isTemporary ? new Date(expiresAt!) : undefined,
+        isClickLimited,
+        maxClicks: isClickLimited ? maxClicks : undefined,
     });
 
     await newLink.save();
@@ -125,6 +175,8 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
         clickCount: newLink.clickCount,
         isTemporary: newLink.isTemporary,
         expiresAt: newLink.expiresAt?.toISOString(),
+        isClickLimited: newLink.isClickLimited,
+        maxClicks: newLink.maxClicks,
         createdAt: newLink.createdAt,
         updatedAt: newLink.updatedAt,
         shortUrl: `${process.env.NEXTAUTH_URL}/${newLink.slug}`,

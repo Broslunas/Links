@@ -122,11 +122,26 @@ export async function handleRedirect(
                 isActive: true,
                 isDisabledByAdmin: { $ne: true }, // Exclude links disabled by admin
                 isExpired: { $ne: true }, // Exclude expired links
-                $or: [
-                    { isTemporary: { $ne: true } }, // Non-temporary links
+                $and: [
                     {
-                        isTemporary: true,
-                        expiresAt: { $gt: new Date() } // Only non-expired temporary links
+                        $or: [
+                            { isTemporary: { $ne: true } }, // Non-temporary links
+                            {
+                                isTemporary: true,
+                                expiresAt: { $gt: new Date() } // Only non-expired temporary links
+                            }
+                        ]
+                    },
+                    {
+                        $or: [
+                            { isClickLimited: { $ne: true } }, // Non-click-limited links
+                            { isClickLimited: true, maxClicks: { $exists: false } }, // Click-limited but no maxClicks set
+                            { isClickLimited: true, maxClicks: null }, // Click-limited but maxClicks is null
+                            {
+                                isClickLimited: true,
+                                $expr: { $lt: ['$clickCount', '$maxClicks'] } // Click count less than max clicks
+                            }
+                        ]
                     }
                 ]
             }).populate('userId', 'isActive'), // Populate user data to check if user is blocked
@@ -164,6 +179,16 @@ export async function handleRedirect(
                 return {
                     success: false,
                     error: 'Este enlace no está disponible porque la cuenta del usuario está inactiva'
+                };
+            }
+        }
+
+        // Check if the link has reached its click limit (only for regular links, not temp links)
+        if (!isTemporary && targetLink.isClickLimited && targetLink.maxClicks) {
+            if (targetLink.clickCount >= targetLink.maxClicks) {
+                return {
+                    success: false,
+                    error: 'Este enlace ha alcanzado su límite máximo de clicks y ya no está disponible'
                 };
             }
         }
@@ -301,11 +326,26 @@ export async function shouldRedirectToMainDomain(
             isActive: true,
             isDisabledByAdmin: { $ne: true },
             isExpired: { $ne: true },
-            $or: [
-                { isTemporary: { $ne: true } },
+            $and: [
                 {
-                    isTemporary: true,
-                    expiresAt: { $gt: new Date() }
+                    $or: [
+                        { isTemporary: { $ne: true } },
+                        {
+                            isTemporary: true,
+                            expiresAt: { $gt: new Date() }
+                        }
+                    ]
+                },
+                {
+                    $or: [
+                        { isClickLimited: { $ne: true } }, // Non-click-limited links
+                        { isClickLimited: true, maxClicks: { $exists: false } }, // Click-limited but no maxClicks set
+                        { isClickLimited: true, maxClicks: null }, // Click-limited but maxClicks is null
+                        {
+                            isClickLimited: true,
+                            $expr: { $lt: ['$clickCount', '$maxClicks'] } // Click count less than max clicks
+                        }
+                    ]
                 }
             ]
         }).populate('userId', 'isActive');

@@ -29,6 +29,8 @@ export function LinkEditor({
     isActive: true,
     isTemporary: false,
     expiresAt: '',
+    isClickLimited: false,
+    maxClicks: 100,
     customDomain: '',
   });
   const [loading, setLoading] = useState(false);
@@ -56,6 +58,8 @@ export function LinkEditor({
         expiresAt: link.expiresAt
           ? new Date(link.expiresAt).toISOString().slice(0, 16)
           : '',
+        isClickLimited: link.isClickLimited || false,
+        maxClicks: link.maxClicks || 100,
         customDomain: (link as any).customDomainId || '',
       });
       setErrors({});
@@ -138,6 +142,15 @@ export function LinkEditor({
       }
     }
 
+    // Validación para límite de clicks
+    if (formData.isClickLimited) {
+      if (formData.maxClicks < 1) {
+        newErrors.maxClicks = 'El número máximo de clicks debe ser mayor a 0';
+      } else if (formData.maxClicks > 1000000) {
+        newErrors.maxClicks = 'El número máximo de clicks no puede ser mayor a 1,000,000';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -162,6 +175,8 @@ export function LinkEditor({
           formData.isTemporary && formData.expiresAt
             ? new Date(formData.expiresAt)
             : undefined,
+        isClickLimited: formData.isClickLimited,
+        maxClicks: formData.isClickLimited ? formData.maxClicks : undefined,
         customDomainId: formData.customDomain || undefined,
       };
 
@@ -290,11 +305,10 @@ export function LinkEditor({
               placeholder="Descripción opcional"
               rows={3}
               disabled={loading}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
-                errors.description
-                  ? 'border-red-300 focus:ring-red-500'
-                  : 'border-input bg-background text-foreground'
-              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${errors.description
+                ? 'border-red-300 focus:ring-red-500'
+                : 'border-input bg-background text-foreground'
+                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
             {errors.description && (
               <p className="text-red-500 text-xs mt-1">{errors.description}</p>
@@ -345,11 +359,10 @@ export function LinkEditor({
                 }
                 disabled={loading}
                 variant={formData.isActive ? 'default' : 'outline'}
-                className={`w-full justify-center ${
-                  formData.isActive
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-600 dark:hover:bg-red-900/20'
-                }`}
+                className={`w-full justify-center ${formData.isActive
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : 'text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-600 dark:hover:bg-red-900/20'
+                  }`}
               >
                 {formData.isActive ? '✓ Enlace Activo' : '✗ Enlace Inactivo'}
               </Button>
@@ -369,11 +382,10 @@ export function LinkEditor({
                 }
                 disabled={loading}
                 variant={formData.isPublicStats ? 'default' : 'outline'}
-                className={`w-full justify-center ${
-                  formData.isPublicStats
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-900/20'
-                }`}
+                className={`w-full justify-center ${formData.isPublicStats
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-900/20'
+                  }`}
               >
                 {formData.isPublicStats
                   ? '✓ Estadísticas Públicas'
@@ -400,11 +412,10 @@ export function LinkEditor({
                 }}
                 disabled={loading}
                 variant={formData.isTemporary ? 'default' : 'outline'}
-                className={`w-full justify-center ${
-                  formData.isTemporary
-                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                    : 'text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-900/20'
-                }`}
+                className={`w-full justify-center ${formData.isTemporary
+                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                  : 'text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-900/20'
+                  }`}
               >
                 {formData.isTemporary
                   ? '⏰ Enlace Temporal'
@@ -431,11 +442,10 @@ export function LinkEditor({
                   onChange={e => handleInputChange('expiresAt', e.target.value)}
                   disabled={loading}
                   min={new Date().toISOString().slice(0, 16)}
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
-                    errors.expiresAt
-                      ? 'border-red-300 focus:ring-red-500'
-                      : 'border-input bg-background text-foreground'
-                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${errors.expiresAt
+                    ? 'border-red-300 focus:ring-red-500'
+                    : 'border-input bg-background text-foreground'
+                    } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
                 {errors.expiresAt && (
                   <p className="text-red-500 text-xs mt-1">
@@ -444,6 +454,58 @@ export function LinkEditor({
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
                   El enlace dejará de funcionar después de esta fecha y hora
+                </p>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Límite de clicks
+              </label>
+              <Button
+                type="button"
+                onClick={() => {
+                  const newIsClickLimited = !formData.isClickLimited;
+                  handleInputChange('isClickLimited', newIsClickLimited);
+                  // Si se desactiva el límite, no limpiar maxClicks para mantener el valor
+                }}
+                disabled={loading}
+                variant={formData.isClickLimited ? 'default' : 'outline'}
+                className={`w-full justify-center ${formData.isClickLimited
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                  : 'text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-900/20'
+                  }`}
+              >
+                {formData.isClickLimited
+                  ? '🔢 Límite Activado'
+                  : '∞ Sin Límite'}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1">
+                El enlace se bloqueará automáticamente al alcanzar el máximo de clicks
+              </p>
+            </div>
+
+            {formData.isClickLimited && (
+              <div>
+                <label
+                  htmlFor="maxClicks"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
+                  Número máximo de clicks *
+                </label>
+                <Input
+                  id="maxClicks"
+                  type="number"
+                  min="1"
+                  max="1000000"
+                  value={formData.maxClicks.toString()}
+                  nChange={e => handleInputChange('maxClicks', e.target.value)}
+                  placeholder="Ej: 100"
+                  error={errors.maxClicks}
+                  disabled={loading}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  El enlace se bloqueará cuando se alcance este número de clicks
                 </p>
               </div>
             )}

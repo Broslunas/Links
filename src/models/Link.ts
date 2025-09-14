@@ -15,6 +15,12 @@ export interface ILink extends Document {
   isTemporary: boolean;
   expiresAt?: Date;
   isExpired: boolean;
+  isClickLimited: boolean;
+  maxClicks?: number;
+  isTimeRestricted: boolean;
+  timeRestrictionStart?: string; // HH:MM format
+  timeRestrictionEnd?: string; // HH:MM format
+  timeRestrictionTimezone?: string; // Timezone identifier
   customDomain?: mongoose.Types.ObjectId; // Referencia al dominio personalizado
   createdAt: Date;
   updatedAt: Date;
@@ -97,7 +103,7 @@ const LinkSchema = new Schema<ILink>(
       type: Date,
       default: null,
       validate: {
-        validator: function(this: ILink, expiresAt: Date) {
+        validator: function (this: ILink, expiresAt: Date) {
           // Si es temporal, debe tener fecha de expiración
           if (this.isTemporary && !expiresAt) {
             return false;
@@ -118,6 +124,28 @@ const LinkSchema = new Schema<ILink>(
     isExpired: {
       type: Boolean,
       default: false,
+    },
+    isClickLimited: {
+      type: Boolean,
+      default: false,
+    },
+    maxClicks: {
+      type: Number,
+      min: 1,
+      validate: {
+        validator: function (this: ILink, maxClicks: number) {
+          // Si tiene límite de clicks, debe tener un número máximo
+          if (this.isClickLimited && !maxClicks) {
+            return false;
+          }
+          // Si no tiene límite, no debe tener número máximo
+          if (!this.isClickLimited && maxClicks) {
+            return false;
+          }
+          return true;
+        },
+        message: 'Max clicks is required when click limit is enabled',
+      },
     },
     customDomain: {
       type: Schema.Types.ObjectId,

@@ -48,6 +48,8 @@ export const GET = withAuth(async (
     isTemporary: link.isTemporary,
     expiresAt: link.expiresAt?.toISOString(),
     isExpired: link.isExpired,
+    isClickLimited: link.isClickLimited,
+    maxClicks: link.maxClicks,
     createdAt: link.createdAt,
     updatedAt: link.updatedAt,
     clickCount: link.clickCount,
@@ -63,7 +65,7 @@ export const PUT = withAuth(async (
 ) => {
 
   const { id } = params;
-  
+
   if (!id) {
     throw new AppError(
       ErrorCode.VALIDATION_ERROR,
@@ -73,7 +75,7 @@ export const PUT = withAuth(async (
   }
 
   await connectDB();
-  
+
   // Verificar acceso al enlace (propietario o permisos compartidos)
   const { isOwner, sharedLink, link } = await verifyLinkAccessBySlug(
     auth.userId,
@@ -93,6 +95,8 @@ export const PUT = withAuth(async (
     'isTemporary',
     'expiresAt',
     'isExpired',
+    'isClickLimited',
+    'maxClicks',
     'slug',
   ];
   updatableFields.forEach(field => {
@@ -105,7 +109,7 @@ export const PUT = withAuth(async (
   // Special handling for slug updates
   if (Object.prototype.hasOwnProperty.call(body, 'slug') && body.slug !== link.slug) {
     const newSlug = body.slug.trim().toLowerCase();
-    
+
     // Validate slug format
     if (!/^[a-zA-Z0-9-_]+$/.test(newSlug)) {
       throw new AppError(
@@ -114,7 +118,7 @@ export const PUT = withAuth(async (
         400
       );
     }
-    
+
     if (newSlug.length < 3 || newSlug.length > 50) {
       throw new AppError(
         ErrorCode.VALIDATION_ERROR,
@@ -122,7 +126,7 @@ export const PUT = withAuth(async (
         400
       );
     }
-    
+
     // Check if slug is already taken
     const existingLink = await Link.findOne({ slug: newSlug });
     if (existingLink) {
@@ -132,7 +136,7 @@ export const PUT = withAuth(async (
         409
       );
     }
-    
+
     link.slug = newSlug;
   }
 
@@ -152,11 +156,32 @@ export const PUT = withAuth(async (
     }
   }
 
+  // Special handling for click limit fields
+  if (Object.prototype.hasOwnProperty.call(body, 'isClickLimited')) {
+    if (!body.isClickLimited) {
+      // Si se desactiva el límite, limpiar maxClicks
+      link.maxClicks = null;
+    } else if (body.isClickLimited && (!body.maxClicks || body.maxClicks < 1)) {
+      // Si se activa el límite pero no se proporciona maxClicks válido
+      throw new AppError(
+        ErrorCode.VALIDATION_ERROR,
+        'maxClicks is required and must be greater than 0 for click-limited links',
+        400
+      );
+    } else if (body.isClickLimited && body.maxClicks > 1000000) {
+      throw new AppError(
+        ErrorCode.VALIDATION_ERROR,
+        'maxClicks cannot be greater than 1,000,000',
+        400
+      );
+    }
+  }
+
   // Special handling for extending expired links
   if (body.extendTime && link.isTemporary) {
     const now = new Date();
     const extensionHours = parseInt(body.extendTime);
-    
+
     if (extensionHours > 0 && extensionHours <= 720) { // Max 30 days
       link.expiresAt = new Date(now.getTime() + extensionHours * 60 * 60 * 1000);
       link.isExpired = false;
@@ -179,6 +204,8 @@ export const PUT = withAuth(async (
     isTemporary: link.isTemporary,
     expiresAt: link.expiresAt?.toISOString(),
     isExpired: link.isExpired,
+    isClickLimited: link.isClickLimited,
+    maxClicks: link.maxClicks,
     createdAt: link.createdAt,
     updatedAt: link.updatedAt,
     clickCount: link.clickCount,
@@ -192,7 +219,7 @@ export const DELETE = withAuth(async (
   { params }: { params: { id: string } }
 ) => {
   const { id } = params;
-  
+
   if (!id) {
     throw new AppError(
       ErrorCode.VALIDATION_ERROR,
@@ -202,7 +229,7 @@ export const DELETE = withAuth(async (
   }
 
   await connectDB();
-  
+
   // Verificar acceso al enlace (propietario o permisos compartidos)
   const { isOwner, sharedLink, link } = await verifyLinkAccessBySlug(
     auth.userId,

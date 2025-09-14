@@ -125,6 +125,11 @@ export function LinkList({
     return new Date(link.expiresAt) < new Date();
   };
 
+  const isClickLimitReached = (link: Link) => {
+    if (!link.isClickLimited || !link.maxClicks) return false;
+    return link.clickCount >= link.maxClicks;
+  };
+
   const isTemporaryAndActive = (link: Link) => {
     return link.isTemporary && link.expiresAt && !isLinkExpired(link);
   };
@@ -443,21 +448,19 @@ export function LinkList({
               <div className="flex gap-2">
                 <button
                   onClick={() => setViewMode('cards')}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'cards'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-background text-foreground border border-border hover:bg-accent'
-                  }`}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'cards'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background text-foreground border border-border hover:bg-accent'
+                    }`}
                 >
                   Lista
                 </button>
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'table'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-background text-foreground border border-border hover:bg-accent'
-                  }`}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'table'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background text-foreground border border-border hover:bg-accent'
+                    }`}
                 >
                   Tarjetas
                 </button>
@@ -640,11 +643,10 @@ export function LinkList({
                           onClick={() => toggleFavorite(link.slug)}
                           variant="ghost"
                           size="sm"
-                          className={`p-1 h-auto ${
-                            link.isFavorite
-                              ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
-                              : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
-                          }`}
+                          className={`p-1 h-auto ${link.isFavorite
+                            ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
+                            : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                            }`}
                         >
                           <Star
                             className={`h-4 w-4 ${link.isFavorite ? 'fill-current' : ''}`}
@@ -731,9 +733,15 @@ export function LinkList({
                             </div>
                           </div>
                         )}
+                        {isClickLimitReached(link) && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
+                            Límite alcanzado ({link.clickCount}/{link.maxClicks})
+                          </span>
+                        )}
                         {!link.isActive &&
                           !link.isDisabledByAdmin &&
-                          !isLinkExpired(link) && (
+                          !isLinkExpired(link) &&
+                          !isClickLimitReached(link) && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
                               Inactivo
                             </span>
@@ -823,7 +831,9 @@ export function LinkList({
                               d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                             />
                           </svg>
-                          {link.clickCount} clicks
+                          {link.isClickLimited && link.maxClicks
+                            ? `${link.clickCount}/${link.maxClicks} clicks`
+                            : `${link.clickCount} clicks`}
                         </span>
                         <span className="flex items-center gap-1">
                           <svg
@@ -1031,11 +1041,10 @@ export function LinkList({
                         onClick={() => toggleFavorite(link.slug)}
                         variant="ghost"
                         size="sm"
-                        className={`p-1 h-auto mt-0.5 ${
-                          link.isFavorite
-                            ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
-                            : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
-                        }`}
+                        className={`p-1 h-auto mt-0.5 ${link.isFavorite
+                          ? 'text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300'
+                          : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                          }`}
                       >
                         <Star
                           className={`h-4 w-4 ${link.isFavorite ? 'fill-current' : ''}`}
@@ -1048,23 +1057,26 @@ export function LinkList({
                       </div>
                     </div>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                        link.isDisabledByAdmin
-                          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                          : isLinkExpired(link)
-                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                      className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${link.isDisabledByAdmin
+                        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                        : isLinkExpired(link)
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          : isClickLimitReached(link)
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                             : link.isActive
                               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                               : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                      }`}
+                        }`}
                     >
                       {link.isDisabledByAdmin
                         ? 'Deshabilitado por Admin'
                         : isLinkExpired(link)
                           ? 'Expirado'
-                          : link.isActive
-                            ? 'Activo'
-                            : 'Inactivo'}
+                          : isClickLimitReached(link)
+                            ? 'Límite alcanzado'
+                            : link.isActive
+                              ? 'Activo'
+                              : 'Inactivo'}
                     </span>
                   </div>
                   {link.isDisabledByAdmin && (
@@ -1175,7 +1187,9 @@ export function LinkList({
                     <div className="flex items-center gap-1">
                       <span className="text-muted-foreground">Clicks:</span>
                       <span className="font-semibold text-foreground">
-                        {link.clickCount}
+                        {link.isClickLimited && link.maxClicks
+                          ? `${link.clickCount}/${link.maxClicks}`
+                          : link.clickCount}
                       </span>
                     </div>
                     <span className="text-xs text-muted-foreground">

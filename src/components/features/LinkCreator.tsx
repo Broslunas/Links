@@ -45,6 +45,8 @@ interface FormData {
   customDurationUnit: 'hours' | 'days';
   expirationDate: string;
   expirationTime: string;
+  isClickLimited: boolean;
+  maxClicks: number;
   customDomain: string;
 }
 
@@ -56,6 +58,7 @@ interface FormErrors {
   customDuration?: string;
   expirationDate?: string;
   expirationTime?: string;
+  maxClicks?: string;
 }
 
 export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
@@ -83,6 +86,8 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
     customDurationUnit: 'days',
     expirationDate: '',
     expirationTime: '23:59',
+    isClickLimited: false,
+    maxClicks: 100,
     customDomain: '',
   });
 
@@ -249,6 +254,15 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
       }
     }
 
+    // Validate click limit if enabled
+    if (formData.isClickLimited) {
+      if (formData.maxClicks < 1) {
+        newErrors.maxClicks = 'El número máximo de clicks debe ser mayor a 0';
+      } else if (formData.maxClicks > 1000000) {
+        newErrors.maxClicks = 'El número máximo de clicks no puede ser mayor a 1,000,000';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -308,6 +322,8 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
         isPublicStats: formData.isPublicStats,
         isTemporary: formData.isTemporary,
         expiresAt: expiresAt,
+        isClickLimited: formData.isClickLimited,
+        maxClicks: formData.isClickLimited ? formData.maxClicks : undefined,
         customDomainId: formData.customDomain || undefined,
       };
 
@@ -472,6 +488,8 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
       customDurationUnit: 'days',
       expirationDate: '',
       expirationTime: '23:59',
+      isClickLimited: false,
+      maxClicks: 100,
       customDomain: '',
     });
     setErrors({});
@@ -517,16 +535,14 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
           role="switch"
           aria-checked={checked}
           id={id}
-          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-            checked ? 'bg-primary' : 'bg-muted'
-          }`}
+          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${checked ? 'bg-primary' : 'bg-muted'
+            }`}
           onClick={() => onChange(!checked)}
         >
           <span
             aria-hidden="true"
-            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-              checked ? 'translate-x-5' : 'translate-x-0'
-            }`}
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'
+              }`}
           />
         </button>
       </div>
@@ -738,6 +754,22 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                   )}
                 </>
               )}
+
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                  Límite de Clicks
+                </h4>
+                <p className="text-sm">{formData.isClickLimited ? 'Sí' : 'No'}</p>
+              </div>
+
+              {formData.isClickLimited && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                    Máximo de Clicks
+                  </h4>
+                  <p className="text-sm">{formData.maxClicks.toLocaleString()}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -807,11 +839,10 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
               return (
                 <div key={step.id} className="flex flex-col items-center">
                   <div
-                    className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                      currentStep >= index
-                        ? 'bg-primary border-primary text-primary-foreground'
-                        : 'border-border bg-background text-muted-foreground'
-                    }`}
+                    className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${currentStep >= index
+                      ? 'bg-primary border-primary text-primary-foreground'
+                      : 'border-border bg-background text-muted-foreground'
+                      }`}
                   >
                     {currentStep > index ? (
                       <Check className="h-5 w-5" />
@@ -820,11 +851,10 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                     )}
                   </div>
                   <span
-                    className={`text-xs mt-2 ${
-                      currentStep >= index
-                        ? 'text-primary font-medium'
-                        : 'text-muted-foreground'
-                    }`}
+                    className={`text-xs mt-2 ${currentStep >= index
+                      ? 'text-primary font-medium'
+                      : 'text-muted-foreground'
+                      }`}
                   >
                     {step.title}
                   </span>
@@ -1029,11 +1059,10 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                           <div className="flex gap-2">
                             <button
                               type="button"
-                              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                                formData.expirationType === 'duration'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                              }`}
+                              className={`px-3 py-1 text-sm rounded-md transition-colors ${formData.expirationType === 'duration'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                }`}
                               onClick={() =>
                                 handleInputChange('expirationType', 'duration')
                               }
@@ -1042,11 +1071,10 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                             </button>
                             <button
                               type="button"
-                              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                                formData.expirationType === 'date'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                              }`}
+                              className={`px-3 py-1 text-sm rounded-md transition-colors ${formData.expirationType === 'date'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                }`}
                               onClick={() =>
                                 handleInputChange('expirationType', 'date')
                               }
@@ -1196,6 +1224,49 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                       label="Estadísticas públicas"
                       description="Permite que cualquiera vea las estadísticas de este enlace"
                     />
+
+                    <ToggleSwitch
+                      id="clickLimited"
+                      checked={formData.isClickLimited}
+                      onChange={checked =>
+                        handleInputChange('isClickLimited', checked)
+                      }
+                      label="Límite de clicks"
+                      description="Se bloqueará automáticamente al alcanzar el máximo de clicks"
+                    />
+
+                    {formData.isClickLimited && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="ml-9 space-y-3 p-3 bg-muted/30 rounded-lg"
+                      >
+                        <div>
+                          <label className="text-sm font-medium text-card-foreground mb-2 block">
+                            Número máximo de clicks
+                          </label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="1000000"
+                            value={formData.maxClicks.toString()}
+                            onChange={e =>
+                              handleInputChange(
+                                'maxClicks',
+                                parseInt(e.target.value) || 1
+                              )
+                            }
+                            error={errors.maxClicks}
+                            placeholder="Ej: 100"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            💡 El enlace se bloqueará automáticamente cuando se alcance este número de clicks.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -1248,8 +1319,8 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                         <p className="text-sm">
                           {formData.customDomain
                             ? customDomains.find(
-                                d => d.id === formData.customDomain
-                              )?.domain || 'broslunas.link'
+                              d => d.id === formData.customDomain
+                            )?.domain || 'broslunas.link'
                             : 'broslunas.link (por defecto)'}
                         </p>
                       </div>

@@ -46,6 +46,8 @@ export interface Link {
   isTemporary: boolean;
   expiresAt?: string;
   isExpired?: boolean;
+  isClickLimited: boolean;
+  maxClicks?: number;
   createdAt: string;
   updatedAt: string;
   // Shared link properties
@@ -103,6 +105,8 @@ export interface CreateLinkData {
   isTemporary?: boolean;
   expiresAt?: Date;
   isExpired?: boolean;
+  isClickLimited?: boolean;
+  maxClicks?: number;
   customDomainId?: string;
 }
 
@@ -120,6 +124,8 @@ export interface UpdateLinkData {
   isTemporary?: boolean;
   expiresAt?: Date;
   isExpired?: boolean;
+  isClickLimited?: boolean;
+  maxClicks?: number;
   customDomainId?: string;
 }
 
