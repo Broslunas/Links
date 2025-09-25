@@ -1,10 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
-import { connectDB } from './lib/db-utils';
-import CustomDomain from './models/CustomDomain';
-
-// Forzar Node.js runtime para compatibilidad con Mongoose
-export const runtime = 'nodejs';
 
 // Lista de rutas que no deben ser procesadas por el middleware de dominios personalizados
 const EXCLUDED_PATHS = ['/slug/'];
@@ -46,18 +40,12 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    // Conectar a la base de datos
-    await connectDB();
+    // Verificar si el dominio personalizado existe y está verificado usando la API
+    const apiUrl = `${mainDomain}/api/domains/verify-domain?domain=${encodeURIComponent(hostname)}`;
+    const response = await fetch(apiUrl);
+    const data = await response.json();
 
-    // Verificar si el dominio personalizado existe y está verificado
-    const customDomain = await CustomDomain.findOne({
-      fullDomain: hostname,
-      isVerified: true,
-      isActive: true,
-      isBlocked: { $ne: true },
-    });
-
-    if (!customDomain) {
+    if (!response.ok || !data.success || !data.exists) {
       // Si el dominio no existe o no está verificado, redirigir al dominio principal
       const url = new URL(mainDomain);
       url.pathname = pathname;
