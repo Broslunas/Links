@@ -107,7 +107,7 @@ function getClientIP(request: NextRequest): string {
 export const RATE_LIMITS = {
   // API v1 endpoints - Links management
   'api-v1-get-links': { limit: 100, windowMs: 60 * 60 * 1000 }, // 100 per hour
-  'api-v1-create-link': { limit: 1000, windowMs: 60 * 60 * 1000 }, // 1000 per hour
+  'api-v1-create-link': { limit: 50, windowMs: 60 * 60 * 1000 }, // 50 per hour
   'api-v1-update-link': { limit: 100, windowMs: 60 * 60 * 1000 }, // 100 per hour
   'api-v1-delete-link': { limit: 50, windowMs: 60 * 60 * 1000 }, // 50 per hour
 
