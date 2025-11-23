@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/db-utils';
 import Link from '../../../../models/Link';
 import { withApiV1Middleware, createApiSuccessResponse, createApiErrorResponse } from '../../../../lib/api-v1-middleware';
@@ -10,6 +10,25 @@ import mongoose from 'mongoose';
 
 // Force Node.js runtime for Mongoose compatibility
 export const runtime = 'nodejs';
+
+/**
+ * Helper function to add CORS headers to responses
+ */
+function addCorsHeaders(response: NextResponse): NextResponse {
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.headers.set('Access-Control-Max-Age', '86400');
+    return response;
+}
+
+/**
+ * OPTIONS /api/v1/links - Handle CORS preflight requests
+ */
+export async function OPTIONS(request: NextRequest) {
+    const response = new NextResponse(null, { status: 204 });
+    return addCorsHeaders(response);
+}
 
 
 /**
@@ -61,32 +80,35 @@ export async function GET(request: NextRequest) {
                 totalPages
             };
 
-            return createApiSuccessResponse(
+            const response = createApiSuccessResponse(
                 transformedLinks,
                 200,
                 pagination,
                 context.requestId
             );
+            return addCorsHeaders(response);
 
         } catch (error) {
             if (error instanceof AppError) {
-                return createApiErrorResponse(
+                const response = createApiErrorResponse(
                     error.code,
                     error.message,
                     error.statusCode,
                     error.details,
                     context.requestId
                 );
+                return addCorsHeaders(response);
             }
 
             console.error('[API v1 Links GET Error]:', error);
-            return createApiErrorResponse(
+            const response = createApiErrorResponse(
                 ErrorCode.INTERNAL_ERROR,
                 'An internal server error occurred',
                 500,
                 undefined,
                 context.requestId
             );
+            return addCorsHeaders(response);
         }
     });
 }
@@ -277,32 +299,35 @@ export async function POST(request: NextRequest) {
             // Transform to API response format
             const responseData = transformLinkToV1Response(newLink.toObject());
 
-            return createApiSuccessResponse(
+            const response = createApiSuccessResponse(
                 responseData,
                 201,
                 undefined,
                 context.requestId
             );
+            return addCorsHeaders(response);
 
         } catch (error) {
             if (error instanceof AppError) {
-                return createApiErrorResponse(
+                const response = createApiErrorResponse(
                     error.code,
                     error.message,
                     error.statusCode,
                     error.details,
                     context.requestId
                 );
+                return addCorsHeaders(response);
             }
 
             console.error('[API v1 Links POST Error]:', error);
-            return createApiErrorResponse(
+            const response = createApiErrorResponse(
                 ErrorCode.INTERNAL_ERROR,
                 'An internal server error occurred',
                 500,
                 undefined,
                 context.requestId
             );
+            return addCorsHeaders(response);
         }
     });
 }
