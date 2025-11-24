@@ -34,6 +34,10 @@ export async function authenticateRequest(
     : null;
 
   if (apiToken) {
+    // Ensure database connection is active before validating token
+    const { connectDB } = await import('./db-utils');
+    await connectDB();
+    
     const user = await validateApiToken(apiToken);
     if (!user) {
       throw new AppError(ErrorCode.INVALID_TOKEN, 'Invalid API token', 401);

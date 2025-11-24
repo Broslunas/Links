@@ -64,17 +64,29 @@ export async function validateApiToken(token: string) {
         return null;
     }
 
-    const user = await User.findOne({ apiToken: token });
-    return user;
+    try {
+        // Ensure database connection before querying
+        const user = await User.findOne({ apiToken: token });
+        return user;
+    } catch (error) {
+        console.error('[validateApiToken] Error validating token:', error);
+        // Return null instead of throwing to allow graceful degradation
+        return null;
+    }
 }
 
 /**
  * Update the lastUsedAt timestamp for an API token
  */
 export async function updateTokenLastUsed(userId: string): Promise<void> {
-    await User.findByIdAndUpdate(userId, {
-        apiTokenLastUsedAt: new Date(),
-    });
+    try {
+        await User.findByIdAndUpdate(userId, {
+            apiTokenLastUsedAt: new Date(),
+        });
+    } catch (error) {
+        console.error('[updateTokenLastUsed] Error updating token last used:', error);
+        // Don't throw, just log the error
+    }
 }
 
 /**
