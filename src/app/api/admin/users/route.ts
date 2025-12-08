@@ -613,19 +613,20 @@ export async function PUT(request: NextRequest) {
 
     // Send webhook notification if user status is being changed
     if (isActive !== undefined && isActive !== userBeforeUpdate.isActive) {
-      const action = isActive ? 'active' : 'inactive';
+      const action = isActive ? 'active_account' : 'inactive_account';
       try {
-        await fetch('https://hook.eu2.make.com/oiwghj44buyslgsi7ykp5v2wo3yfvgye', {
+        await fetch('https://hook.eu2.make.com/cihkqitnkkwd3lv6md151glodc2ahhdr', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'x-make-apikey': process.env.WEBHOOK_API_KEY || '',
           },
           body: JSON.stringify({
+            action: action,
             userName: updatedUser.name,
             userEmail: updatedUser.email,
             adminName: adminUser.name,
             adminEmail: adminUser.email,
-            action: action
           })
         });
       } catch (webhookError) {

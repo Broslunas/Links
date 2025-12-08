@@ -56,7 +56,7 @@ const ContactPage: React.FC = () => {
 
     try {
       const response = await fetch(
-        'https://hook.eu2.make.com/rguazps31ef98ox5yxfe5bdn2gqpmt41',
+        '/api/webhooks/contact',
         {
           method: 'POST',
           headers: {
@@ -70,7 +70,6 @@ const ContactPage: React.FC = () => {
             message: formData.message,
             isLoggedIn: !!session?.user,
             userId: session?.user?.id || null,
-            timestamp: new Date().toISOString(),
           }),
         }
       );

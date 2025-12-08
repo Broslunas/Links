@@ -247,28 +247,6 @@ export default function SettingsPage() {
       }
 
       const { downloadUrl, exportId, summary } = await exportResponse.json();
-      const fileName = `broslunas-link-export-${new Date().toISOString().split('T')[0]}.json`;
-
-      // Send data to webhook with public download link
-      const webhookData = {
-        email: settings.email,
-        downloadLink: downloadUrl,
-        fileName: fileName,
-        exportDate: new Date().toISOString(),
-        exportId: exportId,
-        summary: summary, // Include summary with totals
-      };
-
-      await fetch(
-        'https://hook.eu2.make.com/zvfuyr381bgdpgq1nltnof7vlmjridcb',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(webhookData),
-        }
-      );
 
       success(
         `Enlace de exportación se ha enviado a ${settings.email}. ${summary.totalLinks} enlaces y ${summary.totalAnalyticsEvents} eventos exportados. El enlace estará disponible por 1 hora`,

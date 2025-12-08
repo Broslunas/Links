@@ -107,6 +107,9 @@ export const PUT = withAuth(async (
     'timeRestrictionTimezone',
     'slug',
   ];
+  // Capture previous state
+  const previousIsActive = link.isActive;
+
   updatableFields.forEach(field => {
     // Permite actualizar el campo aunque el valor sea vacío, null, false, etc.
     if (Object.prototype.hasOwnProperty.call(body, field)) {
@@ -241,6 +244,31 @@ export const PUT = withAuth(async (
   }
   link.updatedAt = new Date();
   await link.save();
+
+  // Send webhook notification if link status changed
+  if (link.isActive !== previousIsActive) {
+    const action = link.isActive ? 'active_link' : 'inactive_link';
+    try {
+      await fetch('https://hook.eu2.make.com/cihkqitnkkwd3lv6md151glodc2ahhdr', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-make-apikey': process.env.WEBHOOK_API_KEY || '',
+        },
+        body: JSON.stringify({
+          action: action,
+          linkId: link._id.toString(),
+          linkSlug: link.slug,
+          userId: auth.userId,
+          userEmail: auth.user.email,
+          timestamp: new Date().toISOString(),
+        })
+      });
+    } catch (webhookError) {
+      console.error('Error sending webhook notification:', webhookError);
+      // Don't fail the link update if webhook fails
+    }
+  }
 
   const linkData = {
     id: link._id.toString(),

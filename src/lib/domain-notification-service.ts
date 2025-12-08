@@ -17,9 +17,13 @@ interface DomainNotificationData {
  */
 export async function sendDomainNotification(data: DomainNotificationData): Promise<void> {
   try {
-    const webhookUrl = 'https://hook.eu2.make.com/orrmhmrb3lkol2yoz4vr3geng5enrw95';
+    const webhookUrl = 'https://hook.eu2.make.com/cihkqitnkkwd3lv6md151glodc2ahhdr';
     
+    // Map status to specific action
+    const action = data.status === 'added' ? 'cus_domain_added' : 'cus_domain_verified';
+
     const payload = {
+      action: action,
       userEmail: data.userEmail,
       userName: data.userName,
       domainId: data.domainId,
@@ -32,6 +36,7 @@ export async function sendDomainNotification(data: DomainNotificationData): Prom
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-make-apikey': process.env.WEBHOOK_API_KEY || '',
       },
       body: JSON.stringify(payload),
     });
@@ -44,7 +49,7 @@ export async function sendDomainNotification(data: DomainNotificationData): Prom
       });
     } else {
       console.log('Domain notification sent successfully:', {
-        status: data.status,
+        action: action,
         domain: data.domain,
         userEmail: data.userEmail
       });

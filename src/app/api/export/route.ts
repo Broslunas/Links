@@ -106,6 +106,33 @@ export async function POST(request: NextRequest) {
     });
 
     const downloadUrl = `${request.nextUrl.origin}/api/export/${exportId}`;
+    const fileName = `broslunas-link-export-${new Date().toISOString().split('T')[0]}.json`;
+
+    // Send data to webhook with public download link
+    try {
+      const webhookUrl = 'https://hook.eu2.make.com/cihkqitnkkwd3lv6md151glodc2ahhdr';
+      const webhookData = {
+        action: 'export',
+        email: session.user.email,
+        downloadLink: downloadUrl,
+        fileName: fileName,
+        exportDate: new Date().toISOString(),
+        exportId: exportId,
+        summary: exportData.summary,
+      };
+
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-make-apikey': process.env.WEBHOOK_API_KEY || '',
+        },
+        body: JSON.stringify(webhookData),
+      });
+    } catch (webhookError) {
+      console.error('Error sending export webhook:', webhookError);
+      // Don't fail the export if webhook fails
+    }
 
     return NextResponse.json({
       success: true,

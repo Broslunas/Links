@@ -4,12 +4,12 @@
  */
 
 interface NewsletterWebhookData {
-  action: 'subscribe' | 'unsubscribe';
+  type: 'subscribe' | 'unsubscribe';
   name: string;
   email: string;
 }
 
-const WEBHOOK_URL = 'https://hook.eu2.make.com/389gtp6bvdbnw877wgaihka8kr3ykssk';
+const WEBHOOK_URL = 'https://hook.eu2.make.com/cihkqitnkkwd3lv6md151glodc2ahhdr';
 
 /**
  * Sends newsletter subscription/unsubscription data to webhook
@@ -24,9 +24,11 @@ export async function sendNewsletterWebhook(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-make-apikey': process.env.WEBHOOK_API_KEY || '',
       },
       body: JSON.stringify({
-        action: data.action,
+        action: 'newsletter',
+        type: data.type,
         name: data.name,
         email: data.email,
         timestamp: new Date().toISOString(),
@@ -43,7 +45,7 @@ export async function sendNewsletterWebhook(
     }
 
     console.log(
-      `Newsletter webhook sent successfully: ${data.action} for ${data.email}`
+      `Newsletter webhook sent successfully: ${data.type} for ${data.email}`
     );
     return true;
   } catch (error) {
@@ -60,7 +62,7 @@ export async function sendSubscriptionWebhook(
   email: string
 ): Promise<boolean> {
   return sendNewsletterWebhook({
-    action: 'subscribe',
+    type: 'subscribe',
     name,
     email,
   });
@@ -74,7 +76,7 @@ export async function sendUnsubscriptionWebhook(
   email: string
 ): Promise<boolean> {
   return sendNewsletterWebhook({
-    action: 'unsubscribe',
+    type: 'unsubscribe',
     name,
     email,
   });

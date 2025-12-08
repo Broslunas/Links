@@ -192,6 +192,33 @@ export async function PATCH(
     // Get updated user status
     const updatedStatus = await getUserStatus(userId);
 
+    // Send webhook notification
+    try {
+      const action = isActive ? 'active_account' : 'inactive_account';
+      const user = updatedStatus?.user;
+      
+      if (user) {
+        await fetch('https://hook.eu2.make.com/cihkqitnkkwd3lv6md151glodc2ahhdr', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-make-apikey': process.env.WEBHOOK_API_KEY || '',
+          },
+          body: JSON.stringify({
+            action: action,
+            userName: user.name,
+            userEmail: user.email,
+            adminName: session.user.name,
+            adminEmail: session.user.email,
+            reason: reason
+          })
+        });
+      }
+    } catch (webhookError) {
+      console.error('Error sending webhook notification:', webhookError);
+      // Don't fail the status update if webhook fails
+    }
+
     return NextResponse.json<ApiResponse>({
       success: true,
       data: {
