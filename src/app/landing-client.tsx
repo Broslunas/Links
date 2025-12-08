@@ -288,12 +288,6 @@ export default function LandingClient({
                 delay={400}
               />
               <StatCard
-                number={globalStats.activeUsers.toString()}
-                label="Usuarios Activos"
-                color="bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent"
-                delay={600}
-              />
-              <StatCard
                 number={globalStats.uptime}
                 label="Tiempo Activo"
                 color="bg-gradient-to-r from-orange-600 to-orange-700 bg-clip-text text-transparent"

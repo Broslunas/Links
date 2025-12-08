@@ -518,12 +518,6 @@ export default function GSAPLanding({
                 index={1}
               />
               <AnimatedStatCard
-                number={globalStats.activeUsers.toString()}
-                label="Usuarios Activos"
-                color="bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent"
-                index={2}
-              />
-              <AnimatedStatCard
                 number={globalStats.uptime}
                 label="Tiempo Activo"
                 color="bg-gradient-to-r from-orange-600 to-orange-700 bg-clip-text text-transparent"
