@@ -5,10 +5,10 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const webhookUrl = 'https://hook.eu2.make.com/cihkqitnkkwd3lv6md151glodc2ahhdr';
+    const webhookUrl = 'https://n8n.broslunas.com/webhook/contacto';
 
     const payload = {
-      action: 'contact',
+      referer: 'brl.links',
       ...body,
       timestamp: new Date().toISOString(),
     };
@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-make-apikey': process.env.WEBHOOK_API_KEY || '',
       },
       body: JSON.stringify(payload),
     });
