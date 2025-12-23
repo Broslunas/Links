@@ -110,10 +110,11 @@ export async function POST(request: NextRequest) {
 
     // Send data to webhook with public download link
     try {
-      const webhookUrl = 'https://hook.eu2.make.com/cihkqitnkkwd3lv6md151glodc2ahhdr';
+      const webhookUrl = 'https://n8n.broslunas.com/webhook/brl-link-export-data';
       const webhookData = {
         action: 'export',
         email: session.user.email,
+        name: session.user.name || user.name,
         downloadLink: downloadUrl,
         fileName: fileName,
         exportDate: new Date().toISOString(),
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-make-apikey': process.env.WEBHOOK_API_KEY || '',
+          'auth': process.env.WEBHOOK_API_KEY || '',
         },
         body: JSON.stringify(webhookData),
       });
