@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { GlobalHeader } from '@/components/layout/GlobalHeader';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
+import { submitContactForm } from './actions';
 import {
   Mail,
   Phone,
@@ -55,26 +56,17 @@ const ContactPage: React.FC = () => {
     setSubmitStatus('idle');
 
     try {
-      const response = await fetch(
-        '/api/webhooks/contact',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            subject: formData.subject,
-            message: formData.message,
-            isLoggedIn: !!session?.user,
-            userId: session?.user?.id || null,
-          }),
-        }
-      );
+      const result = await submitContactForm({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        subject: formData.subject,
+        message: formData.message,
+        isLoggedIn: !!session?.user,
+        userId: session?.user?.id || null,
+      });
 
-      if (response.ok) {
+      if (result.success) {
         setSubmitStatus('success');
         // Limpiar formulario solo si el usuario no está logueado
         if (!session?.user) {
