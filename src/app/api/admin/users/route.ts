@@ -613,22 +613,28 @@ export async function PUT(request: NextRequest) {
 
     // Send webhook notification if user status is being changed
     if (isActive !== undefined && isActive !== userBeforeUpdate.isActive) {
+
       const action = isActive ? 'active_account' : 'inactive_account';
+      
       try {
-        await fetch('https://hook.eu2.make.com/cihkqitnkkwd3lv6md151glodc2ahhdr', {
+        const webhookUrl = 'https://n8n.broslunas.com/webhook/brl-link-inactive-account';
+        const payload = {
+          action: action,
+          userName: updatedUser.name,
+          userEmail: updatedUser.email,
+          adminName: adminUser.name,
+          adminEmail: adminUser.email,
+        };
+        
+        await fetch(webhookUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-make-apikey': process.env.WEBHOOK_API_KEY || '',
+            'auth': process.env.WEBHOOK_API_KEY || '',
           },
-          body: JSON.stringify({
-            action: action,
-            userName: updatedUser.name,
-            userEmail: updatedUser.email,
-            adminName: adminUser.name,
-            adminEmail: adminUser.email,
-          })
+          body: JSON.stringify(payload)
         });
+
       } catch (webhookError) {
         console.error('Error sending webhook notification:', webhookError);
         // Don't fail the user update if webhook fails
