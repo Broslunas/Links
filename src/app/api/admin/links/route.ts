@@ -202,10 +202,11 @@ export async function PUT(request: NextRequest) {
           reason: finalIsDisabledByAdmin ? (disabledReason || updatedLink.disabledReason) : null
         };
 
-        await fetch('https://hook.eu2.make.com/toj5qmxuzm2xq4a2gseqs5wp9tbebwek', {
+        await fetch('https://n8n.broslunas.com/webhook/brl-link-inactive-links', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'auth': process.env.WEBHOOK_API_KEY || ''
           },
           body: JSON.stringify(webhookPayload)
         });
