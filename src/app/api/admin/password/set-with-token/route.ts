@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
     if (debugUser) {
         console.log(`[Set Password Debug] Token expires: ${debugUser.adminPasswordResetExpires}`);
         console.log(`[Set Password Debug] Current time: ${new Date()}`);
-        console.log(`[Set Password Debug] Is expired? ${debugUser.adminPasswordResetExpires < new Date()}`);
+        const isExpired = debugUser.adminPasswordResetExpires ? debugUser.adminPasswordResetExpires < new Date() : 'N/A';
+        console.log(`[Set Password Debug] Is expired? ${isExpired}`);
     }
 
     // Buscar usuario con el token válido y no expirado
