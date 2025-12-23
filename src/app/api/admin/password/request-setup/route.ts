@@ -3,9 +3,9 @@ import { connectDB } from '@/lib/db-utils';
 import User from '@/models/User';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
-import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
-// POST /api/admin/password/set - Establecer contraseña de administrador
+// POST /api/admin/password/request-setup
 export async function POST(request: NextRequest) {
   try {
     // Verificar autenticación
@@ -28,59 +28,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { password } = await request.json();
+    // Generate token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Validar contraseña
-    if (!password || typeof password !== 'string') {
-      return NextResponse.json(
-        { success: false, error: { code: 'VALIDATION_ERROR', message: 'Password is required' } },
-        { status: 400 }
-      );
-    }
+    console.log(`[Request Setup Debug] Generating token for user ${adminUser.email} (ID: ${adminUser._id})`);
+    console.log(`[Request Setup Debug] Token generated: ${token}`);
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { success: false, error: { code: 'VALIDATION_ERROR', message: 'Password must be at least 6 characters long' } },
-        { status: 400 }
-      );
-    }
-
-    // Encriptar contraseña
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    // Actualizar usuario con la nueva contraseña
+    // Save token to user
     await User.findByIdAndUpdate(adminUser._id, {
-      adminPassword: hashedPassword,
-      adminPasswordCreatedAt: new Date()
+      adminPasswordResetToken: token,
+      adminPasswordResetExpires: expires
     });
 
-    // Send webhook notification
+    const setupUrl = `${request.nextUrl.origin}/admin/set-password?token=${token}`;
+
+    // Send webhook to n8n to send email
     try {
-      await fetch('https://n8n.broslunas.com/webhook/brl-link-set-pswd-admin', {
+      await fetch('https://n8n.broslunas.com/webhook-test/brl-link-set-pswd-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'auth': process.env.WEBHOOK_API_KEY || '',
         },
         body: JSON.stringify({
-          action: 'set_admin_password',
+          action: 'request_admin_password_setup',
+          adminName: adminUser.name,
           adminEmail: session.user.email,
+          setupLink: setupUrl,
+          expiresAt: expires.toISOString(),
           timestamp: new Date().toISOString(),
         })
       });
     } catch (webhookError) {
-      console.error('Error sending admin password webhook:', webhookError);
-      // Don't fail the request if webhook fails
+      console.error('Error sending admin password request webhook:', webhookError);
+      return NextResponse.json(
+        { success: false, error: { code: 'WEBHOOK_ERROR', message: 'Failed to send setup email' } },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Admin password set successfully'
+      message: 'Password setup email sent successfully'
     });
 
   } catch (error) {
-    console.error('Error setting admin password:', error);
+    console.error('Error requesting admin password setup:', error);
     return NextResponse.json(
       { success: false, error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }

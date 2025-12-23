@@ -34,6 +34,9 @@ export interface IUser extends Document {
   apiToken?: string;
   apiTokenCreatedAt?: Date;
   apiTokenLastUsedAt?: Date;
+  // Admin password reset
+  adminPasswordResetToken?: string;
+  adminPasswordResetExpires?: Date;
   // User preferences
   defaultPublicStats?: boolean;
   emailNotifications?: boolean;
@@ -114,6 +117,16 @@ const UserSchema = new Schema<IUser>(
     apiTokenLastUsedAt: {
       type: Date,
     },
+    // Admin password reset
+    adminPasswordResetToken: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
+    adminPasswordResetExpires: {
+      type: Date,
+    },
     // User preferences
     defaultPublicStats: {
       type: Boolean,
@@ -145,12 +158,16 @@ UserSchema.index({ provider: 1, providerId: 1 }, { unique: true });
 UserSchema.index({ email: 1 }, { unique: true });
 
 let User: mongoose.Model<IUser>;
+
+// Force model recompilation to pick up new schema fields if needed
+if (process.env.NODE_ENV === 'development') {
+  delete mongoose.models?.User;
+}
+
 if (mongoose?.models?.User) {
   User = mongoose.models.User;
-} else if (mongoose?.model) {
-  User = mongoose.model<IUser>('User', UserSchema);
 } else {
-  throw new Error('Mongoose is not initialized properly.');
+  User = mongoose.model<IUser>('User', UserSchema);
 }
 
 export default User;

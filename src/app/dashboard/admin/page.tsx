@@ -475,33 +475,17 @@ export default function AdminPage() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 🔐 Establecer Contraseña de Administrador
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Es la primera vez que accedes al panel de administración. Establece una contraseña segura.
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Es la primera vez que accedes al panel de administración o no tienes configurada una contraseña.
+                Para continuar, te enviaremos un correo electrónico con un enlace seguro para establecer tu contraseña.
               </p>
               
-              <div className="mb-4">
-                <input
-                  type="password"
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  placeholder="Nueva contraseña (mín. 6 caracteres)"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white mb-3"
-                  disabled={isPasswordLoading}
-                />
-                <input
-                  type="password"
-                  value={confirmPasswordInput}
-                  onChange={(e) => setConfirmPasswordInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && setAdminPassword()}
-                  placeholder="Confirmar contraseña"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  disabled={isPasswordLoading}
-                />
-                {passwordError && (
-                  <p className="text-red-500 text-sm mt-2">{passwordError}</p>
-                )}
-              </div>
-              
+              {passwordError && (
+                 <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-3">
+                  <p className="text-red-600 dark:text-red-400 text-sm">{passwordError}</p>
+                 </div>
+              )}
+
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => router.push('/dashboard')}
@@ -511,11 +495,27 @@ export default function AdminPage() {
                   Cancelar
                 </button>
                 <button
-                  onClick={setAdminPassword}
+                  onClick={async () => {
+                    setIsPasswordLoading(true);
+                    setPasswordError('');
+                    try {
+                      const response = await fetch('/api/admin/password/request-setup', { method: 'POST' });
+                      const data = await response.json();
+                      if (data.success) {
+                        router.push('/dashboard?adminSetupEmailSent=true');
+                      } else {
+                        setPasswordError(data.error?.message || 'Error al enviar el correo');
+                      }
+                    } catch (error) {
+                      setPasswordError('Error de conexión');
+                    } finally {
+                      setIsPasswordLoading(false);
+                    }
+                  }}
                   disabled={isPasswordLoading}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isPasswordLoading ? 'Estableciendo...' : 'Establecer Contraseña'}
+                  {isPasswordLoading ? 'Enviando...' : 'Enviar correo de configuración'}
                 </button>
               </div>
             </div>

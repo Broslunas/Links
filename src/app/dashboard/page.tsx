@@ -447,6 +447,31 @@ export default function DashboardPage() {
         variant="danger"
         loading={deleteLoading}
       />
+
+      {/* Admin Email Success Modal */}
+      {searchParams.get('adminSetupEmailSent') === 'true' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6 border border-border">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
+              <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-center text-foreground mb-2">Correo Enviado</h3>
+            <p className="text-center text-muted-foreground mb-6">
+              Se ha enviado un correo electrónico con las instrucciones para configurar tu contraseña de administrador. Por favor, revisa tu bandeja de entrada.
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => router.replace('/dashboard')}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
