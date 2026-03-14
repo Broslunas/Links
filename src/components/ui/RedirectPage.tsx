@@ -1,486 +1,389 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { LoadingSpinner } from './LoadingSpinner';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ExternalLink, ArrowRight, ShieldCheck, Globe, Clock } from 'lucide-react';
 import { Button } from './Button';
 import { cn } from '@/lib/utils';
 
 interface RedirectPageProps {
-    destinationUrl: string;
-    title?: string;
-    redirectDelay?: number;
-    className?: string;
+  destinationUrl: string;
+  title?: string;
+  redirectDelay?: number;
+  className?: string;
 }
 
 type RedirectState = 'waiting' | 'redirecting' | 'failed' | 'manual';
 
 const RedirectPage: React.FC<RedirectPageProps> = ({
-    destinationUrl,
-    title,
-    redirectDelay = 3000, // Default 3 seconds
-    className
+  destinationUrl,
+  title,
+  redirectDelay = 3000,
+  className,
 }) => {
-    const [countdown, setCountdown] = useState(Math.ceil(redirectDelay / 1000));
-    const [redirectState, setRedirectState] = useState<RedirectState>('waiting');
-    const [isVisible, setIsVisible] = useState(false);
-    const [redirectAttempts, setRedirectAttempts] = useState(0);
-    const [isJavaScriptEnabled, setIsJavaScriptEnabled] = useState(true);
+  const [countdown, setCountdown] = useState(redirectDelay / 1000);
+  const [redirectState, setRedirectState] = useState<RedirectState>('waiting');
+  const [isHovered, setIsHovered] = useState(false);
 
-    // Function to truncate long URLs for display with responsive breakpoints
-    const truncateUrl = (url: string, maxLength: number = 60): string => {
-        if (url.length <= maxLength) return url;
+  // Parse domain for display
+  const displayDomain = useMemo(() => {
+    try {
+      const url = new URL(destinationUrl);
+      return url.hostname;
+    } catch {
+      return destinationUrl;
+    }
+  }, [destinationUrl]);
 
-        // Try to keep the domain and show the end of the path
-        try {
-            const urlObj = new URL(url);
-            const domain = urlObj.hostname;
-            const path = urlObj.pathname + urlObj.search + urlObj.hash;
+  const isValidUrl = useCallback((url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
 
-            if (domain.length + 10 >= maxLength) {
-                // If domain is too long, just truncate normally
-                return url.substring(0, maxLength - 3) + '...';
-            }
+  const performRedirect = useCallback(
+    async (url: string, attempt: number = 1) => {
+      if (!isValidUrl(url)) {
+        setRedirectState('failed');
+        return;
+      }
 
-            const availableLength = maxLength - domain.length - 6; // 6 for "..." and "/"
-            if (path.length <= availableLength) {
-                return url;
-            }
-
-            const truncatedPath = '...' + path.substring(path.length - availableLength);
-            return `${urlObj.protocol}//${domain}${truncatedPath}`;
-        } catch {
-            // If URL parsing fails, just truncate normally
-            return url.substring(0, maxLength - 3) + '...';
+      setRedirectState('redirecting');
+      
+      try {
+        // Multi-attempt redirect logic
+        if (attempt === 1) window.location.assign(url);
+        else if (attempt === 2) window.location.href = url;
+        else {
+          const a = document.createElement('a');
+          a.href = url;
+          a.rel = 'noopener noreferrer';
+          a.click();
         }
-    };
-
-    // Validate destination URL
-    const isValidUrl = useCallback((url: string): boolean => {
-        try {
-            new URL(url);
-            return true;
-        } catch {
-            return false;
+      } catch (e) {
+        if (attempt < 3) {
+          setTimeout(() => performRedirect(url, attempt + 1), 500);
+        } else {
+          setRedirectState('failed');
         }
-    }, []);
+      }
+    },
+    [isValidUrl]
+  );
 
-    // Enhanced redirect function with error handling
-    const performRedirect = useCallback(async (url: string, attempt: number = 1): Promise<boolean> => {
-        if (!isValidUrl(url)) {
-            console.error('Invalid destination URL:', url);
-            setRedirectState('failed');
-            return false;
-        }
+  useEffect(() => {
+    if (redirectState !== 'waiting') return;
 
-        try {
-            setRedirectState('redirecting');
+    if (countdown <= 0) {
+      performRedirect(destinationUrl);
+      return;
+    }
 
-            // Try different redirect methods based on attempt
-            switch (attempt) {
-                case 1:
-                    // First attempt: window.location.assign (allows back navigation)
-                    window.location.assign(url);
-                    break;
-                case 2:
-                    // Second attempt: window.location.href (more compatible)
-                    window.location.href = url;
-                    break;
-                case 3:
-                    // Third attempt: window.open with _self (fallback)
-                    window.open(url, '_self');
-                    break;
-                default:
-                    // Final fallback: create and click a link
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.target = '_self';
-                    link.rel = 'noopener noreferrer';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    break;
-            }
+    const timer = setInterval(() => {
+      setCountdown((prev) => Math.max(0, prev - 0.1));
+    }, 100);
 
-            // If we reach here after a short delay, the redirect might have failed
-            await new Promise(resolve => setTimeout(resolve, 1000));
+    return () => clearInterval(timer);
+  }, [countdown, redirectState, destinationUrl, performRedirect]);
 
-            // Check if we're still on the same page (redirect failed)
-            if (window.location.href.includes(window.location.pathname)) {
-                throw new Error('Redirect did not occur');
-            }
+  const handleManualRedirect = () => {
+    setRedirectState('manual');
+    performRedirect(destinationUrl);
+  };
 
-            return true;
-        } catch (error) {
-            console.error(`Redirect attempt ${attempt} failed:`, error);
+  // Progress for the circular indicator (0 to 100)
+  const progress = (1 - countdown / (redirectDelay / 1000)) * 100;
 
-            if (attempt < 4) {
-                // Try next method
-                setRedirectAttempts(attempt);
-                return performRedirect(url, attempt + 1);
-            } else {
-                // All attempts failed
-                setRedirectState('failed');
-                return false;
-            }
-        }
-    }, [isValidUrl]);
+  return (
+    <div className={cn(
+      "fixed inset-0 flex flex-col items-center justify-center overflow-hidden bg-[#000] text-white selection:bg-primary/30",
+      className
+    )}>
+      {/* Dynamic Immersive Background */}
+      <div className="absolute inset-0 z-0 select-none pointer-events-none">
+        {/* Massive Ambient Glows */}
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.15, 0.25, 0.15],
+            x: [0, 50, 0],
+            y: [0, -30, 0]
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-primary/30 blur-[150px]" 
+        />
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.3, 1],
+            opacity: [0.1, 0.2, 0.1],
+            x: [0, -40, 0],
+            y: [0, 40, 0]
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "linear", delay: 2 }}
+          className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-blue-600/20 blur-[180px]" 
+        />
+        
+        {/* Technical Grid Layer */}
+        <div 
+          className="absolute inset-0 opacity-[0.05]"
+          style={{ 
+            backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
+            backgroundSize: '100px 100px'
+          }} 
+        />
+        <div 
+          className="absolute inset-0 opacity-[0.02]"
+          style={{ 
+            backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
+            backgroundSize: '20px 20px'
+          }} 
+        />
 
-    // Trigger fade-in animation on mount
-    useEffect(() => {
-        const timer = setTimeout(() => setIsVisible(true), 100);
-        return () => clearTimeout(timer);
-    }, []);
+        {/* Noise overlay for texture */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-30 mix-blend-overlay" />
+      </div>
 
-    // Check if JavaScript is enabled (this will run, proving JS is enabled)
-    useEffect(() => {
-        setIsJavaScriptEnabled(true);
-    }, []);
+      {/* Full Screen Content Layout */}
+      <div className="relative z-10 w-full h-full flex flex-col items-center justify-between py-12 px-6 md:py-20">
+        
+        {/* Top Branding Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center space-y-4"
+        >
+          <div className="flex items-center gap-3 px-6 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-2xl">
+            <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
+            <span className="text-xs font-black uppercase tracking-[0.4em] text-white/60">Sistema de Redirección</span>
+          </div>
+        </motion.div>
 
-    // Handle automatic redirection with enhanced error handling
-    useEffect(() => {
-        if (redirectState !== 'waiting') return;
-
-        const timer = setTimeout(async () => {
-            const success = await performRedirect(destinationUrl);
-            if (!success) {
-                console.error('Automatic redirect failed, user can try manual redirect');
-            }
-        }, redirectDelay);
-
-        return () => clearTimeout(timer);
-    }, [destinationUrl, redirectDelay, redirectState, performRedirect]);
-
-    // Handle countdown display with enhanced state management
-    useEffect(() => {
-        if (redirectState !== 'waiting') return;
-
-        const interval = setInterval(() => {
-            setCountdown((prev) => {
-                if (prev <= 1) {
-                    clearInterval(interval);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [redirectState]);
-
-    // Manual redirect handler with enhanced error handling
-    const handleManualRedirect = useCallback(async () => {
-        if (redirectState === 'redirecting') return;
-
-        setRedirectState('manual');
-        const success = await performRedirect(destinationUrl);
-
-        if (!success) {
-            // If manual redirect also fails, show error state
-            console.error('Manual redirect failed');
-        }
-    }, [redirectState, performRedirect, destinationUrl]);
-
-    // Responsive URL truncation
-    const getDisplayUrl = () => {
-        if (typeof window !== 'undefined') {
-            const width = window.innerWidth;
-            if (width < 640) return truncateUrl(destinationUrl, 35); // Mobile
-            if (width < 1024) return truncateUrl(destinationUrl, 50); // Tablet
-            return truncateUrl(destinationUrl, 70); // Desktop
-        }
-        return truncateUrl(destinationUrl, 60); // Default
-    };
-
-    const displayUrl = getDisplayUrl();
-
-    return (
-        <div className={cn(
-            // Base layout with responsive padding and max-width
-            'flex flex-col items-center justify-center min-h-screen px-4 py-8',
-            // Responsive spacing and sizing
-            'space-y-6 sm:space-y-8 lg:space-y-10',
-            'max-w-sm sm:max-w-md lg:max-w-lg xl:max-w-xl mx-auto',
-            // Smooth fade-in animation
-            'transition-all duration-700 ease-out',
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
-            className
-        )}>
-            {/* Loading Spinner with enhanced animation and state-aware text */}
-            <div className={cn(
-                'transition-all duration-500 ease-out',
-                isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-            )}>
-                <LoadingSpinner
-                    size="lg"
-                    text={
-                        redirectState === 'redirecting' ? 'Redirigiendo...' :
-                            redirectState === 'manual' ? 'Redirigiendo...' :
-                                redirectState === 'failed' ? 'Error de redirección' :
-                                    redirectAttempts > 0 ? `Reintentando... (${redirectAttempts}/4)` :
-                                        'Redirigiendo...'
-                    }
-                    className={cn(
-                        'text-primary',
-                        redirectState === 'failed' && 'text-destructive'
-                    )}
+        {/* Central Core (The main interaction area, but now open) */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col items-center text-center space-y-12 md:space-y-16 w-full max-w-4xl"
+        >
+          {/* Progress Visualizer */}
+          <div className="relative">
+            <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              className="absolute -inset-16 border border-white/5 rounded-full pointer-events-none"
+            />
+            <motion.div 
+              animate={{ rotate: -360 }}
+              transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+              className="absolute -inset-24 border border-white/[0.02] rounded-full pointer-events-none"
+            />
+            
+            <div className="relative h-40 w-40 md:h-56 md:w-56">
+              <svg className="h-full w-full -rotate-90 drop-shadow-[0_0_30px_rgba(var(--primary),0.3)]">
+                <circle
+                  cx="50%"
+                  cy="50%"
+                  r="45%"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="transparent"
+                  className="text-white/5"
                 />
-            </div>
-
-            {/* Redirect Message with staggered animation */}
-            <div className={cn(
-                'space-y-4 sm:space-y-5 text-center',
-                'transition-all duration-700 ease-out delay-200',
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            )}>
-                {/* Main heading with responsive typography */}
-                <h1 className={cn(
-                    'font-semibold text-foreground leading-tight',
-                    'text-xl sm:text-2xl lg:text-3xl',
-                    // Enhanced contrast for accessibility
-                    'contrast-more:font-bold'
-                )}>
-                    {title || 'Estás siendo redirigido'}
-                </h1>
-
-                {/* Subtitle with improved spacing */}
-                <p className={cn(
-                    'text-muted-foreground leading-relaxed',
-                    'text-sm sm:text-base lg:text-lg',
-                    // Enhanced contrast for accessibility
-                    'contrast-more:text-foreground contrast-more:font-medium'
-                )}>
-                    Serás redirigido a:
-                </p>
-
-                {/* Destination URL with enhanced styling */}
-                <div className={cn(
-                    // Responsive padding and border radius
-                    'bg-muted/50 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-5',
-                    'border border-border/50',
-                    // Subtle shadow and hover effects
-                    'shadow-sm hover:shadow-md transition-shadow duration-300',
-                    // Enhanced contrast for accessibility
-                    'contrast-more:bg-muted contrast-more:border-border'
-                )}>
-                    <p
-                        className={cn(
-                            'font-mono text-foreground break-all leading-relaxed',
-                            'text-xs sm:text-sm lg:text-base',
-                            // Enhanced contrast for accessibility
-                            'contrast-more:font-semibold'
-                        )}
-                        title={destinationUrl}
-                        aria-label={`Destino: ${destinationUrl}`}
+                <motion.circle
+                  cx="50%"
+                  cy="50%"
+                  r="45%"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  fill="transparent"
+                  strokeDasharray="100 100"
+                  animate={{ strokeDashoffset: 100 - progress }}
+                  transition={{ duration: 0.1, ease: "linear" }}
+                  className="text-primary"
+                  style={{ strokeDasharray: '283', strokeDashoffset: '283' }}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <AnimatePresence mode="wait">
+                  {redirectState === 'waiting' ? (
+                    <motion.div
+                      key="countdown"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="text-center"
                     >
-                        {displayUrl}
-                    </p>
-                </div>
-            </div>
-
-            {/* Countdown and Manual Redirect with staggered animation */}
-            <div className={cn(
-                'space-y-4 sm:space-y-5 w-full',
-                'transition-all duration-700 ease-out delay-400',
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            )}>
-                {/* Countdown with smooth number transitions and enhanced state handling */}
-                {countdown > 0 && redirectState === 'waiting' && (
-                    <div className={cn(
-                        'transition-all duration-300 ease-in-out',
-                        'transform hover:scale-105'
-                    )}>
-                        <p className={cn(
-                            'text-muted-foreground leading-relaxed',
-                            'text-sm sm:text-base',
-                            // Enhanced contrast for accessibility
-                            'contrast-more:text-foreground contrast-more:font-medium'
-                        )}>
-                            Redirigiendo automáticamente en{' '}
-                            <span className={cn(
-                                'font-semibold text-primary tabular-nums',
-                                'transition-all duration-300 ease-in-out',
-                                // Enhanced contrast for accessibility
-                                'contrast-more:text-foreground'
-                            )}>
-                                {countdown}
-                            </span>{' '}
-                            segundo{countdown !== 1 ? 's' : ''}...
-                        </p>
-                    </div>
-                )}
-
-                {/* Redirect attempt status */}
-                {redirectAttempts > 0 && redirectState === 'redirecting' && (
-                    <div className={cn(
-                        'transition-all duration-300 ease-in-out',
-                        'p-3 rounded-lg bg-yellow-50 border border-yellow-200',
-                        'dark:bg-yellow-900/20 dark:border-yellow-800'
-                    )}>
-                        <p className={cn(
-                            'text-yellow-800 dark:text-yellow-200 leading-relaxed',
-                            'text-sm sm:text-base',
-                            'contrast-more:text-yellow-900 contrast-more:font-medium'
-                        )}>
-                            Reintentando redirección... (Intento {redirectAttempts} de 4)
-                        </p>
-                    </div>
-                )}
-
-                {/* Failed redirect message */}
-                {redirectState === 'failed' && (
-                    <div className={cn(
-                        'transition-all duration-300 ease-in-out',
-                        'p-4 rounded-lg bg-red-50 border border-red-200',
-                        'dark:bg-red-900/20 dark:border-red-800'
-                    )}>
-                        <p className={cn(
-                            'text-red-800 dark:text-red-200 leading-relaxed',
-                            'text-sm sm:text-base font-medium',
-                            'contrast-more:text-red-900 contrast-more:font-semibold'
-                        )}>
-                            La redirección automática falló. Por favor, usa el botón "Ir ahora" o el enlace directo abajo.
-                        </p>
-                    </div>
-                )}
-
-                {/* Manual redirect button with enhanced styling and state management */}
-                <div className="flex flex-col items-center space-y-3">
-                    <Button
-                        onClick={handleManualRedirect}
-                        disabled={redirectState === 'redirecting' || redirectState === 'manual'}
-                        size="lg"
-                        variant={redirectState === 'failed' ? 'default' : 'default'}
-                        className={cn(
-                            // Responsive button sizing
-                            'min-w-[180px] sm:min-w-[200px] lg:min-w-[220px]',
-                            'px-6 sm:px-8 lg:px-10',
-                            'text-sm sm:text-base lg:text-lg',
-                            // Enhanced animations
-                            'transition-all duration-300 ease-out',
-                            'hover:scale-105 active:scale-95',
-                            'shadow-lg hover:shadow-xl',
-                            // Enhanced contrast for accessibility
-                            'contrast-more:border-2 contrast-more:border-primary-foreground',
-                            // Loading state styling
-                            (redirectState === 'redirecting' || redirectState === 'manual') && 'animate-pulse',
-                            // Failed state styling
-                            redirectState === 'failed' && 'bg-primary hover:bg-primary/90'
-                        )}
-                        aria-label="Ir ahora al destino"
-                        loading={redirectState === 'redirecting' || redirectState === 'manual'}
+                      <span className="text-5xl md:text-7xl font-black font-mono tracking-tighter block">
+                        {Math.ceil(countdown)}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-white/30">Segundos</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="status"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-primary flex flex-col items-center"
                     >
-                        {redirectState === 'redirecting' || redirectState === 'manual' ? 'Redirigiendo...' :
-                            redirectState === 'failed' ? 'Intentar de nuevo' : 'Ir ahora'}
-                    </Button>
-
-                    {/* Direct link fallback for failed redirects */}
-                    {redirectState === 'failed' && (
-                        <div className="text-center">
-                            <p className={cn(
-                                'text-muted-foreground text-sm mb-2',
-                                'contrast-more:text-foreground'
-                            )}>
-                                O usa este enlace directo:
-                            </p>
-                            <a
-                                href={destinationUrl}
-                                target="_self"
-                                rel="noopener noreferrer"
-                                className={cn(
-                                    'inline-flex items-center px-3 py-2 rounded-md',
-                                    'text-sm font-medium text-primary hover:text-primary/80',
-                                    'bg-primary/10 hover:bg-primary/20',
-                                    'border border-primary/20 hover:border-primary/30',
-                                    'transition-all duration-200',
-                                    'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-                                    'contrast-more:border-primary contrast-more:text-primary'
-                                )}
-                                aria-label={`Enlace directo a ${destinationUrl}`}
-                            >
-                                <span className="truncate max-w-[200px] sm:max-w-[300px]">
-                                    {getDisplayUrl()}
-                                </span>
-                                <svg
-                                    className="ml-2 h-4 w-4 flex-shrink-0"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                                    />
-                                </svg>
-                            </a>
-                        </div>
-                    )}
-                </div>
-
-                {/* Enhanced fallback message for JavaScript disabled */}
-                <noscript>
-                    <div className={cn(
-                        'mt-6 p-4 rounded-lg border',
-                        'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800',
-                        // Enhanced contrast for accessibility
-                        'contrast-more:bg-yellow-100 contrast-more:border-yellow-400',
-                        'contrast-more:dark:bg-yellow-900/40 contrast-more:dark:border-yellow-600'
-                    )}>
-                        <div className="space-y-3">
-                            <p className={cn(
-                                'text-yellow-800 dark:text-yellow-200 leading-relaxed font-medium',
-                                'text-sm sm:text-base',
-                                // Enhanced contrast for accessibility
-                                'contrast-more:text-yellow-900 contrast-more:font-semibold',
-                                'contrast-more:dark:text-yellow-100'
-                            )}>
-                                JavaScript está deshabilitado. La redirección automática no funcionará.
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                                <a
-                                    href={destinationUrl}
-                                    className={cn(
-                                        'inline-flex items-center justify-center px-4 py-2 rounded-md',
-                                        'bg-yellow-600 hover:bg-yellow-700 text-white font-medium',
-                                        'transition-colors duration-200',
-                                        'focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2',
-                                        'text-sm sm:text-base',
-                                        // Enhanced contrast for accessibility
-                                        'contrast-more:bg-yellow-800 contrast-more:border-2 contrast-more:border-yellow-900'
-                                    )}
-                                    rel="noopener noreferrer"
-                                >
-                                    Continuar al destino
-                                    <svg
-                                        className="ml-2 h-4 w-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                                        />
-                                    </svg>
-                                </a>
-                            </div>
-                            <p className={cn(
-                                'text-yellow-700 dark:text-yellow-300 text-xs',
-                                'contrast-more:text-yellow-800 contrast-more:dark:text-yellow-200'
-                            )}>
-                                Para una mejor experiencia, considera habilitar JavaScript en tu navegador.
-                            </p>
-                        </div>
-                    </div>
-                </noscript>
+                      <Globe className="h-16 w-16 md:h-20 md:w-20 animate-pulse" />
+                      <span className="text-[10px] mt-2 uppercase tracking-[0.2em] font-bold">Saltando...</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <motion.h1 
+                className="text-4xl md:text-7xl font-black tracking-tighter leading-none"
+              >
+                {title || 'Redirigiendo...'}
+              </motion.h1>
+              <p className="text-white/40 text-lg md:text-xl font-medium">Lanzando conexión segura hacia el destino</p>
+            </div>
+
+            {/* Destination URL Display */}
+            <motion.div 
+              className="flex flex-col items-center space-y-4"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
+              <div className="flex items-center gap-4 text-white/80 group cursor-pointer">
+                <ShieldCheck className={cn("h-6 w-6 transition-colors", isHovered ? "text-primary" : "text-white/20")} />
+                <span className="text-xl md:text-3xl font-mono tracking-tight underline decoration-white/10 underline-offset-8 decoration-2 hover:decoration-primary/50 transition-all duration-300">
+                  {displayDomain}
+                </span>
+                <ExternalLink className={cn("h-6 w-6 transition-all", isHovered ? "translate-x-1 translate-y-[-4px] text-primary" : "text-white/20")} />
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Large Action Area */}
+          <div className="w-full flex flex-col items-center space-y-8 pt-8">
+            <Button
+              onClick={handleManualRedirect}
+              variant="default"
+              size="lg"
+              className="group relative h-20 px-12 md:px-20 rounded-full text-xl font-black bg-primary hover:bg-white text-white hover:text-black transition-all duration-500 overflow-hidden"
+              loading={redirectState === 'redirecting' || redirectState === 'manual'}
+            >
+              <motion.div 
+                className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"
+              />
+              <span className="relative z-10 flex items-center gap-3">
+                {redirectState === 'redirecting' ? 'PROCESANDO...' : 'IR AL SITIO'}
+                {!redirectState.includes('redirecting') && <ArrowRight className="h-6 w-6" />}
+              </span>
+            </Button>
+
+            {redirectState === 'failed' && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-md p-6 rounded-3xl bg-red-500/10 border border-red-500/20 backdrop-blur-xl text-center"
+              >
+                <p className="text-red-400 font-bold mb-2 uppercase text-xs tracking-widest">Error de Salto</p>
+                <p className="text-white/60 text-sm mb-4">La secuencia automática falló. Prueba el enlace directo:</p>
+                <a href={destinationUrl} className="text-primary font-mono text-sm break-all hover:underline">{destinationUrl}</a>
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Bottom Status Info */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          className="w-full flex flex-col items-center space-y-8"
+        >
+          <div className="h-px w-24 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          
+          <div className="flex flex-wrap justify-center gap-x-12 gap-y-4 px-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-white/5 border border-white/5">
+                <ShieldCheck className="h-5 w-5 text-green-500/50" />
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] uppercase tracking-widest font-black text-white/20">Seguridad</p>
+                <p className="text-xs font-bold text-white/60">SSL Verificado</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-white/5 border border-white/5">
+                <Clock className="h-5 w-5 text-blue-500/50" />
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] uppercase tracking-widest font-black text-white/20">Latencia</p>
+                <p className="text-xs font-bold text-white/60">Optimizado</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-white/5 border border-white/5">
+                <Globe className="h-5 w-5 text-primary/50" />
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] uppercase tracking-widest font-black text-white/20">DNS</p>
+                <p className="text-xs font-bold text-white/60">Global Edge</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center gap-2">
+             <span className="text-[9px] uppercase tracking-[0.6em] font-black text-white/10">BRLNS.ES INFRASTRUCTURE</span>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Interactive Floating Particles (Visual Flair) */}
+      <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+        {[...Array(5)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ 
+              x: Math.random() * 100 + "%", 
+              y: Math.random() * 100 + "%",
+              opacity: 0,
+              scale: 0
+            }}
+            animate={{ 
+              y: [null, "-20%", "120%"],
+              opacity: [0, 0.2, 0],
+              scale: [0, 1, 0.5]
+            }}
+            transition={{ 
+              duration: Math.random() * 10 + 10,
+              repeat: Infinity,
+              delay: Math.random() * 20
+            }}
+            className="absolute w-1 h-1 bg-primary rounded-full blur-[1px]"
+          />
+        ))}
+      </div>
+
+      {/* No-JS Fallback */}
+      <noscript>
+        <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-6 text-center">
+          <div className="max-w-md space-y-6">
+            <h1 className="text-4xl font-black tracking-tighter">BRLNS.ES</h1>
+            <p className="text-white/60 leading-relaxed">Estamos redirigiéndote. Si la página no carga en 3 segundos, usa el botón de abajo.</p>
+            <a 
+              href={destinationUrl}
+              className="inline-block px-12 py-5 bg-white text-black rounded-full font-black text-lg hover:scale-105 transition-transform"
+            >
+              CONTINUAR AL SITIO
+            </a>
+          </div>
         </div>
-    );
+      </noscript>
+    </div>
+  );
 };
 
 export { RedirectPage };

@@ -9,7 +9,7 @@ interface RedirectLayoutProps {
 
 const RedirectLayout: React.FC<RedirectLayoutProps> = ({ children }) => {
     return (
-        <AnimatedBackground className="flex items-center justify-center">
+        <>
             {/* Skip Navigation Link for accessibility */}
             <a
                 href="#redirect-content"
@@ -18,11 +18,8 @@ const RedirectLayout: React.FC<RedirectLayoutProps> = ({ children }) => {
                 Saltar al contenido de redirección
             </a>
 
-            {/* Main Content - Centered vertically and horizontally */}
-            <main id="redirect-content" className="flex-1 flex items-center justify-center p-4">
-                {children}
-            </main>
-        </AnimatedBackground>
+            {children}
+        </>
     );
 };
 
