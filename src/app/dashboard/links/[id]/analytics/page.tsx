@@ -186,7 +186,7 @@ export default function LinkAnalyticsPage() {
             <p className="text-muted-foreground">
               <span className="font-medium">URL:</span>{' '}
               <a
-                href={`${window.location.origin}/${link.slug}`}
+                href={`https://brlns.es/${link.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
@@ -214,7 +214,7 @@ export default function LinkAnalyticsPage() {
           <Button
             onClick={() =>
               navigator.clipboard.writeText(
-                `${window.location.origin}/${link.slug}`
+                `https://brlns.es/${link.slug}`
               )
             }
             variant="outline"

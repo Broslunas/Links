@@ -53,7 +53,9 @@ export async function handleRedirect(
         if (requestDomain !== process.env.DEFAULT_DOMAIN &&
             !requestDomain.startsWith('localhost:') &&
             requestDomain !== 'broslunas.link' &&
-            requestDomain !== 'www.broslunas.link') {
+            requestDomain !== 'www.broslunas.link' &&
+            requestDomain !== 'brlns.es' &&
+            requestDomain !== 'www.brlns.es') {
             customDomain = await CustomDomain.findOne({
                 fullDomain: requestDomain,
                 isVerified: true,
@@ -305,6 +307,8 @@ export async function shouldRedirectToMainDomain(
             requestDomain === '127.0.0.1' ||
             requestDomain === 'broslunas.link' ||
             requestDomain === 'www.broslunas.link' ||
+            requestDomain === 'brlns.es' ||
+            requestDomain === 'www.brlns.es' ||
             requestDomain.includes('vercel.app')) {
             return { success: true };
         }

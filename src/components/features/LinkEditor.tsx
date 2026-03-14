@@ -292,7 +292,7 @@ export function LinkEditor({
             </label>
             <div className="flex items-center">
               <span className="text-sm text-muted-foreground mr-2">
-                {typeof window !== 'undefined' ? window.location.origin : ''}/
+                brlns.es/
               </span>
               <Input
                 id="slug"
@@ -370,7 +370,7 @@ export function LinkEditor({
                 disabled={loading}
                 className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors border-input bg-background text-foreground"
               >
-                <option value="">broslunas.link</option>
+                <option value="">brlns.es</option>
                 {customDomains.map(domain => (
                   <option key={domain.id} value={domain.id}>
                     {domain.domain}

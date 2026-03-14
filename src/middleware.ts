@@ -11,6 +11,8 @@ const DEFAULT_DOMAINS = [
   '127.0.0.1',
   'broslunas.link',
   'www.broslunas.link',
+  'brlns.es',
+  'www.brlns.es',
   process.env.DEFAULT_DOMAIN,
   process.env.VERCEL_URL,
   process.env.NEXT_PUBLIC_APP_URL?.replace('https://', '').replace(

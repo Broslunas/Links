@@ -24,6 +24,8 @@ export default function CustomDomainRedirectHandler({ children }: CustomDomainRe
           currentDomain === '127.0.0.1' || 
           currentDomain === 'broslunas.link' ||
           currentDomain === 'www.broslunas.link' ||
+          currentDomain === 'brlns.es' ||
+          currentDomain === 'www.brlns.es' ||
           currentDomain.includes('vercel.app') ||
           currentDomain.includes('localhost')) {
         return;

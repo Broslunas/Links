@@ -261,7 +261,7 @@ export const POST = withAuth(async (request: NextRequest, auth: AuthContext) => 
         timeRestrictionTimezone: newLink.timeRestrictionTimezone,
         createdAt: newLink.createdAt,
         updatedAt: newLink.updatedAt,
-        shortUrl: `${process.env.NEXTAUTH_URL}/${newLink.slug}`,
+        shortUrl: `https://brlns.es/${newLink.slug}`,
     };
 
     return createSuccessResponse(responseData, 201);

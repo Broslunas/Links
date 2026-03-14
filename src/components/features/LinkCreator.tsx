@@ -1079,7 +1079,7 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                         }
                         className="w-full px-3 py-2 border border-border rounded-md bg-background text-card-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
                       >
-                        <option value="">broslunas.link</option>
+                        <option value="">brlns.es</option>
                         {customDomains.map(domain => (
                           <option key={domain.id} value={domain.id}>
                             {domain.domain}{' '}
@@ -1489,8 +1489,8 @@ export function LinkCreator({ onLinkCreated, onError }: LinkCreatorProps) {
                           {formData.customDomain
                             ? customDomains.find(
                               d => d.id === formData.customDomain
-                            )?.domain || 'broslunas.link'
-                            : 'broslunas.link (por defecto)'}
+                            )?.domain || 'brlns.es'
+                            : 'brlns.es (por defecto)'}
                         </p>
                       </div>
 

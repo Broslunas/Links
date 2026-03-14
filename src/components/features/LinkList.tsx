@@ -262,7 +262,7 @@ export function LinkList({
   };
 
   const getShortUrl = (slug: string) => {
-    return `${window.location.origin}/${slug}`;
+    return `https://brlns.es/${slug}`;
   };
 
   // Filter and sort links

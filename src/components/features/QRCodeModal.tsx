@@ -103,7 +103,7 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
         const textX = downloadSize / 2;
 
         // Draw text centered
-        ctx.fillText('Creado con broslunas.link', textX, textY);
+        ctx.fillText('Creado con brlns.es', textX, textY);
 
         // Convert to PNG
         try {
@@ -112,7 +112,7 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
           // Create a download link
           const downloadLink = document.createElement('a');
           downloadLink.href = pngUrl;
-          downloadLink.download = `${getSlugFromUrl()} - Broslunas Link.png`;
+          downloadLink.download = `${getSlugFromUrl()} - brlns.es.png`;
           document.body.appendChild(downloadLink);
           downloadLink.click();
           document.body.removeChild(downloadLink);
@@ -171,7 +171,7 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
               />
             </div>
             <p className="text-center text-xs sm:text-sm mt-2" style={{ color: '#444444' }}>
-              Creado con broslunas.link
+              Creado con brlns.es
             </p>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground text-center break-all mb-4 px-2">

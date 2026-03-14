@@ -209,7 +209,7 @@ export default function SharedLinksPage() {
 
   const handleLinkClick = (link: SharedLink) => {
     // Abrir el enlace acortado en una nueva pestaña
-    window.open(`${window.location.origin}/${link.linkId.slug}`, '_blank');
+    window.open(`https://brlns.es/${link.linkId.slug}`, '_blank');
   };
 
   const handleEditLink = (sharedLink: SharedLink) => {
@@ -683,7 +683,7 @@ export default function SharedLinksPage() {
                       onClick={() => handleLinkClick(sharedLink)}
                       className="text-xs text-primary hover:text-primary/80 font-mono break-all text-left"
                     >
-                      {window.location.origin}/{link.slug}
+                      https://brlns.es/{link.slug}
                     </button>
                   </div>
                 </div>
