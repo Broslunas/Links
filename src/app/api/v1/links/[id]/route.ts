@@ -327,7 +327,7 @@ function validateUpdateLinkRequest(body: UpdateLinkV1Request): void {
  * Transform Link document to API v1 response format
  */
 function transformLinkToV1Response(link: any): LinkV1Response {
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = 'https://brlns.es';
 
     return {
         id: link._id.toString(),
