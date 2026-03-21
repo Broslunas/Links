@@ -11,6 +11,15 @@ export function generateApiToken(): string {
 }
 
 /**
+ * Generate a secure Extension token
+ */
+export function generateExtensionToken(): string {
+    // Generate a random token with prefix for identification
+    const randomBytes = crypto.randomBytes(32).toString('hex');
+    return `ext_${randomBytes}`;
+}
+
+/**
  * Generate and save API token for a user
  */
 export async function generateUserApiToken(userId: string): Promise<string> {
@@ -44,6 +53,44 @@ export async function generateUserApiToken(userId: string): Promise<string> {
 }
 
 /**
+ * Generate and save Extension token for a user
+ */
+export async function generateUserExtensionToken(userId: string): Promise<string> {
+    let token: string;
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 5;
+
+    // Ensure token uniqueness
+    while (!isUnique && attempts < maxAttempts) {
+        token = generateExtensionToken();
+        const existingUser = await User.findOne({ 
+            $or: [
+                { apiToken: token },
+                { extensionToken: token }
+            ]
+        });
+
+        if (!existingUser) {
+            isUnique = true;
+        }
+        attempts++;
+    }
+
+    if (!isUnique) {
+        throw new Error('Failed to generate unique extension token');
+    }
+
+    // Update user with new token
+    await User.findByIdAndUpdate(userId, {
+        extensionToken: token!,
+        extensionTokenCreatedAt: new Date(),
+    });
+
+    return token!;
+}
+
+/**
  * Validate API token format
  */
 export function isValidTokenFormat(token: string): boolean {
@@ -51,8 +98,8 @@ export function isValidTokenFormat(token: string): boolean {
         return false;
     }
 
-    // Check if token starts with 'uls_' and has exactly 64 hex characters after
-    const tokenRegex = /^uls_[a-f0-9]{64}$/;
+    // Check if token starts with 'uls_' or 'ext_' and has exactly 64 hex characters after
+    const tokenRegex = /^(uls|ext)_[a-f0-9]{64}$/;
     return tokenRegex.test(token);
 }
 
@@ -65,8 +112,13 @@ export async function validateApiToken(token: string) {
     }
 
     try {
-        // Ensure database connection before querying
-        const user = await User.findOne({ apiToken: token });
+        // Check both token fields
+        const user = await User.findOne({ 
+            $or: [
+                { apiToken: token },
+                { extensionToken: token }
+            ]
+        });
         return user;
     } catch (error) {
         console.error('[validateApiToken] Error validating token:', error);
@@ -76,16 +128,18 @@ export async function validateApiToken(token: string) {
 }
 
 /**
- * Update the lastUsedAt timestamp for an API token
+ * Update the lastUsedAt timestamp for any token type
  */
-export async function updateTokenLastUsed(userId: string): Promise<void> {
+export async function updateTokenLastUsed(userId: string, token: string): Promise<void> {
     try {
+        const isExtension = token.startsWith('ext_');
+        const updateField = isExtension ? 'extensionTokenLastUsedAt' : 'apiTokenLastUsedAt';
+        
         await User.findByIdAndUpdate(userId, {
-            apiTokenLastUsedAt: new Date(),
+            [updateField]: new Date(),
         });
     } catch (error) {
         console.error('[updateTokenLastUsed] Error updating token last used:', error);
-        // Don't throw, just log the error
     }
 }
 

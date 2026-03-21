@@ -45,7 +45,11 @@ const providers: Record<Provider, ProviderConfig> = {
   }
 };
 
-export default function SignInForm() {
+interface SignInFormProps {
+  callbackUrl?: string;
+}
+
+export default function SignInForm({ callbackUrl = '/dashboard' }: SignInFormProps) {
   const [isLoading, setIsLoading] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,7 +57,7 @@ export default function SignInForm() {
     try {
       setIsLoading(provider);
       setError(null);
-      await signIn(provider, { callbackUrl: '/dashboard' });
+      await signIn(provider, { callbackUrl });
     } catch (error) {
       console.error('Error signing in:', error);
       setError('Error al iniciar sesión. Por favor, inténtalo de nuevo.');

@@ -44,7 +44,7 @@ export async function authenticateRequest(
     }
 
     // Update lastUsedAt timestamp for the API token
-    await updateTokenLastUsed(user._id?.toString() || '');
+    await updateTokenLastUsed(user._id?.toString() || '', apiToken);
 
     return {
       userId: user._id?.toString() || '',

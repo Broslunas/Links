@@ -34,6 +34,10 @@ export interface IUser extends Document {
   apiToken?: string;
   apiTokenCreatedAt?: Date;
   apiTokenLastUsedAt?: Date;
+  // Extension token for Chrome Extension access
+  extensionToken?: string;
+  extensionTokenCreatedAt?: Date;
+  extensionTokenLastUsedAt?: Date;
   // Admin password reset
   adminPasswordResetToken?: string;
   adminPasswordResetExpires?: Date;
@@ -115,6 +119,19 @@ const UserSchema = new Schema<IUser>(
       type: Date,
     },
     apiTokenLastUsedAt: {
+      type: Date,
+    },
+    // Extension token for Chrome Extension access
+    extensionToken: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
+    extensionTokenCreatedAt: {
+      type: Date,
+    },
+    extensionTokenLastUsedAt: {
       type: Date,
     },
     // Admin password reset

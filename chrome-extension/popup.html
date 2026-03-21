@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broslunas Links</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="logo-section">
+        <img src="icons/icon128.png" alt="Broslunas Links" class="logo">
+        <h1 class="brand-text">Broslunas<span>Links</span></h1>
+      </div>
+      <button id="settingsBtn" class="icon-btn" title="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      </button>
+    </header>
+
+    <main id="mainView">
+      <div id="loading" class="view hidden">
+        <div class="spinner"></div>
+        <p>Shortening...</p>
+      </div>
+
+      <div id="inputView" class="view">
+        <div class="input-group">
+          <label for="originalUrl">URL to Shorten</label>
+          <input type="text" id="originalUrl" placeholder="https://example.com/very-long-url..." readonly>
+        </div>
+        
+        <div class="input-row">
+            <div class="input-group">
+                <label for="customSlug">Custom Slug (Optional)</label>
+                <input type="text" id="customSlug" placeholder="my-awesome-link">
+            </div>
+        </div>
+
+        <button id="shortenBtn" class="primary-btn">Shorten Now</button>
+      </div>
+
+      <div id="resultView" class="view hidden">
+        <div class="success-header">
+           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="success-icon"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+           <p>Link Shortened!</p>
+        </div>
+        
+        <div class="result-container">
+          <input type="text" id="shortUrl" readonly>
+          <button id="copyBtn" class="secondary-btn">Copy</button>
+        </div>
+        
+        <button id="newLinkBtn" class="link-btn">Shorten another link</button>
+      </div>
+
+      <div id="errorView" class="view hidden">
+        <div class="error-header">
+           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="error-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+           <p id="errorMessage">Something went wrong</p>
+        </div>
+        <button id="retryBtn" class="secondary-btn">Try Again</button>
+      </div>
+
+      <div id="loginView" class="view">
+        <div class="login-header">
+           <img src="icons/icon128.png" alt="Broslunas Links" class="login-icon">
+           <h2>Broslunas Links</h2>
+           <p>Log in to shorten URLs from any tab instantly.</p>
+        </div>
+        <button id="loginBtn" class="primary-btn">Log in with account</button>
+        <p class="help-text center">You will be redirected to the login page.</p>
+        <button id="loginToSettings" class="link-btn center">Edit API Endpoint</button>
+      </div>
+
+      <div id="settingsView" class="view hidden">
+        <div class="settings-header">
+            <button id="backBtn" class="icon-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
+            <h2>Settings</h2>
+        </div>
+        
+        <div class="input-group">
+          <label for="apiKey">API v1 Token</label>
+          <input type="password" id="apiKey" readonly>
+        </div>
+
+        <div class="input-group">
+          <label for="apiEndpoint">API Endpoint</label>
+          <input type="text" id="apiEndpoint" value="https://broslunas.link">
+        </div>
+
+        <div class="button-row">
+            <button id="saveSettingsBtn" class="primary-btn">Save</button>
+            <button id="logoutBtn" class="secondary-btn logout-btn">Logout</button>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Broslunas Links &copy; 2026</p>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
