@@ -112,6 +112,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        const urlToShorten = inputs.originalUrl.value.trim();
+        
+        if (!urlToShorten || !urlToShorten.startsWith('http')) {
+            errorMessage.textContent = 'Please enter a valid URL (starting with http:// or https://)';
+            showView('error');
+            return;
+        }
+
         showView('loading');
 
         try {
@@ -122,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     'Authorization': `Bearer ${settings.apiKey}`
                 },
                 body: JSON.stringify({
-                    originalUrl: currentTabUrl,
+                    originalUrl: urlToShorten,
                     slug: inputs.customSlug.value || undefined
                 })
             });
@@ -159,8 +167,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 2000);
     };
 
-    buttons.newLink.onclick = () => {
+    buttons.newLink.onclick = async () => {
         inputs.customSlug.value = '';
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab && tab.url && tab.url.startsWith('http')) {
+            inputs.originalUrl.value = tab.url;
+        }
         showView('input');
     };
 

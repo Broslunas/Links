@@ -11,11 +11,15 @@
     "notifications"
   ],
   "host_permissions": [
-    "https://www.broslunas.link/*"
+    "https://www.broslunas.link/*",
+    "http://localhost:3000/*"
   ],
   "content_scripts": [
     {
-      "matches": ["https://www.broslunas.link/extension/login"],
+      "matches": [
+        "https://www.broslunas.link/extension/login",
+        "http://localhost:3000/extension/login"
+      ],
       "js": ["content.js"],
       "run_at": "document_end"
     }
