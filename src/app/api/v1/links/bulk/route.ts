@@ -133,7 +133,7 @@ async function createSingleLink(linkData: CreateLinkV1Request, userId: string): 
     await newLink.save();
 
     // Transform to API response format
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = 'https://brlns.es';
     
     return {
         id: newLink._id.toString(),

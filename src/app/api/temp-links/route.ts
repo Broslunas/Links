@@ -114,7 +114,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         expiresAt: newTempLink.expiresAt,
         createdAt: newTempLink.createdAt,
         updatedAt: newTempLink.updatedAt,
-        shortUrl: `${process.env.NEXTAUTH_URL}/${newTempLink.slug}`,
+        shortUrl: `https://brlns.es/${newTempLink.slug}`,
     };
 
     // Add rate limit headers to response
