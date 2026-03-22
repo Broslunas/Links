@@ -34,10 +34,24 @@ export const authOptions: NextAuthOptions = {
     GithubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      ...(process.env.NODE_ENV !== 'development' && {
+        authorization: {
+          params: {
+            redirect_uri: 'https://broslunas.link/api/auth/callback/github'
+          }
+        }
+      })
     }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      ...(process.env.NODE_ENV !== 'development' && {
+        authorization: {
+          params: {
+            redirect_uri: 'https://broslunas.link/api/auth/callback/google'
+          }
+        }
+      })
     }),
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID!,
@@ -45,12 +59,22 @@ export const authOptions: NextAuthOptions = {
       authorization: {
         params: {
           scope: 'identify email',
+          ...(process.env.NODE_ENV !== 'development' && {
+            redirect_uri: 'https://broslunas.link/api/auth/callback/discord'
+          })
         },
       },
     }),
     TwitchProvider({
       clientId: process.env.TWITCH_CLIENT_ID!,
       clientSecret: process.env.TWITCH_CLIENT_SECRET!,
+      ...(process.env.NODE_ENV !== 'development' && {
+        authorization: {
+          params: {
+            redirect_uri: 'https://broslunas.link/api/auth/callback/twitch'
+          }
+        }
+      })
     }),
   ],
   pages: {
