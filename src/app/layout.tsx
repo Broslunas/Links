@@ -95,6 +95,11 @@ export default function RootLayout({
           data-key="eWu3qIhBOnwujRqteUvklA"
           async
         ></script>
+        <script
+          defer
+          src="https://analytics.broslunas.com/script.js"
+          data-website-id="20044e51-7f2c-4e36-82da-9566b336c422"
+        ></script>
         <link rel="canonical" href={baseUrl} />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -114,11 +119,6 @@ export default function RootLayout({
             </SessionProvider>
           </ThemeProvider>
         </ErrorBoundary>
-        <Script
-          src="https://analytics.broslunas.com/script.js"
-          data-website-id="20044e51-7f2c-4e36-82da-9566b336c422"
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );
