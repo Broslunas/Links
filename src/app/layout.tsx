@@ -115,18 +115,10 @@ export default function RootLayout({
           </ThemeProvider>
         </ErrorBoundary>
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-NS5QEFY8G9"
+          src="https://analytics.broslunas.com/script.js"
+          data-website-id="20044e51-7f2c-4e36-82da-9566b336c422"
           strategy="afterInteractive"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-
-            gtag('config', 'G-NS5QEFY8G9');
-          `}
-        </Script>
       </body>
     </html>
   );
