@@ -99,6 +99,7 @@ export default function RootLayout({
           defer
           src="https://analytics.broslunas.com/script.js"
           data-website-id="20044e51-7f2c-4e36-82da-9566b336c422"
+          data-performance="true"
         ></script>
         <link rel="canonical" href={baseUrl} />
         <link rel="icon" href="/favicon.ico" />
